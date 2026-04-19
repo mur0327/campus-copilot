@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
+import tempfile
 from collections.abc import Awaitable, Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from pathlib import Path
 
 from bs4 import BeautifulSoup
+from langchain_core.documents import Document
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
@@ -55,6 +60,55 @@ async def render_markdown_from_article(article_html: str) -> str:
         result = await crawler.arun(url=f"raw:{article_html}", config=config)
     markdown = result.markdown.fit_markdown or result.markdown.raw_markdown
     return markdown.strip()
+
+
+def load_pdf_markdown_documents(pdf_path: str) -> list[Document]:
+    from langchain_opendataloader_pdf import OpenDataLoaderPDFLoader
+
+    worker_settings = get_settings()
+    loader = OpenDataLoaderPDFLoader(
+        file_path=pdf_path,
+        format="markdown",
+        quiet=True,
+        hybrid=worker_settings.pdf_hybrid_backend,
+        hybrid_mode=worker_settings.pdf_hybrid_mode,
+        hybrid_url=worker_settings.pdf_hybrid_url,
+        hybrid_fallback=True,
+    )
+    return loader.load()
+
+
+def split_markdown_ordered_blocks(markdown: str) -> list[tuple[str, str]]:
+    blocks: list[tuple[str, str]] = []
+    current_text: list[str] = []
+    current_table: list[str] = []
+
+    def flush_text() -> None:
+        if current_text:
+            blocks.append(("text", "\n".join(current_text).strip()))
+            current_text.clear()
+
+    def flush_table() -> None:
+        if current_table:
+            blocks.append(("table", "\n".join(current_table)))
+            current_table.clear()
+
+    for line in markdown.splitlines():
+        stripped_line = line.strip()
+        if stripped_line.startswith("|") and stripped_line.endswith("|"):
+            if current_text:
+                flush_text()
+            current_table.append(line.rstrip())
+            continue
+
+        if current_table:
+            flush_table()
+
+        current_text.append(line)
+
+    flush_text()
+    flush_table()
+    return blocks
 
 
 def markdown_to_text_chunks(markdown: str) -> list[ParsedChunk]:
@@ -137,6 +191,57 @@ async def parse_html(
     )
 
 
-async def parse_pdf(url: str, content: bytes) -> list[dict]:
-    """Convert a PDF file into chunk dictionaries."""
-    return []
+async def parse_pdf(
+    target: CrawlTarget,
+    pdf_bytes: bytes,
+    crawled_at: datetime | None = None,
+    file_loader: Callable[[str], list[Document]] = load_pdf_markdown_documents,
+) -> ParsedDocument:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        pdf_path = Path(temp_dir) / f"{target.year or 'document'}.pdf"
+        pdf_path.write_bytes(pdf_bytes)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            documents = await asyncio.get_running_loop().run_in_executor(
+                executor, file_loader, str(pdf_path)
+            )
+
+    chunks: list[ParsedChunk] = []
+    chunk_index = 0
+
+    for doc in documents:
+        page = doc.metadata.get("page")
+
+        for block_type, block_content in split_markdown_ordered_blocks(doc.page_content):
+            if block_type == "text":
+                for text_chunk in markdown_to_text_chunks(block_content):
+                    chunks.append(
+                        ParsedChunk(
+                            chunk_index=chunk_index,
+                            content=text_chunk.content,
+                            chunk_type="text",
+                            meta={"page": page, **text_chunk.meta},
+                        )
+                    )
+                    chunk_index += 1
+                continue
+
+            chunks.append(
+                ParsedChunk(
+                    chunk_index=chunk_index,
+                    content=block_content,
+                    chunk_type="table",
+                    meta={"page": page},
+                )
+            )
+            chunk_index += 1
+
+    return ParsedDocument(
+        url=target.url,
+        title=target.title_hint,
+        menu_path=target.menu_path,
+        category=None,
+        source_type="pdf",
+        content_hash=build_content_hash(pdf_bytes),
+        crawled_at=crawled_at or datetime.now(UTC),
+        chunks=chunks,
+    )
