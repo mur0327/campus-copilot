@@ -1,0 +1,31 @@
+name: campus-copilot-prod
+
+services:
+  backend:
+    restart: unless-stopped
+    volumes: !reset []
+    command: ["sh", "/app/scripts/entrypoint.sh", "--workers", "2"]
+
+  worker:
+    restart: unless-stopped
+    volumes: !reset []
+
+  frontend:
+    build:
+      target: prod
+    ports: !reset []
+    volumes: !reset []
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
