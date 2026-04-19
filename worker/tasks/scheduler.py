@@ -32,6 +32,7 @@ async def main() -> None:
         run_crawl,
         build_cron_trigger(cron_expr),
         id="crawl_job",
+        coalesce=True,
         max_instances=1,
         misfire_grace_time=600,
     )
