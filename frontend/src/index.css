@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  color: #f6f1e8;
+  background:
+    radial-gradient(circle at top, rgba(213, 164, 96, 0.22), transparent 32%),
+    linear-gradient(180deg, #10253c 0%, #0b1727 55%, #07111b 100%);
+  font-family:
+    "Pretendard Variable",
+    "Pretendard",
+    "Noto Sans KR",
+    system-ui,
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}

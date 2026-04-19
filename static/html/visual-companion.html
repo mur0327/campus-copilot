@@ -1,0 +1,2814 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Copilot 비주얼 컴패니언</title>
+  <style>
+:root {
+  color-scheme: light;
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --border: #cbd5e1;
+  --border-soft: #e2e8f0;
+  --text: #0f172a;
+  --subtext: #475569;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+body {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+    .page {
+      max-width: 1230px;
+      margin: 0 auto;
+      padding: 20px 18px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .hero {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 19px;
+      line-height: 1.2;
+      color: var(--text);
+    }
+    .hero p {
+      margin: 0;
+      color: var(--subtext);
+      font-size: 12px;
+      line-height: 1.7;
+      max-width: 78ch;
+    }
+    .hero-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 200px;
+      align-items: flex-end;
+    }
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .section-head-left {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .section-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .section-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .capture-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .capture-btn:hover {
+      transform: translateY(-1px);
+      border-color: #93c5fd;
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+    }
+    .capture-btn.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .frame-shell {
+      background: #e2e8f0;
+      padding: 10px;
+    }
+    iframe.preview-frame {
+      display: block;
+      width: 100%;
+      border: 0;
+      background: white;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .footer-note {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+      padding: 0 2px;
+    }
+@media (max-width: 900px) {
+  .hero { flex-direction: column; }
+  .hero-actions { min-width: 0; align-items: flex-start; }
+  .section-head { flex-direction: column; align-items: stretch; }
+  .section-actions { justify-content: flex-start; flex-wrap: wrap; }
+  .capture-btn { width: 100%; }
+}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <h1>Campus Copilot 비주얼 컴패니언</h1>
+        <p>각 섹션은 이미지 캡처용으로 정리되어 있습니다. 가로형 구성 요소는 세로 흐름으로 맞추고, 최대 너비는 1230px로 제한했습니다. 각 섹션의 캡처 버튼으로 PNG를 저장할 수 있습니다.</p>
+      </div>
+      <div class="hero-actions">
+        <span class="hero-chip">단일 HTML · 세로 섹션 정리</span>
+        <span class="hero-chip">중복 제거 · answer-layout.html 제외</span>
+      </div>
+    </header>
+    <section class="section" id="section-main-layout">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 class="section-title">메인 화면 레이아웃</h2>
+          <p class="section-note">메인 레이아웃 비교안</p>
+        </div>
+        <div class="section-actions">
+          <button class="capture-btn primary" type="button" data-frame="frame-main-layout">이미지 캡처</button>
+        </div>
+      </div>
+      <div class="frame-shell">
+        <iframe class="preview-frame" id="frame-main-layout" title="메인 화면 레이아웃" data-template="tpl-main-layout" scrolling="no"></iframe>
+      </div>
+    </section>
+    <template id="tpl-main-layout">
+<!DOCTYPE html>
+        <html lang="ko">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>메인 화면 레이아웃</title>
+          <style id="unified-overrides">:root { color-scheme: light; }
+html, body {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+body {
+  max-width: 1230px !important;
+  margin: 0 auto !important;
+  padding: 24px !important;
+  overflow-x: hidden !important;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+}
+* { box-sizing: border-box !important; }
+img, video, svg, canvas, table, pre, code, .card, .screen, .kiosk, .device, .mockup, .panel { max-width: 100%; }
+.screens-row,
+.flow,
+.cards,
+.approach-cards,
+.answer-split,
+.la-wrap,
+.lb-wrap,
+.lc-body,
+.row,
+.steps-row,
+.action-row,
+.cat-row {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+}
+.cards { display: flex !important; }
+.flow { overflow-x: hidden !important; gap: 16px !important; }
+.arrow,
+.arrow-col { display: none !important; }
+.screen,
+.screen-col,
+.screen-wrap,
+.card,
+.flow-step,
+.answer-main,
+.answer-side,
+.la-left,
+.la-right,
+.lb-left,
+.lb-right,
+.lc-left,
+.lc-right,
+.option-block,
+.approach-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.device,
+.kiosk,
+.kiosk-frame,
+.screen,
+.device-inner {
+  width: 100% !important;
+  max-width: 1230px !important;
+}
+.ans-body,
+.ans-left,
+.ans-right,
+.im-history,
+.main-body,
+.kiosk,
+.kiosk-frame,
+.flow-step,
+.branch-container,
+.option-preview {
+  min-width: 0 !important;
+}
+.option-preview,
+.card-image,
+.mockup-body,
+.screen-body,
+.device,
+.kiosk,
+.kiosk-frame,
+.section,
+.panel,
+.tbl-wrap {
+  overflow-x: hidden;
+}
+.white-space-nowrap,
+.card-body h3,
+.card-body p,
+.section-title,
+.screen-title,
+.hdr-title,
+.hdr-sub,
+.main-title,
+.main-sub,
+.ans-qtext,
+.lb-headline,
+.la-title,
+.lc-school2,
+.lc-cat-btn,
+.lb-chip,
+.la-faq-btn,
+.faq-btn,
+.cat-chip,
+.step-pill,
+.step-item,
+.src-title,
+.source-item,
+.hist-text {
+  word-break: keep-all !important;
+}
+.cards { display: flex !important; flex-direction: column !important; grid-template-columns: 1fr !important; }
+.card { width: 100% !important; }
+.kiosk-frame { width: 100% !important; }</style>
+        </head>
+        <body>
+        <h2>메인 화면 레이아웃</h2>
+<p class="subtitle">터치스크린 키오스크 — 가로형 화면. 어떤 레이아웃이 직관적으로 느껴지나요?</p>
+
+<style>
+  .kiosk-frame {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
+    overflow: hidden;
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    background: white;
+    aspect-ratio: 16/9;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+  /* Layout A */
+  .la-header {
+    background: #eff6ff;
+    border-bottom: 1px solid #dbeafe;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .la-logo { width: 28px; height: 28px; background: #2563eb; border-radius: 6px; }
+  .la-title { color: #0f172a; font-size: 13px; font-weight: 700; }
+  .la-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 12px 20px; }
+  .la-welcome { color: #475569; font-size: 11px; text-align: center; }
+  .la-faq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+  .la-faq-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 6px;
+    color: #1e293b;
+    font-size: 9px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .la-search-area {
+    background: #f8fafc;
+    padding: 10px 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+  }
+  .la-input {
+    flex: 1;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #94a3b8;
+    font-size: 10px;
+  }
+  .la-btn { background: #2563eb; border-radius: 8px; padding: 8px 14px; color: white; font-size: 10px; white-space: nowrap; }
+  .la-mic { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 12px; }
+
+  /* Layout B */
+  .lb-header {
+    background: #eff6ff;
+    border-bottom: 1px solid #dbeafe;
+    padding: 14px 20px 20px;
+  }
+  .lb-school { color: #2563eb; font-size: 10px; font-weight: 600; margin-bottom: 4px; }
+  .lb-headline { color: #0f172a; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .lb-search { display: flex; gap: 6px; }
+  .lb-input { flex: 1; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; color: #64748b; font-size: 10px; }
+  .lb-send { background: #2563eb; border-radius: 8px; padding: 8px 14px; color: white; font-size: 10px; }
+  .lb-mic-btn { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 12px; }
+  .lb-body { flex: 1; padding: 10px 20px; overflow: hidden; background: white; }
+  .lb-section-label { color: #2563eb; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .lb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .lb-chip { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 20px; padding: 5px 10px; color: #1d4ed8; font-size: 9px; }
+
+  /* Layout C */
+  .lc-sidebar {
+    width: 38%;
+    background: #eff6ff;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-right: 1px solid #e2e8f0;
+  }
+  .lc-logo-area { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .lc-logo2 { width: 24px; height: 24px; background: #2563eb; border-radius: 6px; }
+  .lc-school2 { color: #0f172a; font-size: 11px; font-weight: 700; }
+  .lc-cat-label { color: #2563eb; font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .lc-cat-btn {
+    background: white;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #1e293b;
+    font-size: 9px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .lc-cat-icon { font-size: 11px; }
+  .lc-main { flex: 1; display: flex; flex-direction: column; padding: 14px; gap: 8px; }
+  .lc-welcome2 { color: #475569; font-size: 10px; }
+  .lc-faq-list { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .lc-faq-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; color: #1e293b; font-size: 9px; }
+  .lc-input-row { display: flex; gap: 6px; }
+  .lc-input2 { flex: 1; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; color: #94a3b8; font-size: 9px; }
+  .lc-send2 { background: #2563eb; border-radius: 8px; padding: 8px 12px; color: white; font-size: 9px; }
+  .lc-mic2 { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 11px; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: 중앙 집중형 -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 12px; background: #e2e8f0;">
+      <div class="kiosk-frame" style="height: 180px;">
+        <div class="la-header">
+          <div class="la-logo"></div>
+          <span class="la-title">호남대학교 캠퍼스 안내</span>
+        </div>
+        <div class="la-body">
+          <div class="la-welcome">자주 묻는 질문을 선택하거나, 아래에 직접 질문을 입력하세요</div>
+          <div class="la-faq-grid">
+            <div class="la-faq-btn">📋 수강신청 방법은?</div>
+            <div class="la-faq-btn">📅 휴학 신청 기간?</div>
+            <div class="la-faq-btn">🎓 졸업요건 확인</div>
+            <div class="la-faq-btn">💰 장학금 신청</div>
+            <div class="la-faq-btn">🏢 학생처 위치</div>
+            <div class="la-faq-btn">📝 성적 이의신청</div>
+          </div>
+        </div>
+        <div class="la-search-area">
+          <div class="la-mic">🎤</div>
+          <div class="la-input">질문을 입력하세요...</div>
+          <div class="la-btn">전송</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 중앙 집중형 그리드</h3>
+      <p>FAQ가 그리드로 화면 중앙을 채우고, 입력창은 하단 고정. 가장 단순하고 직관적인 구조.</p>
+    </div>
+  </div>
+
+  <!-- Option B: 상단 검색 강조형 -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 12px; background: #e2e8f0;">
+      <div class="kiosk-frame" style="height: 180px;">
+        <div class="lb-header">
+          <div class="lb-school">호남대학교</div>
+          <div class="lb-headline">무엇이 궁금하신가요?</div>
+          <div class="lb-search">
+            <div class="lb-mic-btn">🎤</div>
+            <div class="lb-input">여기에 질문을 입력하세요...</div>
+            <div class="lb-send">전송</div>
+          </div>
+        </div>
+        <div class="lb-body">
+          <div class="lb-section-label">자주 묻는 질문</div>
+          <div class="lb-chips">
+            <div class="lb-chip">📋 수강신청 방법</div>
+            <div class="lb-chip">📅 휴학 신청</div>
+            <div class="lb-chip">🎓 졸업요건</div>
+            <div class="lb-chip">💰 장학금 신청</div>
+            <div class="lb-chip">🏢 학생처 위치</div>
+            <div class="lb-chip">📝 성적 이의신청</div>
+            <div class="lb-chip">🏠 기숙사 신청</div>
+            <div class="lb-chip">📑 재학증명서</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 상단 검색 강조 + 칩 FAQ</h3>
+      <p>헤더에 검색창을 크게 배치, 자주 묻는 질문은 태그칩 형태로 아래 나열. 더 많은 FAQ를 보여줄 수 있음.</p>
+    </div>
+  </div>
+
+  <!-- Option C: 사이드바 카테고리형 -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 12px; background: #e2e8f0;">
+      <div class="kiosk-frame" style="height: 180px; flex-direction: row;">
+        <div class="lc-sidebar">
+          <div class="lc-logo-area">
+            <div class="lc-logo2"></div>
+            <div class="lc-school2">호남대학교</div>
+          </div>
+          <div class="lc-cat-label">카테고리</div>
+          <div class="lc-cat-btn"><span class="lc-cat-icon">🎓</span> 학사행정</div>
+          <div class="lc-cat-btn"><span class="lc-cat-icon">💰</span> 장학·등록</div>
+          <div class="lc-cat-btn"><span class="lc-cat-icon">🏢</span> 시설·부서</div>
+          <div class="lc-cat-btn"><span class="lc-cat-icon">📋</span> 취업·진로</div>
+        </div>
+        <div class="lc-main">
+          <div class="lc-welcome2">자주 묻는 질문</div>
+          <div class="lc-faq-list">
+            <div class="lc-faq-item">📋 수강신청은 어떻게 하나요?</div>
+            <div class="lc-faq-item">📅 이번 학기 휴학 신청 기간은?</div>
+            <div class="lc-faq-item">🎓 졸업요건을 확인하고 싶어요</div>
+          </div>
+          <div class="lc-input-row">
+            <div class="lc-mic2">🎤</div>
+            <div class="lc-input2">직접 입력하세요...</div>
+            <div class="lc-send2">전송</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — 사이드바 카테고리 + FAQ 목록</h3>
+      <p>왼쪽에 카테고리 메뉴 고정, 오른쪽에 해당 카테고리의 FAQ 목록. 카테고리별 탐색이 필요할 때 유리.</p>
+    </div>
+  </div>
+
+</div>
+
+        </body>
+        </html>
+    </template>
+    <section class="section" id="section-input-mode">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 class="section-title">입력 모드 전환</h2>
+          <p class="section-note">기본 상태와 입력 모드의 전환 흐름</p>
+        </div>
+        <div class="section-actions">
+          <button class="capture-btn primary" type="button" data-frame="frame-input-mode">이미지 캡처</button>
+        </div>
+      </div>
+      <div class="frame-shell">
+        <iframe class="preview-frame" id="frame-input-mode" title="입력 모드 전환" data-template="tpl-input-mode" scrolling="no"></iframe>
+      </div>
+    </section>
+    <template id="tpl-input-mode">
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>입력 모드 전환</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #94a3b8;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px; gap: 20px;
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Pretendard', sans-serif;
+  }
+  h2 { color: #1e293b; font-size: 15px; font-weight: 700; background: white; padding: 8px 16px; border-radius: 8px; }
+
+  .screens-row { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; }
+  .screen-col { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: min(100%, 900px); }
+  .screen-title {
+    font-size: 12px; font-weight: 700; color: white;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    background: #1e293b; padding: 4px 14px; border-radius: 6px;
+  }
+  .arrow-col {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: white;
+    font-weight: 700;
+  }
+
+  .device {
+    width: 100%;
+    background: #1e293b; border-radius: 12px; padding: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+  .kiosk {
+    width: 100%; height: 450px;
+    background: white; border-radius: 6px; overflow: hidden;
+    display: flex; flex-direction: column; position: relative;
+  }
+
+  /* ── MAIN STATE (left screen) ── */
+  .hdr {
+    height: 54px; background: #1d4ed8;
+    display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0;
+  }
+  .hdr-logo { font-size: 20px; }
+  .hdr-title { color: white; font-size: 17px; font-weight: 800; white-space: nowrap; }
+
+  .main-body { flex: 1; padding: 16px 24px 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  .sec-lbl { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+  .cat-row { display: flex; gap: 10px; }
+  .cat-chip {
+    flex: 1; height: 42px; background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 13px; font-weight: 700; color: #1d4ed8; white-space: nowrap;
+  }
+  .cat-chip.active { background: #1d4ed8; border-color: #1d4ed8; color: white; }
+
+  .faq-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    overflow: hidden;
+  }
+  .faq-btn {
+    background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px;
+    min-height: 74px;
+    padding: 0 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    text-align: center;
+    font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden;
+  }
+
+  /* Bottom input bar — this animates UP on tap */
+  .input-bar {
+    height: 58px; background: #f8fafc; border-top: 1px solid #e2e8f0;
+    display: flex; align-items: center; padding: 0 24px; gap: 10px; flex-shrink: 0;
+  }
+  .mic { width: 44px; height: 44px; background: white; border: 2px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .txt { flex: 1; height: 44px; background: white; border: 2px solid #cbd5e1; border-radius: 10px; padding: 0 16px; font-size: 14px; color: #94a3b8; display: flex; align-items: center; }
+  .txt.active { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .send { height: 44px; background: #2563eb; border-radius: 10px; padding: 0 20px; font-size: 14px; font-weight: 700; color: white; display: flex; align-items: center; flex-shrink: 0; }
+
+  /* Tap indicator */
+  .tap-hint {
+    position: absolute;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(37,99,235,0.9);
+    color: white; font-size: 11px; font-weight: 700;
+    padding: 5px 14px; border-radius: 20px;
+    white-space: nowrap;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:translateX(-50%) scale(1)} 50%{opacity:0.7;transform:translateX(-50%) scale(0.97)} }
+
+  /* ── INPUT MODE STATE (right screen) ── */
+  /* Top search bar */
+  .im-top {
+    height: 62px; background: white; border-bottom: 2px solid #2563eb;
+    display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0;
+  }
+  .im-back {
+    width: 42px; height: 42px; background: #f1f5f9; border: none; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0;
+  }
+  .im-input {
+    flex: 1; height: 46px; background: #f8fafc; border: 2px solid #2563eb;
+    border-radius: 10px; padding: 0 16px; font-size: 15px; color: #1e293b;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .im-cursor {
+    display: inline-block; width: 1.5px; height: 14px; background: #2563eb;
+    animation: blink 1s step-end infinite; vertical-align: middle; margin-left: 1px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .im-mic { width: 42px; height: 42px; background: #eff6ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+
+  /* History area */
+  .im-history { flex: 1; overflow: hidden; background: white; }
+  .hist-section { padding: 12px 20px 8px; }
+  .hist-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .hist-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid #f1f5f9; cursor: pointer;
+  }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-icon { font-size: 14px; color: #94a3b8; flex-shrink: 0; }
+  .hist-text { font-size: 13px; color: #334155; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist-time { font-size: 11px; color: #cbd5e1; flex-shrink: 0; }
+  .hist-arrow { font-size: 12px; color: #cbd5e1; flex-shrink: 0; }
+
+  /* Virtual keyboard */
+  .im-keyboard {
+    background: #e8edf2; border-top: 1px solid #d1d9e0;
+    padding: 8px 10px 6px; flex-shrink: 0;
+  }
+  .kb-row { display: flex; gap: 4px; margin-bottom: 5px; justify-content: center; }
+  .key {
+    flex: 1; max-width: 52px; height: 36px; background: white; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #1e293b; font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    cursor: pointer; user-select: none;
+  }
+  .key.wide { max-width: 80px; font-size: 10px; background: #d1d5db; }
+  .key.space { max-width: 260px; background: white; }
+  .key.blue { background: #2563eb; color: white; max-width: 80px; }
+  .key.shift { max-width: 60px; background: #d1d5db; }
+
+  /* State label */
+  .state-badge {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 5px;
+  }
+  .state-badge.normal { background: #f1f5f9; color: #64748b; }
+  .state-badge.input  { background: #dbeafe; color: #1d4ed8; }
+
+  /* Annotation */
+  .annotation {
+    background: white; border-radius: 10px; padding: 16px 20px;
+    max-width: 1080px; width: 100%;
+    font-size: 13px; color: #475569; line-height: 1.7;
+  }
+  .annotation strong { color: #1e293b; }
+  .annotation .impl { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+  .annotation code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 11px; color: #2563eb; }
+</style>
+<style id="unified-overrides">:root { color-scheme: light; }
+html, body {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+body {
+  max-width: 1230px !important;
+  margin: 0 auto !important;
+  padding: 24px !important;
+  overflow-x: hidden !important;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+}
+* { box-sizing: border-box !important; }
+img, video, svg, canvas, table, pre, code, .card, .screen, .kiosk, .device, .mockup, .panel { max-width: 100%; }
+.screens-row,
+.flow,
+.cards,
+.approach-cards,
+.answer-split,
+.la-wrap,
+.lb-wrap,
+.lc-body,
+.row,
+.steps-row,
+.action-row,
+.cat-row {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+}
+.cards { display: flex !important; }
+.flow { overflow-x: hidden !important; gap: 16px !important; }
+.arrow,
+.arrow-col { display: none !important; }
+.screen,
+.screen-col,
+.screen-wrap,
+.card,
+.flow-step,
+.answer-main,
+.answer-side,
+.la-left,
+.la-right,
+.lb-left,
+.lb-right,
+.lc-left,
+.lc-right,
+.option-block,
+.approach-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.device,
+.kiosk,
+.kiosk-frame,
+.screen,
+.device-inner {
+  width: 100% !important;
+  max-width: 1230px !important;
+}
+.ans-body,
+.ans-left,
+.ans-right,
+.im-history,
+.main-body,
+.kiosk,
+.kiosk-frame,
+.flow-step,
+.branch-container,
+.option-preview {
+  min-width: 0 !important;
+}
+.option-preview,
+.card-image,
+.mockup-body,
+.screen-body,
+.device,
+.kiosk,
+.kiosk-frame,
+.section,
+.panel,
+.tbl-wrap {
+  overflow-x: hidden;
+}
+.white-space-nowrap,
+.card-body h3,
+.card-body p,
+.section-title,
+.screen-title,
+.hdr-title,
+.hdr-sub,
+.main-title,
+.main-sub,
+.ans-qtext,
+.lb-headline,
+.la-title,
+.lc-school2,
+.lc-cat-btn,
+.lb-chip,
+.la-faq-btn,
+.faq-btn,
+.cat-chip,
+.step-pill,
+.step-item,
+.src-title,
+.source-item,
+.hist-text {
+  word-break: keep-all !important;
+}
+.screens-row { flex-direction: column !important; align-items: stretch !important; }
+.screen-col { width: 100% !important; }
+.arrow-col { display: none !important; }
+.device, .kiosk { width: 100% !important; max-width: 1230px !important; }</style>
+</head>
+<body>
+
+<h2>입력창 탭 → 검색 모드 전환</h2>
+
+<div class="screens-row">
+
+  <!-- Left: 기본 상태 -->
+  <div class="screen-col">
+    <div class="screen-title state-badge normal">기본 상태</div>
+    <div class="device">
+      <div class="kiosk">
+        <div class="hdr">
+          <span class="hdr-logo">🏫</span>
+          <span class="hdr-title">호남대학교 캠퍼스 안내</span>
+        </div>
+        <div class="main-body">
+          <div>
+            <div class="sec-lbl">카테고리</div>
+            <div class="cat-row">
+              <div class="cat-chip active">🎓 학사행정</div>
+              <div class="cat-chip">💰 장학·등록</div>
+              <div class="cat-chip">🏢 시설·부서</div>
+              <div class="cat-chip">📋 취업·진로</div>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+            <div class="sec-lbl">자주 묻는 질문</div>
+            <div class="faq-grid">
+              <div class="faq-btn">📋 수강신청 방법</div>
+              <div class="faq-btn">📅 휴학 신청 기간</div>
+              <div class="faq-btn">🎓 졸업요건 확인</div>
+              <div class="faq-btn">💰 장학금 신청</div>
+              <div class="faq-btn">🏢 학생처 위치</div>
+              <div class="faq-btn">📝 성적 이의신청</div>
+            </div>
+          </div>
+        </div>
+        <div class="input-bar">
+          <div class="mic">🎤</div>
+          <div class="txt">직접 질문을 입력하세요...</div>
+          <div class="send">전송</div>
+        </div>
+        <div class="tap-hint">👆 입력창 탭</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrow -->
+  <div class="arrow-col">↓</div>
+
+  <!-- Right: 입력 모드 -->
+  <div class="screen-col">
+    <div class="screen-title state-badge input">입력 모드</div>
+    <div class="device">
+      <div class="kiosk">
+
+        <!-- 입력창이 상단으로 이동 -->
+        <div class="im-top">
+          <div class="im-back">←</div>
+          <div class="im-input">
+            <span style="color:#94a3b8;">검색어 입력...</span><span class="im-cursor"></span>
+          </div>
+          <div class="im-mic">🎤</div>
+        </div>
+
+        <!-- 이전 검색 기록 -->
+        <div class="im-history">
+          <div class="hist-section">
+            <div class="hist-label">🔥 다른 사람들이 자주 물은 질문</div>
+            <div class="hist-item">
+              <span class="hist-icon">1</span>
+              <span class="hist-text">수강신청은 어떻게 하나요?</span>
+              <span class="hist-time">128회</span>
+              <span class="hist-arrow">↗</span>
+            </div>
+            <div class="hist-item">
+              <span class="hist-icon">2</span>
+              <span class="hist-text">이번 학기 휴학 신청 기간은?</span>
+              <span class="hist-time">94회</span>
+              <span class="hist-arrow">↗</span>
+            </div>
+            <div class="hist-item">
+              <span class="hist-icon">3</span>
+              <span class="hist-text">장학금 신청은 어디서 하나요?</span>
+              <span class="hist-time">81회</span>
+              <span class="hist-arrow">↗</span>
+            </div>
+            <div class="hist-item">
+              <span class="hist-icon">4</span>
+              <span class="hist-text">졸업요건을 확인하고 싶어요</span>
+              <span class="hist-time">67회</span>
+              <span class="hist-arrow">↗</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 가상 키보드 (하단 고정) -->
+        <div class="im-keyboard">
+          <div class="kb-row">
+            <div class="key">ㅂ</div><div class="key">ㅈ</div><div class="key">ㄷ</div><div class="key">ㄱ</div><div class="key">ㅅ</div><div class="key">ㅛ</div><div class="key">ㅕ</div><div class="key">ㅑ</div><div class="key">ㅐ</div><div class="key">ㅔ</div>
+          </div>
+          <div class="kb-row">
+            <div class="key">ㅁ</div><div class="key">ㄴ</div><div class="key">ㅇ</div><div class="key">ㄹ</div><div class="key">ㅎ</div><div class="key">ㅗ</div><div class="key">ㅓ</div><div class="key">ㅏ</div><div class="key">ㅣ</div>
+          </div>
+          <div class="kb-row">
+            <div class="key shift">⇧</div><div class="key">ㅋ</div><div class="key">ㅌ</div><div class="key">ㅊ</div><div class="key">ㅍ</div><div class="key">ㅠ</div><div class="key">ㅜ</div><div class="key">ㅡ</div><div class="key wide">⌫ 삭제</div>
+          </div>
+          <div class="kb-row">
+            <div class="key wide">영/한</div><div class="key space">스페이스</div><div class="key wide">?123</div><div class="key blue">전송 ↵</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Annotation -->
+<div class="annotation">
+  <strong>동작 흐름:</strong>
+  입력창 탭 → 화면 전체가 "입력 모드"로 전환 (슬라이드 애니메이션).
+  입력창은 상단 고정, <strong>다른 사람들이 자주 물은 질문</strong>(전체 기록 집계)이 중간에 순위별로 나타남, 가상 키보드가 하단에서 올라옴.
+  인기 질문 탭 → 해당 질문이 입력창에 채워짐 → 바로 전송 가능. ← 버튼 또는 30초 무조작 → 기본 화면 복귀.
+
+  <div class="impl">
+    <strong>React 구현:</strong> <code>isInputMode: boolean</code> 상태 하나로 제어.
+    <code>&lt;MainScreen /&gt;</code> ↔ <code>&lt;InputMode /&gt;</code> 전환.
+    인기 질문 목록은 <code>GET /api/v1/popular</code> (신규 엔드포인트) —
+    <code>query_logs</code> 테이블에서 <code>query</code> 기준 집계, 상위 10건 반환.
+    Redis TTL 캐시 적용 → 실시간 집계 부하 없음.
+  </div>
+</div>
+
+</body>
+</html>
+
+    </template>
+    <section class="section" id="section-answer-layout-light">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 class="section-title">답변 화면 레이아웃</h2>
+          <p class="section-note">답변/절차/출처 배치 비교</p>
+        </div>
+        <div class="section-actions">
+          <button class="capture-btn primary" type="button" data-frame="frame-answer-layout-light">이미지 캡처</button>
+        </div>
+      </div>
+      <div class="frame-shell">
+        <iframe class="preview-frame" id="frame-answer-layout-light" title="답변 화면 레이아웃" data-template="tpl-answer-layout-light" scrolling="no"></iframe>
+      </div>
+    </section>
+    <template id="tpl-answer-layout-light">
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>답변 화면 레이아웃 (라이트)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-family: 'Apple SD Gothic Neo', 'Pretendard', sans-serif;
+    padding: 24px;
+  }
+  h2 { font-size: 21px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+  .subtitle { color: #64748b; font-size: 15px; margin-bottom: 32px; }
+
+  .options-wrap { display: flex; flex-direction: column; gap: 28px; }
+
+  .option-block {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    background: white;
+  }
+  .option-block:hover { border-color: #94a3b8; }
+  .option-block.selected { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+  .option-header {
+    background: #f8fafc;
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .opt-letter {
+    width: 40px; height: 40px;
+    background: #eff6ff;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800; color: #2563eb;
+    flex-shrink: 0;
+  }
+  .option-header h3 { font-size: 18px; color: #0f172a; font-weight: 800; }
+  .option-header p { font-size: 14px; color: #64748b; margin-top: 4px; }
+
+  .option-preview { padding: 14px; background: #f8fafc; }
+
+  /* Shared panel */
+  .panel {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    flex: 1;
+    overflow: hidden;
+  }
+  .panel-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #2563eb;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .answer-text { font-size: 13px; color: #334155; line-height: 1.8; }
+  .cursor { display: inline-block; width: 2px; height: 14px; background: #2563eb; margin-left: 1px; animation: blink 1s step-end infinite; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .steps-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #eff6ff;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: #1e40af;
+  }
+  .step-num {
+    width: 20px; height: 20px;
+    background: #2563eb;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; color: white;
+    flex-shrink: 0;
+  }
+
+  .src-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .src-title { font-size: 11px; color: #1e293b; font-weight: 700; }
+  .src-meta { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+  .src-fresh { display: inline-block; background: #dcfce7; color: #15803d; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+
+  .conflict-box {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+  }
+  .conflict-title { font-size: 11px; color: #c2410c; font-weight: 700; }
+  .conflict-desc { font-size: 10px; color: #9a3412; opacity: 0.85; margin-top: 4px; line-height: 1.5; }
+
+  .action-bar { display: flex; gap: 8px; margin-top: 10px; }
+  .act-btn {
+    flex: 1;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 8px;
+    font-size: 11px;
+    color: #64748b;
+    text-align: center;
+  }
+  .act-btn.primary { background: #2563eb; border-color: #2563eb; color: white; font-weight: 600; }
+
+  /* ── A: 6:4 ── */
+  .la-wrap { display: flex; gap: 14px; height: 300px; }
+  .la-left { flex: 6; display: flex; flex-direction: column; gap: 10px; }
+  .la-right { flex: 4; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── B: 7:3 + tabs ── */
+  .lb-wrap { display: flex; gap: 14px; height: 300px; }
+  .lb-left { flex: 7; display: flex; flex-direction: column; gap: 10px; }
+  .lb-right { flex: 3; display: flex; flex-direction: column; }
+
+  .tabs {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid #e2e8f0;
+    border-bottom: none;
+    overflow: hidden;
+  }
+  .tab {
+    flex: 1; padding: 8px 6px;
+    font-size: 11px; color: #94a3b8; text-align: center;
+    border-bottom: 2px solid transparent; font-weight: 600;
+  }
+  .tab.active { color: #2563eb; border-bottom-color: #2563eb; background: white; }
+  .tab-body {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 12px; flex: 1; overflow: hidden;
+  }
+
+  /* ── C: 상단 질문 바 ── */
+  .lc-wrap { height: 300px; display: flex; flex-direction: column; gap: 10px; }
+  .lc-qbar {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lc-qlabel { font-size: 12px; color: #2563eb; font-weight: 700; white-space: nowrap; }
+  .lc-qtext { font-size: 13px; color: #1e40af; flex: 1; }
+  .lc-back { font-size: 11px; color: #2563eb; white-space: nowrap; font-weight: 600; }
+  .lc-body { flex: 1; display: flex; gap: 12px; overflow: hidden; }
+  .lc-left { flex: 6; display: flex; flex-direction: column; gap: 10px; }
+  .lc-right { flex: 4; display: flex; flex-direction: column; gap: 10px; }
+</style>
+<style id="unified-overrides">:root { color-scheme: light; }
+html, body {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+body {
+  max-width: 1230px !important;
+  margin: 0 auto !important;
+  padding: 24px !important;
+  overflow-x: hidden !important;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+}
+* { box-sizing: border-box !important; }
+img, video, svg, canvas, table, pre, code, .card, .screen, .kiosk, .device, .mockup, .panel { max-width: 100%; }
+.screens-row,
+.flow,
+.cards,
+.approach-cards,
+.answer-split,
+.la-wrap,
+.lb-wrap,
+.lc-body,
+.row,
+.steps-row,
+.action-row,
+.cat-row {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+}
+.cards { display: flex !important; }
+.flow { overflow-x: hidden !important; gap: 16px !important; }
+.arrow,
+.arrow-col { display: none !important; }
+.screen,
+.screen-col,
+.screen-wrap,
+.card,
+.flow-step,
+.answer-main,
+.answer-side,
+.la-left,
+.la-right,
+.lb-left,
+.lb-right,
+.lc-left,
+.lc-right,
+.option-block,
+.approach-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.device,
+.kiosk,
+.kiosk-frame,
+.screen,
+.device-inner {
+  width: 100% !important;
+  max-width: 1230px !important;
+}
+.ans-body,
+.ans-left,
+.ans-right,
+.im-history,
+.main-body,
+.kiosk,
+.kiosk-frame,
+.flow-step,
+.branch-container,
+.option-preview {
+  min-width: 0 !important;
+}
+.option-preview,
+.card-image,
+.mockup-body,
+.screen-body,
+.device,
+.kiosk,
+.kiosk-frame,
+.section,
+.panel,
+.tbl-wrap {
+  overflow-x: hidden;
+}
+.white-space-nowrap,
+.card-body h3,
+.card-body p,
+.section-title,
+.screen-title,
+.hdr-title,
+.hdr-sub,
+.main-title,
+.main-sub,
+.ans-qtext,
+.lb-headline,
+.la-title,
+.lc-school2,
+.lc-cat-btn,
+.lb-chip,
+.la-faq-btn,
+.faq-btn,
+.cat-chip,
+.step-pill,
+.step-item,
+.src-title,
+.source-item,
+.hist-text {
+  word-break: keep-all !important;
+}
+.la-wrap, .lb-wrap, .lc-wrap { flex-direction: column !important; align-items: stretch !important; }
+.la-left, .la-right, .lb-left, .lb-right, .lc-left, .lc-right { width: 100% !important; }
+.answer-split { flex-direction: column !important; }
+.action-bar, .steps-row { flex-wrap: nowrap !important; }</style>
+</head>
+<body>
+
+<h2>답변 화면 레이아웃</h2>
+<p class="subtitle">좌=본문 · 우=출처·근거 구조 공통 — 비율과 세부 배치 3가지 비교</p>
+
+<div class="options-wrap">
+
+  <!-- A: 6:4 균형 -->
+  <div class="option-block" data-choice="ans-a" onclick="pick(this)">
+    <div class="option-header">
+      <div class="opt-letter">A</div>
+      <div>
+        <h3>6:4 균형 분할 — 답변·절차 / 출처·충돌 경고</h3>
+        <p>모든 정보를 동시에 표시. 탭 전환 없이 한눈에 파악.</p>
+      </div>
+    </div>
+    <div class="option-preview">
+      <div class="la-wrap">
+        <div class="la-left">
+          <div class="panel" style="flex:3;">
+            <div class="panel-label">📝 답변</div>
+            <div class="answer-text">
+              수강신청은 포털시스템(HLS)에서 진행합니다. 로그인 후 수강신청 메뉴에서 희망 과목을 선택하고 신청 버튼을 클릭하세요.<div class="cursor"></div>
+            </div>
+          </div>
+          <div class="panel" style="flex:2;">
+            <div class="panel-label">📋 신청 절차</div>
+            <div class="steps-list">
+              <div class="step-item"><div class="step-num">1</div>포털(HLS) 로그인</div>
+              <div class="step-item"><div class="step-num">2</div>수강신청 메뉴 클릭</div>
+              <div class="step-item"><div class="step-num">3</div>과목 검색 후 신청</div>
+            </div>
+          </div>
+        </div>
+        <div class="la-right">
+          <div class="panel" style="flex:3;">
+            <div class="panel-label">📎 출처 · 근거</div>
+            <div class="src-item">
+              <div class="src-title">학사안내 > 수강신청 <span class="src-fresh">최신</span></div>
+              <div class="src-meta">갱신 2025.03.15 · 학사지원팀</div>
+            </div>
+            <div class="src-item">
+              <div class="src-title">2025 학사일정표</div>
+              <div class="src-meta">갱신 2025.02.28</div>
+            </div>
+            <div class="conflict-box">
+              <div class="conflict-title">⚠️ 정보 불일치 감지</div>
+              <div class="conflict-desc">학사안내와 공지사항의<br>신청 기간이 다릅니다</div>
+            </div>
+          </div>
+          <div class="action-bar" style="margin-top: 0;">
+            <div class="act-btn">🖨️ 인쇄</div>
+            <div class="act-btn">📱 QR</div>
+            <div class="act-btn">🔊 읽기</div>
+            <div class="act-btn primary">← 처음</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: 7:3 + 탭 -->
+  <div class="option-block" data-choice="ans-b" onclick="pick(this)">
+    <div class="option-header">
+      <div class="opt-letter">B</div>
+      <div>
+        <h3>7:3 넓은 본문 + 탭 전환 패널</h3>
+        <p>답변·절차를 왼쪽에 넓게. 오른쪽은 출처/절차/충돌을 탭으로 전환.</p>
+      </div>
+    </div>
+    <div class="option-preview">
+      <div class="lb-wrap">
+        <div class="lb-left">
+          <div class="panel" style="flex:3;">
+            <div class="panel-label">📝 답변</div>
+            <div class="answer-text">
+              수강신청은 포털시스템(HLS)에서 진행합니다. 로그인 후 수강신청 메뉴에서 희망 과목을 선택하고 신청 버튼을 클릭하세요. 수강신청 기간은 매 학기 초 학사공지를 통해 안내됩니다.<div class="cursor"></div>
+            </div>
+          </div>
+          <div class="panel" style="flex:2; background: #f8fafc;">
+            <div class="panel-label">📋 신청 절차</div>
+            <div class="steps-list">
+              <div class="step-item"><div class="step-num">1</div>포털(HLS) 로그인</div>
+              <div class="step-item"><div class="step-num">2</div>수강신청 메뉴 클릭</div>
+              <div class="step-item"><div class="step-num">3</div>과목 검색 후 신청</div>
+            </div>
+          </div>
+        </div>
+        <div class="lb-right">
+          <div class="tabs">
+            <div class="tab active">출처</div>
+            <div class="tab">절차</div>
+            <div class="tab">⚠️</div>
+          </div>
+          <div class="tab-body">
+            <div class="src-item">
+              <div class="src-title">학사안내 <span class="src-fresh">최신</span></div>
+              <div class="src-meta">2025.03.15</div>
+            </div>
+            <div class="src-item">
+              <div class="src-title">2025 학사일정</div>
+              <div class="src-meta">2025.02.28</div>
+            </div>
+            <div class="conflict-box">
+              <div class="conflict-title" style="font-size:8px;">⚠️ 불일치 감지</div>
+              <div class="conflict-desc" style="font-size:7.5px;">신청 기간 상이</div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <div class="act-btn" style="font-size:8px;">🖨️</div>
+            <div class="act-btn" style="font-size:8px;">📱</div>
+            <div class="act-btn primary" style="font-size:8px;">← 처음</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: 상단 질문 바 + 6:4 -->
+  <div class="option-block" data-choice="ans-c" onclick="pick(this)">
+    <div class="option-header">
+      <div class="opt-letter">C</div>
+      <div>
+        <h3>상단 질문 바 + 6:4 분할</h3>
+        <p>질문이 항상 상단에 고정. "내가 뭘 물었는지" 맥락이 명확하고 뒤로가기 버튼도 자연스럽게 배치.</p>
+      </div>
+    </div>
+    <div class="option-preview">
+      <div class="lc-wrap">
+        <div class="lc-qbar">
+          <div class="lc-qlabel">Q.</div>
+          <div class="lc-qtext">수강신청은 어떻게 하나요?</div>
+          <div class="lc-back">← 처음으로</div>
+        </div>
+        <div class="lc-body">
+          <div class="lc-left">
+            <div class="panel" style="flex:3;">
+              <div class="panel-label">📝 답변</div>
+              <div class="answer-text">
+                수강신청은 포털시스템(HLS)에서 진행합니다. 로그인 후 수강신청 메뉴에서 희망 과목을 선택하세요.<div class="cursor"></div>
+              </div>
+            </div>
+            <div class="panel" style="flex:2;">
+              <div class="panel-label">📋 절차</div>
+              <div class="steps-list">
+                <div class="step-item"><div class="step-num">1</div>포털(HLS) 로그인</div>
+                <div class="step-item"><div class="step-num">2</div>수강신청 메뉴</div>
+                <div class="step-item"><div class="step-num">3</div>과목 검색 후 신청</div>
+              </div>
+            </div>
+          </div>
+          <div class="lc-right">
+            <div class="panel" style="flex:1;">
+              <div class="panel-label">📎 출처</div>
+              <div class="src-item">
+                <div class="src-title">학사안내 <span class="src-fresh">최신</span></div>
+                <div class="src-meta">2025.03.15</div>
+              </div>
+              <div class="src-item">
+                <div class="src-title">2025 학사일정</div>
+                <div class="src-meta">2025.02.28</div>
+              </div>
+              <div class="conflict-box">
+                <div class="conflict-title">⚠️ 정보 불일치</div>
+                <div class="conflict-desc">신청 기간이 문서마다 다릅니다</div>
+              </div>
+            </div>
+            <div class="action-bar">
+              <div class="act-btn">🖨️ 인쇄</div>
+              <div class="act-btn">📱 QR</div>
+              <div class="act-btn">🔊</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function pick(el) {
+  document.querySelectorAll('.option-block').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const labels = {
+    'ans-a': 'A — 6:4 균형 분할',
+    'ans-b': 'B — 7:3 넓은 본문 + 탭',
+    'ans-c': 'C — 상단 질문 바 + 6:4'
+  };
+  if (typeof window.__recordEvent === 'function') {
+    window.__recordEvent({ type: 'click', choice: el.dataset.choice, text: labels[el.dataset.choice] });
+  }
+}
+</script>
+
+</body>
+</html>
+
+    </template>
+    <section class="section" id="section-user-flow">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 class="section-title">화면 동선 설계</h2>
+          <p class="section-note">카테고리-입력-답변 흐름 정리</p>
+        </div>
+        <div class="section-actions">
+          <button class="capture-btn primary" type="button" data-frame="frame-user-flow">이미지 캡처</button>
+        </div>
+      </div>
+      <div class="frame-shell">
+        <iframe class="preview-frame" id="frame-user-flow" title="화면 동선 설계" data-template="tpl-user-flow" scrolling="no"></iframe>
+      </div>
+    </section>
+    <template id="tpl-user-flow">
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Copilot — 사용자 동선</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-family: 'Apple SD Gothic Neo', 'Pretendard', sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 13px; margin-bottom: 28px; }
+
+  /* Flow layout */
+  .flow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 16px;
+  }
+  .flow-step { display: flex; align-items: center; gap: 0; }
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    min-width: 80px;
+  }
+  .arrow-line { width: 100%; height: 2px; background: #e2e8f0; position: relative; }
+  .arrow-line::after { content: '▶'; position: absolute; right: -6px; top: -7px; color: #94a3b8; font-size: 12px; }
+  .arrow-label { color: #2563eb; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .arrow-sub { color: #94a3b8; font-size: 9px; white-space: nowrap; }
+
+  /* Screen card */
+  .screen {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+    overflow: hidden;
+    width: 220px;
+    flex-shrink: 0;
+  }
+  .screen.highlight { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .screen-title {
+    background: #f8fafc;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .screen-badge {
+    background: #2563eb;
+    color: white;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .screen-body { padding: 10px; }
+
+  /* Mini kiosk components */
+  .mini-header {
+    background: #1d4ed8;
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+  }
+  .mini-section { margin-bottom: 8px; }
+  .mini-label { font-size: 8px; color: #2563eb; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+
+  .cat-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .cat-chip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 8.5px;
+    color: #1e293b;
+    white-space: nowrap;
+  }
+  .cat-chip.active {
+    background: #1d4ed8;
+    border-color: #2563eb;
+    color: white;
+  }
+
+  .faq-list { display: flex; flex-direction: column; gap: 4px; }
+  .faq-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 8.5px;
+    color: #1e293b;
+  }
+  .faq-item.dimmed { opacity: 0.35; }
+  .faq-item.active { border-color: #2563eb; background: #eff6ff; }
+
+  .input-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .mini-input {
+    flex: 1;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 8.5px;
+    color: #64748b;
+  }
+  .mini-btn {
+    background: #2563eb;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 8.5px;
+    color: white;
+    white-space: nowrap;
+  }
+  .mini-mic {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 5px;
+    font-size: 10px;
+  }
+
+  /* Answer screen */
+  .answer-split { display: flex; gap: 6px; margin-top: 4px; }
+  .answer-main { flex: 1; }
+  .answer-side { width: 38%; }
+  .answer-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 8px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  .answer-box.streaming { border-color: #2563eb; }
+  .answer-box h4 { color: #2563eb; font-size: 8px; margin-bottom: 4px; font-weight: 700; }
+  .source-item {
+    background: #f8fafc;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 7.5px;
+    color: #64748b;
+    margin-bottom: 3px;
+  }
+  .source-item .src-title { color: #1e293b; font-weight: 600; }
+  .source-item .src-date { color: #94a3b8; }
+  .conflict-badge {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 7.5px;
+    color: #c2410c;
+    margin-top: 4px;
+  }
+  .step-tag {
+    background: #f8fafc;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 7.5px;
+    color: #4f46e5;
+    margin-bottom: 3px;
+  }
+  .action-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .action-btn {
+    flex: 1;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    padding: 4px;
+    font-size: 7.5px;
+    color: #64748b;
+    text-align: center;
+  }
+
+  /* Branching arrows */
+  .branch-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0 6px;
+  }
+  .branch-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    color: #2563eb;
+    white-space: nowrap;
+  }
+  .branch-line {
+    width: 40px;
+    height: 2px;
+    background: #e2e8f0;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .branch-line::after { content: '▶'; position: absolute; right: -6px; top: -7px; color: #94a3b8; font-size: 12px; }
+
+  /* Annotation */
+  .note {
+    background: #eff6ff;
+    border-left: 3px solid #2563eb;
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #475569;
+    margin-top: 20px;
+    line-height: 1.6;
+  }
+  .note strong { color: #1e293b; }
+
+  .options-section { margin-top: 32px; }
+  .options-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .options-sub { color: #64748b; font-size: 12px; margin-bottom: 16px; }
+
+  .approach-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .approach-card {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .approach-card:hover { border-color: #2563eb; }
+  .approach-card.selected { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+  .approach-num {
+    width: 28px; height: 28px;
+    background: #e0e7ff;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #2563eb;
+    margin-bottom: 10px;
+  }
+  .approach-card h3 { font-size: 13px; color: #0f172a; margin-bottom: 6px; }
+  .approach-card p { font-size: 11px; color: #64748b; line-height: 1.6; }
+  .approach-tag {
+    display: inline-block;
+    margin-top: 8px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* Selected indicator */
+  .selected-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #64748b;
+    display: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .selected-indicator.visible { display: block; }
+</style>
+<style id="unified-overrides">:root { color-scheme: light; }
+html, body {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+body {
+  max-width: 1230px !important;
+  margin: 0 auto !important;
+  padding: 24px !important;
+  overflow-x: hidden !important;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+}
+* { box-sizing: border-box !important; }
+img, video, svg, canvas, table, pre, code, .card, .screen, .kiosk, .device, .mockup, .panel { max-width: 100%; }
+.screens-row,
+.flow,
+.cards,
+.approach-cards,
+.answer-split,
+.la-wrap,
+.lb-wrap,
+.lc-body,
+.row,
+.steps-row,
+.action-row,
+.cat-row {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+}
+.cards { display: flex !important; }
+.flow { overflow-x: hidden !important; gap: 16px !important; }
+.arrow,
+.arrow-col { display: none !important; }
+.screen,
+.screen-col,
+.screen-wrap,
+.card,
+.flow-step,
+.answer-main,
+.answer-side,
+.la-left,
+.la-right,
+.lb-left,
+.lb-right,
+.lc-left,
+.lc-right,
+.option-block,
+.approach-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.device,
+.kiosk,
+.kiosk-frame,
+.screen,
+.device-inner {
+  width: 100% !important;
+  max-width: 1230px !important;
+}
+.ans-body,
+.ans-left,
+.ans-right,
+.im-history,
+.main-body,
+.kiosk,
+.kiosk-frame,
+.flow-step,
+.branch-container,
+.option-preview {
+  min-width: 0 !important;
+}
+.option-preview,
+.card-image,
+.mockup-body,
+.screen-body,
+.device,
+.kiosk,
+.kiosk-frame,
+.section,
+.panel,
+.tbl-wrap {
+  overflow-x: hidden;
+}
+.white-space-nowrap,
+.card-body h3,
+.card-body p,
+.section-title,
+.screen-title,
+.hdr-title,
+.hdr-sub,
+.main-title,
+.main-sub,
+.ans-qtext,
+.lb-headline,
+.la-title,
+.lc-school2,
+.lc-cat-btn,
+.lb-chip,
+.la-faq-btn,
+.faq-btn,
+.cat-chip,
+.step-pill,
+.step-item,
+.src-title,
+.source-item,
+.hist-text {
+  word-break: keep-all !important;
+}
+.flow { display: flex !important; flex-direction: row !important; align-items: flex-start !important; gap: 0 !important; overflow-x: auto !important; }
+.flow-step { display: flex !important; align-items: center !important; gap: 0 !important; width: auto !important; max-width: none !important; flex: 0 0 auto !important; }
+.arrow { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 4px !important; min-width: 80px !important; }
+.screen { width: 220px !important; max-width: none !important; flex-shrink: 0 !important; }
+.screen[style*="260px"] { width: 260px !important; }
+.cat-row { display: flex !important; flex-direction: row !important; align-items: center !important; flex-wrap: wrap !important; }
+.action-row { display: flex !important; flex-direction: row !important; align-items: stretch !important; }
+.answer-split { display: flex !important; flex-direction: row !important; align-items: stretch !important; gap: 6px !important; }
+.answer-main { width: auto !important; max-width: none !important; flex: 1 1 auto !important; }
+.answer-side { width: 38% !important; max-width: none !important; flex: 0 0 38% !important; }
+.branch-container { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }</style>
+</head>
+<body>
+
+<h2>화면 동선 설계</h2>
+<p class="subtitle">카테고리 · 입력창 · FAQ 세 요소를 모두 쓰는 방식 — 동선 흐름을 먼저 정해야 레이아웃을 확정할 수 있습니다</p>
+
+<!-- Flow diagram -->
+<div class="flow">
+
+  <!-- Screen 1: Main -->
+  <div class="flow-step">
+    <div class="screen highlight">
+      <div class="screen-title">
+        <span class="screen-badge">1</span> 메인 화면 (항상 보임)
+      </div>
+      <div class="screen-body">
+        <div class="mini-header">🏫 호남대학교 캠퍼스 안내</div>
+
+        <div style="padding: 8px 0 4px;">
+          <div class="mini-label">카테고리</div>
+          <div class="cat-row">
+            <div class="cat-chip">🎓 학사</div>
+            <div class="cat-chip">💰 장학</div>
+            <div class="cat-chip">🏢 시설</div>
+            <div class="cat-chip">📋 취업</div>
+          </div>
+        </div>
+
+        <div style="padding: 4px 0;">
+          <div class="mini-label">자주 묻는 질문</div>
+          <div class="faq-list">
+            <div class="faq-item">📋 수강신청은 어떻게 하나요?</div>
+            <div class="faq-item">📅 이번 학기 휴학 신청 기간?</div>
+            <div class="faq-item">🎓 졸업요건 확인 방법</div>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="mini-mic">🎤</div>
+          <div class="mini-input">직접 입력하세요...</div>
+          <div class="mini-btn">전송</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Branch arrows -->
+  <div class="arrow" style="flex-direction: column; gap: 12px; padding: 30px 4px 0;">
+    <div class="branch-item">
+      <div class="branch-line"></div>
+      <span>카테고리 탭</span>
+    </div>
+    <div class="branch-item">
+      <div class="branch-line"></div>
+      <span>FAQ 버튼 탭</span>
+    </div>
+    <div class="branch-item">
+      <div class="branch-line"></div>
+      <span>입력 후 전송</span>
+    </div>
+  </div>
+
+  <!-- Screen 2: Filtered (카테고리 선택 시) or directly to answer -->
+  <div class="flow-step" style="flex-direction: column; gap: 12px;">
+
+    <div class="screen">
+      <div class="screen-title">
+        <span class="screen-badge" style="background:#0d9488;">?</span> 카테고리 필터 (선택 사항)
+      </div>
+      <div class="screen-body">
+        <div class="mini-label">학사행정 관련 FAQ</div>
+        <div class="faq-list">
+          <div class="faq-item active">📋 수강신청 방법</div>
+          <div class="faq-item">📅 휴학·복학 신청</div>
+          <div class="faq-item">📝 성적 이의신청</div>
+          <div class="faq-item">🎓 졸업요건 확인</div>
+        </div>
+        <div class="input-row" style="margin-top: 8px;">
+          <div class="mini-input">또는 직접 입력...</div>
+          <div class="mini-btn">전송</div>
+        </div>
+        <div style="font-size: 8px; color: #94a3b8; margin-top: 6px; text-align: center;">← 뒤로 또는 다른 카테고리 선택</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="arrow">
+    <div class="arrow-line"></div>
+    <div class="arrow-label">FAQ 선택 / 전송</div>
+    <div class="arrow-sub">모든 진입 경로 수렴</div>
+  </div>
+
+  <!-- Screen 3: Answer -->
+  <div class="flow-step">
+    <div class="screen" style="width: 260px;">
+      <div class="screen-title">
+        <span class="screen-badge" style="background:#7c3aed;">2</span> 답변 화면
+      </div>
+      <div class="screen-body">
+        <div style="font-size: 8.5px; color: #2563eb; margin-bottom: 6px;">Q. 수강신청은 어떻게 하나요?</div>
+
+        <div class="answer-split">
+          <div class="answer-main">
+            <div style="font-size: 8px; color: #64748b; margin-bottom: 3px;">📝 답변</div>
+            <div class="answer-box streaming">
+              수강신청은 포털시스템(HLS)에서<br>진행합니다. 로그인 후 수강신청<br>메뉴에서 희망 과목을 선택...
+              <span style="color: #2563eb; animation: blink 1s infinite;">▌</span>
+            </div>
+            <div class="step-tag" style="margin-top: 6px;">① 포털 로그인</div>
+            <div class="step-tag">② 수강신청 메뉴 클릭</div>
+            <div class="step-tag">③ 과목 검색 후 신청</div>
+          </div>
+          <div class="answer-side">
+            <div style="font-size: 8px; color: #64748b; margin-bottom: 3px;">📎 출처 · 근거</div>
+            <div class="source-item">
+              <div class="src-title">학사안내 > 수강신청</div>
+              <div class="src-date">갱신: 2025.03.15</div>
+            </div>
+            <div class="source-item">
+              <div class="src-title">2025 학사일정</div>
+              <div class="src-date">갱신: 2025.02.28</div>
+            </div>
+            <div class="conflict-badge">⚠️ 일정 불일치 감지</div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <div class="action-btn">🖨️ 프린트</div>
+          <div class="action-btn">📱 QR</div>
+          <div class="action-btn">🔊 읽기</div>
+          <div class="action-btn" style="color: #2563eb;">← 처음으로</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <strong>핵심 원칙:</strong> FAQ 탭과 입력 전송 모두 <strong>같은 답변 화면으로 수렴</strong>합니다.
+  카테고리 탭은 FAQ를 필터링할 뿐, 별도 화면이 아닙니다.
+  → 최대 <strong>2단계</strong> 만에 답변 도달 (메인 → 답변 / 메인 → 카테고리 → 답변).
+</div>
+
+<!-- 동선 방식 선택 -->
+<div class="options-section">
+  <div class="options-title">카테고리 동작 방식 — 어떻게 연결할까요?</div>
+  <div class="options-sub">카테고리를 탭했을 때 FAQ가 어떻게 반응해야 하는지 결정이 필요합니다</div>
+
+  <div class="approach-cards">
+
+    <div class="approach-card" data-choice="flow-a" onclick="selectApproach(this)">
+      <div class="approach-num">A</div>
+      <h3>인라인 필터</h3>
+      <p>카테고리 탭 → <strong>같은 화면에서</strong> FAQ 목록만 바뀜. 화면 전환 없음. 가장 빠른 동선.</p>
+      <div class="approach-tag">화면 전환 0회</div>
+    </div>
+
+    <div class="approach-card" data-choice="flow-b" onclick="selectApproach(this)">
+      <div class="approach-num">B</div>
+      <h3>카테고리 서브화면</h3>
+      <p>카테고리 탭 → 해당 카테고리 전용 화면으로 이동. 더 많은 FAQ를 보여줄 수 있음. 뒤로가기 필요.</p>
+      <div class="approach-tag">화면 전환 1회</div>
+    </div>
+
+    <div class="approach-card" data-choice="flow-c" onclick="selectApproach(this)">
+      <div class="approach-num">C</div>
+      <h3>카테고리 생략</h3>
+      <p>카테고리 버튼 자체가 질문 역할. "장학금 안내" 탭 → 바로 답변 화면. FAQ 목록과 다른 레이어.</p>
+      <div class="approach-tag">카테고리 = 빠른 질문</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="selected-indicator" id="selected-indicator">
+  선택: <span id="selected-label">없음</span>
+</div>
+
+<script>
+function selectApproach(el) {
+  document.querySelectorAll('.approach-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const choice = el.dataset.choice;
+  const labels = { 'flow-a': 'A — 인라인 필터', 'flow-b': 'B — 카테고리 서브화면', 'flow-c': 'C — 카테고리 = 빠른 질문' };
+  document.getElementById('selected-label').textContent = labels[choice] || choice;
+  document.getElementById('selected-indicator').classList.add('visible');
+
+  // Also emit event if toggleSelect available
+  if (typeof window.__recordEvent === 'function') {
+    window.__recordEvent({ type: 'click', choice, text: labels[choice] });
+  }
+}
+</script>
+
+</body>
+</html>
+
+    </template>
+    <section class="section" id="section-fullscale-mockup">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2 class="section-title">실제 스케일 목업</h2>
+          <p class="section-note">실측 스케일 화면 목업</p>
+        </div>
+        <div class="section-actions">
+          <button class="capture-btn primary" type="button" data-frame="frame-fullscale-mockup">이미지 캡처</button>
+        </div>
+      </div>
+      <div class="frame-shell">
+        <iframe class="preview-frame" id="frame-fullscale-mockup" title="실제 스케일 목업" data-template="tpl-fullscale-mockup" scrolling="no"></iframe>
+      </div>
+    </section>
+    <template id="tpl-fullscale-mockup">
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실제 스케일 목업</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e2e8f0;
+    font-family: 'Apple SD Gothic Neo', 'Pretendard', 'Malgun Gothic', sans-serif;
+    padding: 24px;
+  }
+  h2 { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .note { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+
+  .screens-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+  .screen-wrap {
+    flex: 1;
+  }
+  .screen-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .screen-label span {
+    background: #2563eb;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+
+  /* Kiosk screen frame */
+  .kiosk {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    overflow: hidden;
+    aspect-ratio: 16/10;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── MAIN SCREEN ── */
+  .main-header {
+    background: #1d4ed8;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .main-logo {
+    width: 44px; height: 44px;
+    background: white;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .main-title { color: white; font-size: 19px; font-weight: 800; }
+  .main-sub { color: #bfdbfe; font-size: 13px; margin-top: 2px; }
+
+  .main-body {
+    flex: 1;
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  /* Category chips */
+  .cat-row { display: flex; gap: 10px; }
+  .cat-chip {
+    background: #eff6ff;
+    border: 2px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1d4ed8;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+  }
+  .cat-chip:active, .cat-chip.active {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: white;
+  }
+  .cat-icon { font-size: 18px; }
+
+  /* FAQ buttons */
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    flex: 1;
+  }
+  .faq-btn {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #1e293b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.1s;
+    line-height: 1.4;
+  }
+  .faq-btn:active { background: #eff6ff; border-color: #2563eb; }
+  .faq-icon { font-size: 19px; flex-shrink: 0; }
+
+  /* Input row */
+  .input-area {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 14px 28px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .mic-btn {
+    width: 56px; height: 56px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .text-input {
+    flex: 1;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 16px;
+    color: #94a3b8;
+  }
+  .send-btn {
+    height: 56px;
+    background: #2563eb;
+    border-radius: 12px;
+    padding: 0 24px;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  /* ── ANSWER SCREEN ── */
+  .ans-qbar {
+    background: #eff6ff;
+    border-bottom: 2px solid #bfdbfe;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .ans-qlabel {
+    background: #2563eb;
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .ans-qtext { font-size: 17px; color: #1e40af; font-weight: 600; flex: 1; }
+  .ans-back {
+    background: white;
+    border: 2px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 14px;
+    color: #2563eb;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .ans-body {
+    flex: 1;
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* Left panel */
+  .ans-left {
+    flex: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-right: 1px solid #e2e8f0;
+    overflow: hidden;
+  }
+  .ans-answer {
+    flex: 1;
+    padding: 20px 24px;
+    overflow: hidden;
+  }
+  .panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+  .answer-text {
+    font-size: 16px;
+    color: #1e293b;
+    line-height: 1.75;
+  }
+  .cursor {
+    display: inline-block;
+    width: 2px; height: 18px;
+    background: #2563eb;
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .ans-steps {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 14px 24px;
+    flex-shrink: 0;
+  }
+  .steps-row { display: flex; gap: 8px; margin-top: 8px; }
+  .step-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #1e40af;
+    flex: 1;
+  }
+  .step-circle {
+    width: 24px; height: 24px;
+    background: #2563eb;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: white;
+    flex-shrink: 0;
+  }
+
+  /* Right panel */
+  .ans-right {
+    flex: 4;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .ans-sources {
+    flex: 1;
+    padding: 20px 20px 12px;
+    overflow: hidden;
+  }
+  .src-card {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .src-dot {
+    width: 8px; height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .src-dot.old { background: #f59e0b; }
+  .src-name { font-size: 13px; color: #1e293b; font-weight: 600; }
+  .src-date { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .src-badge {
+    font-size: 10px;
+    background: #dcfce7;
+    color: #15803d;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 3px;
+  }
+
+  .conflict-panel {
+    background: #fff7ed;
+    border-top: 2px solid #fed7aa;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+  .conflict-head {
+    font-size: 13px;
+    font-weight: 700;
+    color: #c2410c;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .conflict-body { font-size: 12px; color: #9a3412; line-height: 1.5; }
+
+  .ans-actions {
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 20px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .act-btn {
+    flex: 1;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 8px;
+    font-size: 13px;
+    color: #475569;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 600;
+  }
+</style>
+<style id="unified-overrides">:root { color-scheme: light; }
+html, body {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+body {
+  max-width: 1230px !important;
+  margin: 0 auto !important;
+  padding: 24px !important;
+  overflow-x: hidden !important;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+}
+* { box-sizing: border-box !important; }
+img, video, svg, canvas, table, pre, code, .card, .screen, .kiosk, .device, .mockup, .panel { max-width: 100%; }
+.screens-row,
+.flow,
+.cards,
+.approach-cards,
+.answer-split,
+.la-wrap,
+.lb-wrap,
+.lc-body,
+.row,
+.steps-row,
+.action-row,
+.cat-row {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+}
+.cards { display: flex !important; }
+.flow { overflow-x: hidden !important; gap: 16px !important; }
+.arrow,
+.arrow-col { display: none !important; }
+.screen,
+.screen-col,
+.screen-wrap,
+.card,
+.flow-step,
+.answer-main,
+.answer-side,
+.la-left,
+.la-right,
+.lb-left,
+.lb-right,
+.lc-left,
+.lc-right,
+.option-block,
+.approach-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.device,
+.kiosk,
+.kiosk-frame,
+.screen,
+.device-inner {
+  width: 100% !important;
+  max-width: 1230px !important;
+}
+.ans-body,
+.ans-left,
+.ans-right,
+.im-history,
+.main-body,
+.kiosk,
+.kiosk-frame,
+.flow-step,
+.branch-container,
+.option-preview {
+  min-width: 0 !important;
+}
+.option-preview,
+.card-image,
+.mockup-body,
+.screen-body,
+.device,
+.kiosk,
+.kiosk-frame,
+.section,
+.panel,
+.tbl-wrap {
+  overflow-x: hidden;
+}
+.white-space-nowrap,
+.card-body h3,
+.card-body p,
+.section-title,
+.screen-title,
+.hdr-title,
+.hdr-sub,
+.main-title,
+.main-sub,
+.ans-qtext,
+.lb-headline,
+.la-title,
+.lc-school2,
+.lc-cat-btn,
+.lb-chip,
+.la-faq-btn,
+.faq-btn,
+.cat-chip,
+.step-pill,
+.step-item,
+.src-title,
+.source-item,
+.hist-text {
+  word-break: keep-all !important;
+}
+.screens-row { flex-direction: column !important; align-items: stretch !important; }
+.screen-wrap { width: 100% !important; }
+.kiosk { width: 100% !important; max-width: 1230px !important; }</style>
+</head>
+<body>
+
+<h2>실제 스케일 — 11~15인치 터치스크린 기준</h2>
+<p class="note">버튼 최소 높이 56px (약 15mm), 본문 폰트 16px 이상. 라이트 모드 기준.</p>
+
+<div class="screens-row">
+
+  <!-- SCREEN 1: Main -->
+  <div class="screen-wrap">
+    <div class="screen-label"><span>화면 1</span> 메인 (항상 보임)</div>
+    <div class="kiosk">
+      <div class="main-header">
+        <div class="main-logo">🏫</div>
+        <div>
+          <div class="main-title">호남대학교 캠퍼스 안내</div>
+          <div class="main-sub">궁금한 것을 바로 물어보세요</div>
+        </div>
+      </div>
+
+      <div class="main-body">
+        <div>
+          <div class="section-label">카테고리</div>
+          <div class="cat-row">
+            <div class="cat-chip active"><span class="cat-icon">🎓</span>학사행정</div>
+            <div class="cat-chip"><span class="cat-icon">💰</span>장학·등록</div>
+            <div class="cat-chip"><span class="cat-icon">🏢</span>시설·부서</div>
+            <div class="cat-chip"><span class="cat-icon">📋</span>취업·진로</div>
+          </div>
+        </div>
+
+        <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+          <div class="section-label">자주 묻는 질문</div>
+          <div class="faq-grid">
+            <div class="faq-btn"><span class="faq-icon">📋</span>수강신청은 어떻게 하나요?</div>
+            <div class="faq-btn"><span class="faq-icon">📅</span>이번 학기 휴학 신청 기간은?</div>
+            <div class="faq-btn"><span class="faq-icon">🎓</span>졸업요건 확인 방법</div>
+            <div class="faq-btn"><span class="faq-icon">💰</span>장학금 신청은 어디서?</div>
+            <div class="faq-btn"><span class="faq-icon">🏢</span>학생처는 어디에 있나요?</div>
+            <div class="faq-btn"><span class="faq-icon">📝</span>성적 이의신청 방법</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="mic-btn">🎤</div>
+        <div class="text-input">직접 질문을 입력하세요...</div>
+        <div class="send-btn">전송 ↵</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Answer -->
+  <div class="screen-wrap">
+    <div class="screen-label"><span>화면 2</span> 답변 (C안 — 질문 바 + 6:4)</div>
+    <div class="kiosk">
+      <div class="ans-qbar">
+        <div class="ans-qlabel">Q</div>
+        <div class="ans-qtext">수강신청은 어떻게 하나요?</div>
+        <div class="ans-back">← 처음으로</div>
+      </div>
+
+      <div class="ans-body">
+        <!-- Left -->
+        <div class="ans-left">
+          <div class="ans-answer">
+            <div class="panel-title">📝 답변</div>
+            <div class="answer-text">
+              수강신청은 포털시스템(HLS)에서 진행합니다. 로그인 후
+              <strong>수강신청 메뉴</strong>에서 희망 과목을 선택하고
+              신청 버튼을 클릭하세요.<div class="cursor"></div>
+            </div>
+          </div>
+          <div class="ans-steps">
+            <div class="panel-title">📋 신청 절차</div>
+            <div class="steps-row">
+              <div class="step-pill"><div class="step-circle">1</div>포털(HLS) 로그인</div>
+              <div class="step-pill"><div class="step-circle">2</div>수강신청 메뉴</div>
+              <div class="step-pill"><div class="step-circle">3</div>과목 신청</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div class="ans-right">
+          <div class="ans-sources">
+            <div class="panel-title">📎 출처 · 근거</div>
+            <div class="src-card">
+              <div class="src-dot"></div>
+              <div>
+                <div class="src-name">학사안내 > 수강신청</div>
+                <div class="src-date">갱신 2025.03.15</div>
+                <div class="src-badge">최신</div>
+              </div>
+            </div>
+            <div class="src-card">
+              <div class="src-dot old"></div>
+              <div>
+                <div class="src-name">2025 학사일정표</div>
+                <div class="src-date">갱신 2025.02.28</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="conflict-panel">
+            <div class="conflict-head">⚠️ 정보 불일치 감지</div>
+            <div class="conflict-body">학사안내와 공지사항의<br>신청 기간이 서로 다릅니다.</div>
+          </div>
+
+          <div class="ans-actions">
+            <div class="act-btn">🖨️ 인쇄</div>
+            <div class="act-btn">📱 QR</div>
+            <div class="act-btn">🔊 읽기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
+
+    </template>
+    <div class="footer-note">
+      원본 개별 HTML 파일은 제거하고, 이 파일 하나로 섹션별 비교와 캡처를 수행하도록 정리했습니다.
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    const frameOverrides = new Map(Object.entries({"frame-main-layout": ".cards { display: flex !important; flex-direction: column !important; grid-template-columns: 1fr !important; }\n.card { width: 100% !important; }\n.kiosk-frame { width: 100% !important; }", "frame-input-mode": ".screens-row { flex-direction: column !important; align-items: stretch !important; width: 100% !important; }\n.screen-col { width: min(100%, 900px) !important; margin: 0 auto !important; align-items: stretch !important; }\n.arrow-col { display: none !important; }\n.device { width: 100% !important; max-width: 900px !important; margin: 0 auto !important; }\n.kiosk { width: 100% !important; height: 450px !important; max-width: none !important; margin: 0 auto !important; }", "frame-answer-layout-light": ".la-wrap, .lb-wrap, .lc-wrap { flex-direction: column !important; align-items: stretch !important; }\n.la-left, .la-right, .lb-left, .lb-right, .lc-left, .lc-right { width: 100% !important; }\n.answer-split { flex-direction: column !important; }\n.action-bar, .steps-row { flex-wrap: nowrap !important; }", "frame-user-flow": ".flow { display: flex !important; flex-direction: row !important; align-items: flex-start !important; gap: 0 !important; overflow-x: auto !important; padding-bottom: 16px !important; }\n.flow-step { display: flex !important; align-items: center !important; gap: 0 !important; width: auto !important; max-width: none !important; flex: 0 0 auto !important; }\n.arrow { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 4px !important; padding: 0 8px !important; min-width: 80px !important; }\n.arrow-line { width: 100% !important; height: 2px !important; background: #e2e8f0 !important; position: relative !important; }\n.arrow-line::after { content: '▶' !important; position: absolute !important; right: -6px !important; top: -7px !important; color: #94a3b8 !important; font-size: 12px !important; }\n.arrow-label { color: #2563eb !important; font-size: 10px !important; font-weight: 600 !important; white-space: nowrap !important; }\n.arrow-sub { color: #94a3b8 !important; font-size: 9px !important; white-space: nowrap !important; }\n.screen { width: 220px !important; max-width: none !important; flex-shrink: 0 !important; }\n.screen[style*='260px'] { width: 260px !important; }\n.screen.highlight { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important; }\n.cat-row { display: flex !important; flex-direction: row !important; align-items: center !important; flex-wrap: wrap !important; }\n.action-row { display: flex !important; flex-direction: row !important; align-items: stretch !important; }\n.answer-split { display: flex !important; flex-direction: row !important; gap: 6px !important; margin-top: 4px !important; }\n.answer-main { width: auto !important; max-width: none !important; flex: 1 1 auto !important; }\n.answer-side { width: 38% !important; max-width: none !important; flex: 0 0 38% !important; }\n.branch-container { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; padding: 0 6px !important; }", "frame-fullscale-mockup": ".screens-row { flex-direction: column !important; align-items: stretch !important; }\n.screen-wrap { width: 100% !important; }\n.kiosk { width: 100% !important; max-width: 1230px !important; }"}));
+    const baseOverrides = ":root { color-scheme: light; }\nhtml, body {\n  background: #f1f5f9 !important;\n  color: #1e293b !important;\n}\nbody {\n  max-width: 1230px !important;\n  margin: 0 auto !important;\n  padding: 24px !important;\n  overflow-x: hidden !important;\n  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;\n  -webkit-font-smoothing: antialiased !important;\n  text-rendering: optimizeLegibility !important;\n}\n* { box-sizing: border-box !important; }\nimg, video, svg, canvas, table, pre, code, .card, .screen, .kiosk, .device, .mockup, .panel { max-width: 100%; }\n.screens-row,\n.flow,\n.cards,\n.approach-cards,\n.answer-split,\n.la-wrap,\n.lb-wrap,\n.lc-body,\n.row,\n.steps-row,\n.action-row,\n.cat-row {\n  flex-direction: column !important;\n  align-items: stretch !important;\n  flex-wrap: nowrap !important;\n}\n.cards { display: flex !important; }\n.flow { overflow-x: hidden !important; gap: 16px !important; }\n.arrow,\n.arrow-col { display: none !important; }\n.screen,\n.screen-col,\n.screen-wrap,\n.card,\n.flow-step,\n.answer-main,\n.answer-side,\n.la-left,\n.la-right,\n.lb-left,\n.lb-right,\n.lc-left,\n.lc-right,\n.option-block,\n.approach-card {\n  width: 100% !important;\n  max-width: 100% !important;\n}\n.device,\n.kiosk,\n.kiosk-frame,\n.screen,\n.device-inner {\n  width: 100% !important;\n  max-width: 1230px !important;\n}\n.ans-body,\n.ans-left,\n.ans-right,\n.im-history,\n.main-body,\n.kiosk,\n.kiosk-frame,\n.flow-step,\n.branch-container,\n.option-preview {\n  min-width: 0 !important;\n}\n.option-preview,\n.card-image,\n.mockup-body,\n.screen-body,\n.device,\n.kiosk,\n.kiosk-frame,\n.section,\n.panel,\n.tbl-wrap {\n  overflow-x: hidden;\n}\n.white-space-nowrap,\n.card-body h3,\n.card-body p,\n.section-title,\n.screen-title,\n.hdr-title,\n.hdr-sub,\n.main-title,\n.main-sub,\n.ans-qtext,\n.lb-headline,\n.la-title,\n.lc-school2,\n.lc-cat-btn,\n.lb-chip,\n.la-faq-btn,\n.faq-btn,\n.cat-chip,\n.step-pill,\n.step-item,\n.src-title,\n.source-item,\n.hist-text {\n  word-break: keep-all !important;\n}";
+function applyTemplate(frame) {
+  const tpl = document.getElementById(frame.dataset.template);
+  if (!tpl) return;
+  let html = tpl.innerHTML;
+  const extra = frameOverrides.get(frame.id) || '';
+  const injected = `<style id="frame-overrides">${baseOverrides}\n${extra}</style>`;
+  if (html.includes('</head>')) {
+    html = html.replace('</head>', `${injected}</head>`);
+  } else if (html.includes('<body')) {
+    html = html.replace(/<body([^>]*)>/i, `<body$1>${injected}`);
+  } else {
+    html = `${injected}${html}`;
+  }
+  frame.srcdoc = html;
+}
+
+function resizeFrame(frame) {
+  try {
+    const doc = frame.contentDocument || frame.contentWindow.document;
+    if (!doc) return;
+    const height = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+    frame.style.height = `${height}px`;
+  } catch (error) {
+    // Same-origin srcdoc frames should be accessible; ignore transient failures.
+  }
+}
+
+async function captureFrame(frameId) {
+  const frame = document.getElementById(frameId);
+  if (!frame) return;
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  if (!doc || !doc.body) return;
+  if (typeof html2canvas !== 'function') {
+    alert('이미지 캡처 라이브러리를 불러오지 못했습니다.');
+    return;
+  }
+  const canvas = await html2canvas(doc.body, {
+    backgroundColor: '#f1f5f9',
+    scale: Math.max(2, window.devicePixelRatio || 1),
+    useCORS: true,
+    windowWidth: doc.documentElement.scrollWidth,
+    windowHeight: doc.documentElement.scrollHeight,
+  });
+  const a = document.createElement('a');
+  a.download = `${frameId}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+window.addEventListener('load', () => {
+  document.querySelectorAll('iframe.preview-frame').forEach((frame) => {
+    frame.addEventListener('load', () => resizeFrame(frame));
+    applyTemplate(frame);
+  });
+  document.querySelectorAll('.capture-btn').forEach((button) => {
+    button.addEventListener('click', () => captureFrame(button.dataset.frame));
+  });
+});
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('iframe.preview-frame').forEach(resizeFrame);
+});
+  </script>
+</body>
+</html>
