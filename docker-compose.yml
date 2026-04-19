@@ -1,0 +1,87 @@
+name: campus-copilot
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: campus
+      POSTGRES_PASSWORD: campus
+      POSTGRES_DB: campus_copilot
+    volumes:
+      - ./.data/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus -d campus_copilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  chromadb:
+    build:
+      context: ./chromadb
+      dockerfile: Dockerfile
+    volumes:
+      - ./.data/chromadb:/data
+      - ./chromadb/chroma.config.yaml:/config.yaml:ro
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8001/api/v2/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    volumes:
+      - ./.data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: ["sh", "/app/scripts/entrypoint.sh", "--reload"]
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    volumes:
+      - ./worker:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    env_file: .env
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src

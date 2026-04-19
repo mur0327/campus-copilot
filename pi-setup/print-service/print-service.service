@@ -1,0 +1,14 @@
+[Unit]
+Description=Campus Copilot Print Service
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/campus-copilot/pi-setup/print-service
+ExecStart=/home/pi/campus-copilot/pi-setup/print-service/.venv/bin/uvicorn print_server:app --host 127.0.0.1 --port 6310
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
