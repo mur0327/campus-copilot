@@ -86,7 +86,7 @@ class QueryLog(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
     query: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str | None] = mapped_column(Text)
-    sources: Mapped[list | None] = mapped_column(JSONB)
+    sources: Mapped[dict | None] = mapped_column(JSONB)
     has_conflict: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     response_ms: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(
