@@ -6,23 +6,77 @@ import asyncio
 import logging
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import urljoin
+from dataclasses import dataclass
+from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 from curl_cffi import requests
 
 from core.config import settings
 from core.db import create_pool
-from tasks.contracts import CrawlStats, CrawlTarget, ParsedDocument
-from tasks.parse import parse_html, parse_pdf
+from tasks.contracts import (
+    CrawlDiscoveryResult,
+    CrawlStats,
+    CrawlTarget,
+    DepartmentSite,
+    DocumentProcessingStatus,
+    ParsedDocument,
+)
+from tasks.parse import build_content_hash, extract_article_html, parse_html, parse_pdf
 from tasks.storage import (
+    ExistingDocumentState,
     create_crawl_job,
     finish_crawl_job,
-    load_existing_hashes,
+    load_existing_document_states,
     persist_document,
 )
 
 logger = logging.getLogger(__name__)
+DOWNLOAD_EXTENSIONS = {
+    ".doc",
+    ".docx",
+    ".hwp",
+    ".hwpx",
+    ".pdf",
+    ".ppt",
+    ".pptx",
+    ".xls",
+    ".xlsx",
+    ".zip",
+}
+
+
+@dataclass(slots=True)
+class DocumentProcessingResult:
+    target: CrawlTarget
+    document: ParsedDocument | None = None
+    failure: str | None = None
+
+    @property
+    def crawled(self) -> bool:
+        return self.failure is None
+
+    @property
+    def status(self) -> DocumentProcessingStatus:
+        if self.failure is not None:
+            return DocumentProcessingStatus.FAILED
+        if self.document is not None:
+            return DocumentProcessingStatus.CHANGED
+        return DocumentProcessingStatus.SKIPPED
+
+
+@dataclass(slots=True)
+class ArticleExpansionResult:
+    parent_url: str
+    targets: list[CrawlTarget]
+    failure: str | None = None
+
+
+def root_site_name(root_url: str) -> str:
+    hostname = urlparse(root_url).hostname or root_url
+    if hostname == "www.honam.ac.kr":
+        return "호남대학교"
+    return hostname
 
 
 def fetch_html(url: str, timeout: int | None = None) -> str:
@@ -35,41 +89,141 @@ def fetch_html(url: str, timeout: int | None = None) -> str:
     return response.text
 
 
-def extract_menu_targets(html: str, base_url: str) -> list[CrawlTarget]:
+def dedupe_targets(targets: list[CrawlTarget]) -> list[CrawlTarget]:
+    deduped: dict[str, CrawlTarget] = {}
+    # Menus can expose the same URL through a generic label first and a better
+    # contextual label later, so duplicate URLs intentionally keep the last target.
+    for target in reversed(targets):
+        if target.url in deduped:
+            continue
+        deduped[target.url] = target
+    return list(reversed(list(deduped.values())))
+
+
+def extract_menu_targets(
+    html: str,
+    base_url: str,
+    site_name: str | None = None,
+    site_url: str | None = None,
+) -> list[CrawlTarget]:
     soup = BeautifulSoup(html, "html.parser")
     menu_root = soup.select_one(settings.crawl_menu_selector)
     if menu_root is None:
         return []
 
-    deduped: dict[str, CrawlTarget] = {}
-    for anchor in menu_root.select('a:not([data-link="true"])'):
+    normalized_site_url = site_url or base_url.rstrip("/")
+    targets: list[CrawlTarget] = []
+    for anchor in menu_root.select(settings.crawl_menu_link_selector):
         href = anchor.get("href")
         if not href:
             continue
 
         absolute_url = urljoin(base_url, href)
-        if absolute_url in deduped:
+        if not is_honam_url(absolute_url):
             continue
 
-        deduped[absolute_url] = CrawlTarget(
-            url=absolute_url,
-            menu_path=anchor.get_text(strip=True),
-            source_type="html",
+        targets.append(
+            CrawlTarget(
+                url=absolute_url,
+                menu_path=anchor.get_text(strip=True),
+                source_type="html",
+                site_name=site_name,
+                site_url=normalized_site_url,
+            )
         )
 
-    return list(deduped.values())
+    return dedupe_targets(targets)
+
+
+def extract_department_sites(
+    html: str,
+    base_url: str = "https://www.honam.ac.kr",
+) -> list[DepartmentSite]:
+    soup = BeautifulSoup(html, "html.parser")
+    department_root = soup.select_one(settings.crawl_department_selector)
+    if department_root is None:
+        return []
+
+    sites: list[DepartmentSite] = []
+    seen_urls: set[str] = set()
+    for anchor in department_root.select(settings.crawl_department_link_selector):
+        href = anchor.get("href", "").strip()
+        name = anchor.get_text(strip=True)
+        if not href or not name:
+            continue
+
+        normalized_url = urljoin(base_url, href).rstrip("/")
+        if normalized_url.startswith("http://"):
+            normalized_url = normalized_url.replace("http://", "https://", 1)
+        if not is_honam_url(normalized_url):
+            continue
+        if urlparse(normalized_url).hostname == "www.honam.ac.kr":
+            continue
+        if normalized_url in seen_urls:
+            continue
+
+        sites.append(DepartmentSite(name=name, url=normalized_url))
+        seen_urls.add(normalized_url)
+
+    return sites
+
+
+def extract_article_box_targets(parent: CrawlTarget, html: str) -> list[CrawlTarget]:
+    soup = BeautifulSoup(html, "html.parser")
+    targets: list[CrawlTarget] = []
+    for anchor in soup.select(settings.crawl_article_link_selector):
+        href = anchor.get("href")
+        if not href:
+            continue
+        absolute_url = urljoin(parent.url, href)
+        if is_download_url(absolute_url) or not is_honam_url(absolute_url):
+            continue
+
+        label = anchor.get_text(strip=True)
+        menu_path = parent.menu_path
+        if label:
+            menu_path = f"{parent.menu_path} > {label}"
+
+        targets.append(
+            CrawlTarget(
+                url=absolute_url,
+                menu_path=menu_path,
+                source_type="html",
+                title_hint=parent.title_hint,
+                site_name=parent.site_name,
+                site_url=parent.site_url,
+            )
+        )
+
+    return dedupe_targets(targets)
+
+
+def is_download_url(url: str) -> bool:
+    path = urlparse(url).path.casefold()
+    if "/pdfdownload/" in path:
+        return True
+    return any(path.endswith(extension) for extension in DOWNLOAD_EXTENSIONS)
+
+
+def is_honam_url(url: str) -> bool:
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+    return (
+        parsed.scheme in {"http", "https"}
+        and (hostname == "honam.ac.kr" or hostname.endswith(".honam.ac.kr"))
+    )
 
 
 def extract_pdf_years(html: str) -> list[int]:
     soup = BeautifulSoup(html, "html.parser")
-    select_tag = soup.select_one("select#selectYear")
+    select_tag = soup.select_one(settings.crawl_pdf_year_selector)
     if select_tag is None:
         return []
 
     years: list[int] = []
     for option in select_tag.select("option"):
         value = option.get("value")
-        if value and value.isdigit():
+        if value and len(value) == 4 and value.isdigit():
             years.append(int(value))
 
     return sorted(years, reverse=True)
@@ -110,25 +264,192 @@ async def _fetch_html_in_thread(fetcher: Callable[[str], str], url: str) -> str:
         executor.shutdown(wait=True)
 
 
+async def _fetch_bytes_in_thread(fetcher: Callable[[str], bytes], url: str) -> bytes:
+    loop = asyncio.get_running_loop()
+    executor = ThreadPoolExecutor(max_workers=1)
+    try:
+        return await loop.run_in_executor(executor, fetcher, url)
+    finally:
+        executor.shutdown(wait=True)
+
+
+async def validate_targets_with_failures(
+    targets: list[CrawlTarget],
+    fetcher: Callable[[str], str] = fetch_html,
+    concurrency: int | None = None,
+) -> CrawlDiscoveryResult:
+    semaphore = asyncio.Semaphore(concurrency or settings.crawl_validation_concurrency)
+
+    async def validate(target: CrawlTarget) -> tuple[CrawlTarget | None, str | None]:
+        try:
+            async with semaphore:
+                html = await _fetch_html_in_thread(fetcher, target.url)
+        except Exception as exc:
+            return None, f"{target.url}: {exc}"
+
+        if is_redirect_page(html):
+            return None, None
+
+        return target, None
+
+    results = await asyncio.gather(*(validate(target) for target in targets))
+    return CrawlDiscoveryResult(
+        targets=dedupe_targets([target for target, _ in results if target is not None]),
+        failures=[failure for _, failure in results if failure is not None],
+    )
+
+
+async def expand_article_box_targets_by_parent(
+    targets: list[CrawlTarget],
+    fetcher: Callable[[str], str] = fetch_html,
+    concurrency: int | None = None,
+) -> list[ArticleExpansionResult]:
+    semaphore = asyncio.Semaphore(concurrency or settings.crawl_validation_concurrency)
+
+    async def expand(target: CrawlTarget) -> ArticleExpansionResult:
+        try:
+            async with semaphore:
+                html = await _fetch_html_in_thread(fetcher, target.url)
+        except Exception as exc:
+            return ArticleExpansionResult(
+                parent_url=target.url,
+                targets=[],
+                failure=f"{target.url}: {exc}",
+            )
+
+        if is_redirect_page(html):
+            return ArticleExpansionResult(parent_url=target.url, targets=[])
+
+        article_targets = extract_article_box_targets(parent=target, html=html)
+        if article_targets:
+            return ArticleExpansionResult(parent_url=target.url, targets=[target, *article_targets])
+
+        return ArticleExpansionResult(parent_url=target.url, targets=[target])
+
+    return list(await asyncio.gather(*(expand(target) for target in targets)))
+
+
+def failure_url(failure: str) -> str:
+    return failure.split(": ", maxsplit=1)[0]
+
+
+async def discover_html_targets_with_failures(
+    fetcher: Callable[[str], str] = fetch_html,
+) -> CrawlDiscoveryResult:
+    targets: list[CrawlTarget] = []
+    failures: list[str] = []
+
+    for root_url in settings.crawl_target_urls:
+        normalized_root_url = root_url.rstrip("/")
+        main_url = urljoin(normalized_root_url, settings.crawl_main_path)
+        try:
+            html = await _fetch_html_in_thread(fetcher, main_url)
+        except Exception as exc:
+            logger.warning(
+                "dropping crawl root after main page fetch failure: %s (%s)",
+                main_url,
+                exc,
+            )
+            failures.append(f"{main_url}: {exc}")
+            continue
+        if is_redirect_page(html):
+            continue
+
+        targets.extend(
+            extract_menu_targets(
+                html=html,
+                base_url=normalized_root_url,
+                site_name=root_site_name(normalized_root_url),
+                site_url=normalized_root_url,
+            )
+        )
+        for department_site in extract_department_sites(html, base_url=normalized_root_url):
+            department_main_url = urljoin(department_site.url, settings.crawl_main_path)
+            try:
+                department_html = await _fetch_html_in_thread(fetcher, department_main_url)
+            except Exception as exc:
+                logger.warning(
+                    "dropping department site after main page fetch failure: %s (%s)",
+                    department_main_url,
+                    exc,
+                )
+                failures.append(f"{department_main_url}: {exc}")
+                continue
+            if is_redirect_page(department_html):
+                continue
+            targets.extend(
+                extract_menu_targets(
+                    html=department_html,
+                    base_url=department_site.url,
+                    site_name=department_site.name,
+                    site_url=department_site.url,
+                )
+            )
+
+    deduped_targets = dedupe_targets(targets)
+    first_pass_results = await expand_article_box_targets_by_parent(deduped_targets, fetcher)
+    first_pass_failures = [
+        result.failure for result in first_pass_results if result.failure is not None
+    ]
+    failed_urls = {failure_url(failure) for failure in first_pass_failures}
+    retry_targets = [target for target in deduped_targets if target.url in failed_urls]
+    retry_results = await expand_article_box_targets_by_parent(
+        retry_targets,
+        fetcher=fetcher,
+        concurrency=settings.crawl_retry_validation_concurrency,
+    )
+    retry_failures = [result.failure for result in retry_results if result.failure is not None]
+    recovered_urls = {result.parent_url for result in retry_results if result.targets}
+    unresolved_failures = [
+        failure
+        for failure in retry_failures
+        if failure_url(failure) not in recovered_urls
+    ]
+    retry_targets_by_parent = {
+        result.parent_url: result.targets for result in retry_results if result.targets
+    }
+    ordered_targets: list[CrawlTarget] = []
+    for result in first_pass_results:
+        if result.failure is not None:
+            ordered_targets.extend(retry_targets_by_parent.get(result.parent_url, []))
+            continue
+        ordered_targets.extend(result.targets)
+
+    final_validation = await validate_targets_with_failures(
+        dedupe_targets(ordered_targets),
+        fetcher=fetcher,
+        concurrency=settings.crawl_retry_validation_concurrency,
+    )
+
+    return CrawlDiscoveryResult(
+        targets=final_validation.targets,
+        failures=[*failures, *unresolved_failures, *final_validation.failures],
+    )
+
+
 async def discover_html_targets(fetcher: Callable[[str], str] = fetch_html) -> list[CrawlTarget]:
-    main_url = urljoin(settings.crawl_target_url, settings.crawl_main_path)
-    html = await _fetch_html_in_thread(fetcher, main_url)
-    if is_redirect_page(html):
-        return []
-    return extract_menu_targets(html=html, base_url=settings.crawl_target_url)
+    return (await discover_html_targets_with_failures(fetcher=fetcher)).targets
 
 
 async def discover_pdf_targets(fetcher: Callable[[str], str] = fetch_html) -> list[CrawlTarget]:
+    base_url = next(
+        (
+            root_url.rstrip("/")
+            for root_url in settings.crawl_target_urls
+            if urlparse(root_url).hostname == "www.honam.ac.kr"
+        ),
+        settings.crawl_target_urls[0].rstrip("/"),
+    )
     html = await _fetch_html_in_thread(
         fetcher,
-        urljoin(settings.crawl_target_url, settings.crawl_graduation_path),
+        urljoin(base_url, settings.crawl_graduation_path),
     )
     if is_redirect_page(html):
         return []
     years = extract_pdf_years(html)
     return build_graduation_pdf_targets(
         years=years,
-        base_url=settings.crawl_target_url,
+        base_url=base_url,
         graduation_path=settings.crawl_graduation_path,
         year_limit=settings.crawl_pdf_year_limit,
     )
@@ -144,47 +465,111 @@ def fetch_pdf_bytes(url: str, timeout: int | None = None) -> bytes:
     return response.content
 
 
-async def _fetch_document(target: CrawlTarget) -> ParsedDocument:
-    if target.source_type == "html":
-        html = await asyncio.to_thread(fetch_html, target.url)
-        return await parse_html(target=target, html=html)
+def should_skip_existing_document(
+    existing_state: ExistingDocumentState | None,
+    content_hash: str,
+) -> bool:
+    return (
+        existing_state is not None
+        and existing_state.content_hash == content_hash
+        and existing_state.chunk_count > 0
+    )
 
-    pdf_bytes = await asyncio.to_thread(fetch_pdf_bytes, target.url)
-    return await parse_pdf(target=target, pdf_bytes=pdf_bytes)
+
+async def fetch_and_maybe_parse_document(
+    target: CrawlTarget,
+    existing_state: ExistingDocumentState | None,
+) -> DocumentProcessingResult:
+    try:
+        if target.source_type == "html":
+            html = await _fetch_html_in_thread(fetch_html, target.url)
+            article_html = extract_article_html(html)
+            content_hash = build_content_hash(article_html, target=target)
+            if should_skip_existing_document(existing_state, content_hash):
+                return DocumentProcessingResult(target=target)
+
+            return DocumentProcessingResult(
+                target=target,
+                document=await parse_html(target=target, html=html),
+            )
+
+        pdf_bytes = await _fetch_bytes_in_thread(fetch_pdf_bytes, target.url)
+        content_hash = build_content_hash(pdf_bytes, target=target)
+        if should_skip_existing_document(existing_state, content_hash):
+            return DocumentProcessingResult(target=target)
+
+        return DocumentProcessingResult(
+            target=target,
+            document=await parse_pdf(target=target, pdf_bytes=pdf_bytes),
+        )
+    except Exception as exc:  # pragma: no cover - exercised through integration
+        return DocumentProcessingResult(target=target, failure=f"{target.url}: {exc}")
+
+
+async def fetch_and_maybe_parse_documents(
+    targets: list[CrawlTarget],
+    existing_states: dict[str, ExistingDocumentState],
+) -> list[DocumentProcessingResult]:
+    semaphore = asyncio.Semaphore(settings.crawl_ingestion_concurrency)
+
+    async def process(target: CrawlTarget) -> DocumentProcessingResult:
+        async with semaphore:
+            return await fetch_and_maybe_parse_document(
+                target=target,
+                existing_state=existing_states.get(target.url),
+            )
+
+    return await asyncio.gather(*(process(target) for target in targets))
 
 
 async def execute_ingestion(
     html_targets: list[CrawlTarget],
     pdf_targets: list[CrawlTarget],
+    initial_failures: list[str] | None = None,
 ) -> CrawlStats:
     targets = [*html_targets, *pdf_targets]
     pages_crawled = 0
     pages_changed = 0
-    failures: list[str] = []
+    pages_skipped = 0
+    failures = list(initial_failures or [])
 
     pool = await create_pool()
     try:
         async with pool.acquire() as connection:
             crawl_job_id = await create_crawl_job(connection)
             try:
-                parsed_documents: list[ParsedDocument] = []
-
-                for target in targets:
-                    try:
-                        parsed_documents.append(await _fetch_document(target))
-                    except Exception as exc:  # pragma: no cover - exercised through integration
-                        failures.append(f"{target.url}: {exc}")
-
-                existing_hashes = await load_existing_hashes(
+                existing_states = await load_existing_document_states(
                     connection,
-                    [document.url for document in parsed_documents],
+                    [target.url for target in targets],
+                )
+                processing_results = await fetch_and_maybe_parse_documents(
+                    targets,
+                    existing_states,
                 )
 
-                for document in parsed_documents:
-                    pages_crawled += 1
-                    if existing_hashes.get(document.url) == document.content_hash:
-                        continue
+                parsed_documents = [
+                    result.document
+                    for result in processing_results
+                    if result.document is not None
+                ]
+                failures.extend(
+                    result.failure
+                    for result in processing_results
+                    if result.failure is not None
+                )
+                pages_crawled = sum(1 for result in processing_results if result.crawled)
+                pages_skipped = sum(
+                    1
+                    for result in processing_results
+                    if result.status == DocumentProcessingStatus.SKIPPED
+                )
+                status_counts = {
+                    status: sum(1 for result in processing_results if result.status == status)
+                    for status in DocumentProcessingStatus
+                }
+                status_counts = {status: count for status, count in status_counts.items() if count}
 
+                for document in parsed_documents:
                     await persist_document(connection, document)
                     pages_changed += 1
 
@@ -212,17 +597,23 @@ async def execute_ingestion(
     return CrawlStats(
         pages_crawled=pages_crawled,
         pages_changed=pages_changed,
+        pages_skipped=pages_skipped,
+        status_counts=status_counts if "status_counts" in locals() else {},
         failures=failures,
     )
 
 
 async def run_crawl() -> CrawlStats:
     """Crawl Honam University pages and feed the indexing pipeline."""
-    html_targets, pdf_targets = await asyncio.gather(
-        discover_html_targets(),
+    html_discovery, pdf_targets = await asyncio.gather(
+        discover_html_targets_with_failures(),
         discover_pdf_targets(),
     )
-    stats = await execute_ingestion(html_targets, pdf_targets)
+    stats = await execute_ingestion(
+        html_discovery.targets,
+        pdf_targets,
+        initial_failures=html_discovery.failures,
+    )
     logger.info(
         "crawl completed: pages_crawled=%s pages_changed=%s failures=%s",
         stats.pages_crawled,
