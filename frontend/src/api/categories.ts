@@ -1,4 +1,5 @@
 import type { Category } from "../types/kiosk";
+import { isKioskFallbackEnabled } from "./kioskFallback";
 import { fallbackCategories } from "./mockKioskData";
 
 export async function fetchCategories(): Promise<Category[]> {
@@ -7,12 +8,24 @@ export async function fetchCategories(): Promise<Category[]> {
 
     if (!response.ok) {
       warnOnServerError("categories", response.status);
+      if (!isKioskFallbackEnabled()) {
+        throw new Error(`categories fetch failed: ${response.status}`);
+      }
       return fallbackCategories;
     }
 
     const data = (await response.json()) as Category[];
-    return data.length > 0 ? data : fallbackCategories;
-  } catch {
+    if (data.length > 0) {
+      return data;
+    }
+    if (!isKioskFallbackEnabled()) {
+      throw new Error("categories response was empty");
+    }
+    return fallbackCategories;
+  } catch (error) {
+    if (!isKioskFallbackEnabled()) {
+      throw error;
+    }
     return fallbackCategories;
   }
 }

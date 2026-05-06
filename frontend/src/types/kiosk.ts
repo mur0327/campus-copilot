@@ -25,6 +25,7 @@ export interface Source {
   url: string;
   crawled_at: string;
   freshness: SourceFreshness;
+  chunk_id?: string;
 }
 
 export interface ConflictWarning {
@@ -47,15 +48,51 @@ export interface ChatRequestPayload {
 
 export interface ChatResponsePayload {
   answer: string;
-  sources: Array<{
-    title: string;
-    url: string;
-    crawled_at: string;
-  }>;
+  sources: ChatSourcePayload[];
   procedure_steps: string[];
   conflict_warning: ConflictWarning;
   freshness: string;
 }
+
+export interface ChatSourcePayload {
+  title: string;
+  url: string;
+  crawled_at: string;
+  freshness?: SourceFreshness;
+  chunk_id?: string;
+}
+
+export interface ChatMetadataPayload {
+  sources?: ChatSourcePayload[];
+  procedure_steps?: string[];
+  conflict_warning?: ConflictWarning;
+  freshness?: string;
+}
+
+export interface ChatTokenPayload {
+  text: string;
+}
+
+export interface ChatProcedureStepsPayload {
+  procedure_steps: string[];
+}
+
+export interface ChatErrorPayload {
+  message: string;
+  retryable: boolean;
+}
+
+export type ChatSSEEvent =
+  | {
+      type: "metadata";
+      sources: Source[];
+      freshness: SourceFreshness;
+      conflict_warning: ConflictWarning;
+    }
+  | { type: "token"; text: string }
+  | { type: "procedure_steps"; procedure_steps: string[] }
+  | { type: "done"; payload: ChatResponsePayload }
+  | { type: "error"; message: string; retryable: boolean };
 
 export type ChatResponseToAnswerDataMapper = (payload: ChatResponsePayload) => AnswerData;
 
@@ -73,9 +110,12 @@ export const mapChatResponseToAnswerData: ChatResponseToAnswerDataMapper = (payl
 
   return {
     answer: payload.answer,
-    sources: payload.sources.map((source) => ({
-      ...source,
-      freshness,
+    sources: payload.sources.map(({ title, url, crawled_at, freshness: sourceFreshness, chunk_id }) => ({
+      title,
+      url,
+      crawled_at,
+      freshness: sourceFreshness ? normalizeSourceFreshness(sourceFreshness) : freshness,
+      chunk_id,
     })),
     procedureSteps: payload.procedure_steps,
     conflictWarning: payload.conflict_warning,

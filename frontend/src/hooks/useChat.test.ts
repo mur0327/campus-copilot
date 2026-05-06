@@ -2,13 +2,14 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useKioskStore } from "../store/kioskStore";
+import type { ChatStreamHandlers } from "../api/chat";
 import { useChat } from "./useChat";
 
 vi.mock("../api/chat", () => ({
-  postChat: vi.fn(),
+  streamChat: vi.fn(),
 }));
 
-import { postChat } from "../api/chat";
+import { streamChat } from "../api/chat";
 
 beforeEach(() => {
   useKioskStore.setState({
@@ -21,13 +22,38 @@ beforeEach(() => {
 });
 
 describe("useChat", () => {
-  it("maps ChatResponsePayload into AnswerData with top-level freshness applied to each source", async () => {
-    vi.mocked(postChat).mockResolvedValue({
-      answer: "휴학은 포털에서 신청합니다.",
-      sources: [{ title: "학사안내", url: "https://example.edu", crawled_at: "2026-04-19" }],
-      procedure_steps: ["포털 접속", "휴학 신청"],
-      conflict_warning: { exists: false },
-      freshness: "recent",
+  it("appends streamed tokens and finalizes the done payload", async () => {
+    vi.mocked(streamChat).mockImplementation(async (_payload, handlers) => {
+      handlers.onMetadata({
+        sources: [
+          {
+            title: "학사안내",
+            url: "https://example.edu",
+            crawled_at: "2026-04-19",
+            freshness: "stale",
+            chunk_id: "chunk-1",
+          },
+        ],
+        conflict_warning: { exists: false },
+        freshness: "recent",
+      });
+      handlers.onToken("휴학은 ");
+      handlers.onToken("포털에서 신청합니다.");
+      handlers.onDone({
+        answer: "휴학은 포털에서 신청합니다.",
+        sources: [
+          {
+            title: "학사안내",
+            url: "https://example.edu",
+            crawled_at: "2026-04-19",
+            freshness: "stale",
+            chunk_id: "chunk-1",
+          },
+        ],
+        procedure_steps: ["포털 접속", "휴학 신청"],
+        conflict_warning: { exists: false },
+        freshness: "recent",
+      });
     });
 
     const { result } = renderHook(() => useChat());
@@ -44,7 +70,8 @@ describe("useChat", () => {
           title: "학사안내",
           url: "https://example.edu",
           crawled_at: "2026-04-19",
-          freshness: "recent",
+          freshness: "stale",
+          chunk_id: "chunk-1",
         },
       ],
       procedureSteps: ["포털 접속", "휴학 신청"],
@@ -53,14 +80,39 @@ describe("useChat", () => {
     });
   });
 
+  it("updates procedure steps from the procedure_steps stream event before done", async () => {
+    let capturedHandlers: ChatStreamHandlers | null = null;
+    vi.mocked(streamChat).mockImplementation(
+      (_payload, handlers) =>
+        new Promise((resolve) => {
+          capturedHandlers = handlers;
+          handlers.onProcedureSteps(["포털 접속", "휴학 신청"]);
+          resolve();
+        }),
+    );
+
+    const { result } = renderHook(() => useChat());
+    await act(async () => {
+      await result.current.submit("휴학 신청");
+    });
+
+    expect(capturedHandlers).not.toBeNull();
+    expect(useKioskStore.getState().answerData).toMatchObject({
+      procedureSteps: ["포털 접속", "휴학 신청"],
+      isStreaming: true,
+    });
+  });
+
   it("treats unknown freshness as stale and logs for developers", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    vi.mocked(postChat).mockResolvedValue({
-      answer: "확인된 답변입니다.",
-      sources: [{ title: "학사안내", url: "https://example.edu", crawled_at: "2026-04-19" }],
-      procedure_steps: [],
-      conflict_warning: { exists: false },
-      freshness: "fresh" as "recent",
+    vi.mocked(streamChat).mockImplementation(async (_payload, handlers) => {
+      handlers.onDone({
+        answer: "확인된 답변입니다.",
+        sources: [{ title: "학사안내", url: "https://example.edu", crawled_at: "2026-04-19" }],
+        procedure_steps: [],
+        conflict_warning: { exists: false },
+        freshness: "fresh" as "recent",
+      });
     });
 
     const { result } = renderHook(() => useChat());
@@ -73,7 +125,7 @@ describe("useChat", () => {
   });
 
   it("stores a visible fallback answer when chat request fails", async () => {
-    vi.mocked(postChat).mockRejectedValue(new Error("network"));
+    vi.mocked(streamChat).mockRejectedValue(new Error("network"));
 
     const { result } = renderHook(() => useChat());
     await act(async () => {
@@ -85,11 +137,14 @@ describe("useChat", () => {
   });
 
   it("ignores a stale chat response after reset", async () => {
-    let resolveChat: (value: Awaited<ReturnType<typeof postChat>>) => void = () => {};
-    vi.mocked(postChat).mockReturnValue(
-      new Promise((resolve) => {
-        resolveChat = resolve;
-      }),
+    let resolveChat: () => void = () => {};
+    let capturedHandlers: ChatStreamHandlers | null = null;
+    vi.mocked(streamChat).mockImplementation(
+      (_payload, handlers) =>
+        new Promise((resolve) => {
+          capturedHandlers = handlers;
+          resolveChat = resolve;
+        }),
     );
 
     const { result } = renderHook(() => useChat());
@@ -102,13 +157,14 @@ describe("useChat", () => {
     });
 
     await act(async () => {
-      resolveChat({
+      capturedHandlers?.onDone({
         answer: "늦게 도착한 답변",
         sources: [],
         procedure_steps: [],
         conflict_warning: { exists: false },
         freshness: "recent",
       });
+      resolveChat();
     });
 
     expect(useKioskStore.getState()).toMatchObject({
@@ -119,18 +175,25 @@ describe("useChat", () => {
   });
 
   it("ignores an older same-question response from a previous hook instance", async () => {
-    let resolveFirst: (value: Awaited<ReturnType<typeof postChat>>) => void = () => {};
-    let resolveSecond: (value: Awaited<ReturnType<typeof postChat>>) => void = () => {};
-    vi.mocked(postChat)
-      .mockReturnValueOnce(
-        new Promise((resolve) => {
-          resolveFirst = resolve;
-        }),
+    let resolveFirst: () => void = () => {};
+    let resolveSecond: () => void = () => {};
+    let firstHandlers: ChatStreamHandlers | null = null;
+    let secondHandlers: ChatStreamHandlers | null = null;
+    vi.mocked(streamChat)
+      .mockImplementationOnce(
+        (_payload, handlers, signal) =>
+          new Promise((resolve) => {
+            firstHandlers = handlers;
+            resolveFirst = resolve;
+            expect(signal?.aborted).toBe(false);
+          }),
       )
-      .mockReturnValueOnce(
-        new Promise((resolve) => {
-          resolveSecond = resolve;
-        }),
+      .mockImplementationOnce(
+        (_payload, handlers) =>
+          new Promise((resolve) => {
+            secondHandlers = handlers;
+            resolveSecond = resolve;
+          }),
       );
 
     const first = renderHook(() => useChat());
@@ -145,23 +208,28 @@ describe("useChat", () => {
     });
 
     await act(async () => {
-      resolveSecond({
+      secondHandlers?.onDone({
         answer: "최신 답변",
         sources: [],
         procedure_steps: [],
         conflict_warning: { exists: false },
         freshness: "recent",
       });
+      resolveSecond();
     });
 
+    expect(vi.mocked(streamChat).mock.calls[0]?.[2]?.aborted).toBe(true);
+
     await act(async () => {
-      resolveFirst({
+      firstHandlers?.onToken("이전 토큰");
+      firstHandlers?.onDone({
         answer: "이전 답변",
         sources: [],
         procedure_steps: [],
         conflict_warning: { exists: false },
         freshness: "recent",
       });
+      resolveFirst();
     });
 
     expect(useKioskStore.getState().answerData?.answer).toBe("최신 답변");
