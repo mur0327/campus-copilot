@@ -24,6 +24,8 @@ def test_worker_settings_phase_two_defaults(monkeypatch):
     assert settings.crawl_pdf_year_limit == 5
     assert settings.crawl_validation_concurrency == 12
     assert settings.crawl_retry_validation_concurrency == 3
+    assert settings.crawl_final_validation_concurrency == 24
+    assert settings.crawl_final_validation_timeout_seconds == 8
     assert settings.crawl_ingestion_concurrency == 6
     assert settings.crawl_impersonate == "chrome120"
     assert settings.crawl4ai_base_directory == "/tmp/crawl4ai"

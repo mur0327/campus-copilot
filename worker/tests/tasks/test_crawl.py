@@ -580,7 +580,7 @@ async def test_discover_html_targets_retries_failed_target_validation(fixture_te
         "https://www.honam.ac.kr/Stable",
     ]
     assert result.failures == []
-    assert attempts["https://www.honam.ac.kr/Flaky"] == 3
+    assert attempts["https://www.honam.ac.kr/Flaky"] == 2
 
 
 @pytest.mark.asyncio

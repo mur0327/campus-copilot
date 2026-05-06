@@ -505,22 +505,36 @@ async def discover_html_targets_with_failures(
         result.parent_url: result.targets for result in retry_results if result.targets
     }
     ordered_targets: list[CrawlTarget] = []
+    verified_urls: set[str] = set()
     for result in first_pass_results:
         if result.failure is not None:
             ordered_targets.extend(retry_targets_by_parent.get(result.parent_url, []))
+            if result.parent_url in recovered_urls:
+                verified_urls.add(result.parent_url)
             continue
         ordered_targets.extend(result.targets)
+        verified_urls.add(result.parent_url)
 
+    final_validation_fetcher = (
+        fetcher
+        if fetcher is not fetch_html
+        else lambda url: fetch_html(url, timeout=settings.crawl_final_validation_timeout_seconds)
+    )
     final_validation = await validate_targets_with_failures(
-        dedupe_targets(ordered_targets),
-        fetcher=fetcher,
-        concurrency=settings.crawl_retry_validation_concurrency,
+        [target for target in dedupe_targets(ordered_targets) if target.url not in verified_urls],
+        fetcher=final_validation_fetcher,
+        concurrency=settings.crawl_final_validation_concurrency,
         progress_callback=progress_callback,
         progress_stage="대상 URL 최종 검증 중",
     )
+    final_targets_by_url = {target.url: target for target in final_validation.targets}
 
     return CrawlDiscoveryResult(
-        targets=final_validation.targets,
+        targets=[
+            target
+            for target in dedupe_targets(ordered_targets)
+            if target.url in verified_urls or target.url in final_targets_by_url
+        ],
         failures=[*failures, *unresolved_failures, *final_validation.failures],
     )
 

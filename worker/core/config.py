@@ -27,6 +27,8 @@ class WorkerSettings(BaseSettings):
     crawl_timeout_seconds: int = 30
     crawl_validation_concurrency: int = 12
     crawl_retry_validation_concurrency: int = 3
+    crawl_final_validation_concurrency: int = 24
+    crawl_final_validation_timeout_seconds: int = 8
     crawl_ingestion_concurrency: int = 6
     crawl_impersonate: str = "chrome120"
     crawl_schedule: str = "0 3 * * *"
