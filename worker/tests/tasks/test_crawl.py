@@ -143,9 +143,12 @@ async def test_fetch_and_maybe_parse_documents_serializes_result_callbacks(monke
         fake_fetch_and_maybe_parse_document,
     )
 
-    results = await fetch_and_maybe_parse_documents(targets, {}, on_result=on_result)
+    results = [
+        result
+        async for result in fetch_and_maybe_parse_documents(targets, {}, on_result=on_result)
+    ]
 
-    assert [result.target.url for result in results] == [target.url for target in targets]
+    assert {result.target.url for result in results} == {target.url for target in targets}
 
 
 def test_is_honam_url_requires_exact_domain_or_subdomain():
@@ -841,6 +844,98 @@ async def test_execute_ingestion_runs_indexing_after_persistence_before_finish(m
 
     assert stats.status_counts == {DocumentProcessingStatus.CHANGED: 1}
     assert events == ["persist", "index", "finish", "close"]
+
+
+@pytest.mark.asyncio
+async def test_execute_ingestion_persists_each_document_before_next_result(monkeypatch):
+    targets = [
+        CrawlTarget(
+            url=f"https://example.com/changed-{index}",
+            menu_path="공지",
+            source_type="html",
+        )
+        for index in range(2)
+    ]
+    events: list[str] = []
+
+    class FakeConnection:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakePool:
+        def acquire(self):
+            return FakeConnection()
+
+        async def close(self):
+            pass
+
+    async def fake_create_pool():
+        return FakePool()
+
+    async def fake_create_crawl_job(connection):
+        return "job-1"
+
+    async def fake_load_existing_document_states(connection, urls):
+        return {}
+
+    async def fake_fetch_and_maybe_parse_documents(targets, existing_states, on_result=None):
+        for target in targets:
+            events.append(f"result:{target.url}")
+            result = DocumentProcessingResult(
+                target=target,
+                document=ParsedDocument(
+                    url=target.url,
+                    title="Example",
+                    menu_path=target.menu_path,
+                    category=None,
+                    source_type=target.source_type,
+                    content_hash="hash-1",
+                    crawled_at=datetime(2026, 5, 6, tzinfo=UTC),
+                    chunks=[],
+                ),
+            )
+            if on_result is not None:
+                await on_result(result)
+            yield result
+
+    async def fake_persist_document(connection, document):
+        events.append(f"persist:{document.url}")
+        return "document-1"
+
+    async def fake_index_crawl_documents(connection):
+        events.append("index")
+
+    async def fake_finish_crawl_job(*args, **kwargs):
+        events.append("finish")
+
+    monkeypatch.setattr("tasks.crawl.create_pool", fake_create_pool)
+    monkeypatch.setattr("tasks.crawl.create_crawl_job", fake_create_crawl_job)
+    monkeypatch.setattr(
+        "tasks.crawl.load_existing_document_states",
+        fake_load_existing_document_states,
+    )
+    monkeypatch.setattr(
+        "tasks.crawl.fetch_and_maybe_parse_documents",
+        fake_fetch_and_maybe_parse_documents,
+    )
+    monkeypatch.setattr("tasks.crawl.persist_document", fake_persist_document)
+    monkeypatch.setattr("tasks.crawl.index_crawl_documents", fake_index_crawl_documents)
+    monkeypatch.setattr("tasks.crawl.finish_crawl_job", fake_finish_crawl_job)
+
+    stats = await execute_ingestion(targets, [])
+
+    assert stats.pages_changed == 2
+    assert events == [
+        "result:https://example.com/changed-0",
+        "persist:https://example.com/changed-0",
+        "result:https://example.com/changed-1",
+        "persist:https://example.com/changed-1",
+        "index",
+        "finish",
+    ]
 
 
 @pytest.mark.asyncio

@@ -630,7 +630,7 @@ async def fetch_and_maybe_parse_documents(
     targets: list[CrawlTarget],
     existing_states: dict[str, ExistingDocumentState],
     on_result: Callable[[DocumentProcessingResult], Awaitable[None]] | None = None,
-) -> list[DocumentProcessingResult]:
+):
     semaphore = asyncio.Semaphore(settings.crawl_ingestion_concurrency)
 
     async def process(index: int, target: CrawlTarget) -> tuple[int, DocumentProcessingResult]:
@@ -648,7 +648,7 @@ async def fetch_and_maybe_parse_documents(
         results[index] = result
         if on_result is not None:
             await on_result(result)
-    return [result for result in results if result is not None]
+        yield result
 
 
 async def index_crawl_documents(connection):
@@ -747,38 +747,21 @@ async def execute_ingestion(
                         pages_crawled += 1
                     await update_progress("문서 수집 중")
 
-                processing_results = await fetch_and_maybe_parse_documents(
+                status_counts: dict[DocumentProcessingStatus, int] = {}
+                async for result in fetch_and_maybe_parse_documents(
                     targets,
                     existing_states,
                     on_result=record_processing_progress,
-                )
-
-                parsed_documents = [
-                    result.document
-                    for result in processing_results
-                    if result.document is not None
-                ]
-                failures.extend(
-                    result.failure
-                    for result in processing_results
-                    if result.failure is not None
-                )
-                pages_crawled = sum(1 for result in processing_results if result.crawled)
-                pages_skipped = sum(
-                    1
-                    for result in processing_results
-                    if result.status == DocumentProcessingStatus.SKIPPED
-                )
-                status_counts = {
-                    status: sum(1 for result in processing_results if result.status == status)
-                    for status in DocumentProcessingStatus
-                }
-                status_counts = {status: count for status, count in status_counts.items() if count}
-
-                for document in parsed_documents:
-                    await update_progress("문서 저장 중")
-                    await persist_document(connection, document)
-                    pages_changed += 1
+                ):
+                    status_counts[result.status] = status_counts.get(result.status, 0) + 1
+                    if result.failure is not None:
+                        failures.append(result.failure)
+                    if result.status == DocumentProcessingStatus.SKIPPED:
+                        pages_skipped += 1
+                    if result.document is not None:
+                        await update_progress("문서 저장 중")
+                        await persist_document(connection, result.document)
+                        pages_changed += 1
                 await update_progress("색인 생성 중")
 
                 try:
