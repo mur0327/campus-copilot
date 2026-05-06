@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import UTC, datetime
 from types import SimpleNamespace
@@ -11,6 +12,7 @@ os.environ.setdefault(
 
 from tasks.contracts import CrawlTarget, DocumentProcessingStatus, ParsedChunk, ParsedDocument
 from tasks.crawl import (
+    DocumentProcessingResult,
     build_graduation_pdf_targets,
     discover_html_targets,
     discover_html_targets_with_failures,
@@ -20,6 +22,7 @@ from tasks.crawl import (
     extract_department_sites,
     extract_menu_targets,
     extract_pdf_years,
+    fetch_and_maybe_parse_documents,
     index_crawl_documents,
     is_honam_url,
     is_redirect_page,
@@ -108,6 +111,41 @@ def test_extract_menu_targets_keeps_last_metadata_for_duplicate_url():
     assert [(target.menu_path, target.site_name, target.site_url) for target in deduped] == [
         ("최종 라벨", "입학안내", "https://enter.honam.ac.kr")
     ]
+
+
+@pytest.mark.asyncio
+async def test_fetch_and_maybe_parse_documents_serializes_result_callbacks(monkeypatch):
+    targets = [
+        CrawlTarget(url=f"https://www.honam.ac.kr/{index}", menu_path="메뉴", source_type="html")
+        for index in range(3)
+    ]
+    all_started = asyncio.Event()
+    started = 0
+    active_callbacks = 0
+
+    async def fake_fetch_and_maybe_parse_document(*, target, existing_state):
+        nonlocal started
+        started += 1
+        if started == len(targets):
+            all_started.set()
+        await all_started.wait()
+        return DocumentProcessingResult(target=target)
+
+    async def on_result(result):
+        nonlocal active_callbacks
+        assert active_callbacks == 0
+        active_callbacks += 1
+        await asyncio.sleep(0.01)
+        active_callbacks -= 1
+
+    monkeypatch.setattr(
+        "tasks.crawl.fetch_and_maybe_parse_document",
+        fake_fetch_and_maybe_parse_document,
+    )
+
+    results = await fetch_and_maybe_parse_documents(targets, {}, on_result=on_result)
+
+    assert [result.target.url for result in results] == [target.url for target in targets]
 
 
 def test_is_honam_url_requires_exact_domain_or_subdomain():

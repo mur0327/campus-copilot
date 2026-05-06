@@ -625,8 +625,6 @@ async def fetch_and_maybe_parse_documents(
                 target=target,
                 existing_state=existing_states.get(target.url),
             )
-            if on_result is not None:
-                await on_result(result)
             return index, result
 
     results: list[DocumentProcessingResult | None] = [None] * len(targets)
@@ -634,6 +632,8 @@ async def fetch_and_maybe_parse_documents(
     for task in asyncio.as_completed(tasks):
         index, result = await task
         results[index] = result
+        if on_result is not None:
+            await on_result(result)
     return [result for result in results if result is not None]
 
 
