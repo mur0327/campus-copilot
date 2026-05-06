@@ -22,6 +22,7 @@ def build_sources_log_payload(
     category: str | None,
     query: str,
     error_type: str | None = None,
+    retrieval_status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "_meta": {
@@ -30,6 +31,7 @@ def build_sources_log_payload(
             "category": category,
             "normalized_query": normalize_query(query),
             "error_type": error_type,
+            "retrieval_status": retrieval_status,
         },
         "items": items,
     }

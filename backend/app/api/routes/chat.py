@@ -16,7 +16,12 @@ from sse_starlette.sse import EventSourceResponse
 from app.core.config import settings
 from app.core.db import AsyncSessionLocal
 from app.schemas import ChatRequest, ChatResponse, ConflictWarning
-from app.schemas.chat import ChatMetadataEvent, ChatProcedureStepsEvent, ChatTokenEvent
+from app.schemas.chat import (
+    ChatMetadataEvent,
+    ChatProcedureStepsEvent,
+    ChatTokenEvent,
+    RetrievalStatusPayload,
+)
 from app.services.chroma_client import get_chroma_collection
 from app.services.conflict import load_conflict_warning
 from app.services.freshness import calculate_top_level_freshness
@@ -105,7 +110,7 @@ async def _chat_events(
             return
 
         async with _open_session(dependencies) as session:
-            retrieval_results = await _retrieve(
+            retrieval_results, retrieval_status = await _retrieve(
                 dependencies.get("retriever"),
                 session,
                 question=payload.question,
@@ -122,6 +127,7 @@ async def _chat_events(
             sources=sources,
             freshness=freshness,
             conflict_warning=conflict_warning,
+            retrieval_status=retrieval_status,
         )
         yield sse_event("metadata", metadata.model_dump(mode="json"))
 
@@ -146,6 +152,7 @@ async def _chat_events(
             procedure_steps=procedure_steps,
             conflict_warning=conflict_warning,
             freshness=freshness,
+            retrieval_status=retrieval_status,
         )
         yield sse_event(
             "procedure_steps",
@@ -170,6 +177,14 @@ async def _chat_events(
             procedure_steps=[],
             conflict_warning=ConflictWarning(exists=False),
             freshness="stale",
+            retrieval_status=RetrievalStatusPayload(
+                mode="empty",
+                degraded=True,
+                semantic_available=False,
+                bm25_available=False,
+                semantic_error=type(exc).__name__,
+                bm25_error=type(exc).__name__,
+            ),
         )
         await _safe_write_chat_log_with_session(
             dependencies,
@@ -201,6 +216,7 @@ async def _test_chat_events(request: Request, payload: ChatRequest) -> AsyncIter
         procedure_steps=procedure_steps,
         conflict_warning=ConflictWarning(exists=False),
         freshness="recent",
+        retrieval_status=RetrievalStatusPayload(mode="hybrid"),
     )
 
     yield sse_event("metadata", _metadata_payload(response))
@@ -228,16 +244,26 @@ async def _retrieve(
     *,
     question: str,
     category: str | None,
-) -> list[RetrievalResult]:
+) -> tuple[list[RetrievalResult], RetrievalStatusPayload]:
     if retriever is None:
-        return []
-    return await retriever.retrieve(
+        return [], RetrievalStatusPayload(mode="empty")
+    if hasattr(retriever, "retrieve_with_status"):
+        response = await retriever.retrieve_with_status(
+            session,
+            question=question,
+            category=category,
+            semantic_top_n=settings.retriever_semantic_top_n,
+            bm25_top_n=settings.retriever_bm25_top_n,
+        )
+        return list(response.results), RetrievalStatusPayload.model_validate(response.status)
+    results = await retriever.retrieve(
         session,
         question=question,
         category=category,
         semantic_top_n=settings.retriever_semantic_top_n,
         bm25_top_n=settings.retriever_bm25_top_n,
     )
+    return results, RetrievalStatusPayload(mode="hybrid" if results else "empty")
 
 
 def _chunk_ids(retrieval_results: list[RetrievalResult]) -> list[UUID]:
@@ -267,6 +293,7 @@ def _metadata_payload(response: ChatResponse) -> dict[str, Any]:
         sources=response.sources,
         freshness=response.freshness,
         conflict_warning=response.conflict_warning,
+        retrieval_status=response.retrieval_status,
     ).model_dump(mode="json")
 
 
@@ -367,6 +394,7 @@ async def _write_chat_log(
                 category=category,
                 query=query,
                 error_type=error_type,
+                retrieval_status=response.retrieval_status.model_dump(mode="json"),
             ),
             has_conflict=response.conflict_warning.exists,
             response_ms=response_ms,

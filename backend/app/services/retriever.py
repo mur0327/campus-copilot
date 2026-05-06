@@ -29,6 +29,20 @@ class RetrievalResult(BaseModel):
     meta: dict | None
 
 
+class RetrievalStatus(BaseModel):
+    mode: str
+    degraded: bool = False
+    semantic_available: bool = True
+    bm25_available: bool = True
+    semantic_error: str | None = None
+    bm25_error: str | None = None
+
+
+class RetrievalResponse(BaseModel):
+    results: list[RetrievalResult]
+    status: RetrievalStatus
+
+
 def tokenize_korean_light(text: str) -> list[str]:
     return [token.lower() for token in TOKEN_RE.findall(text)]
 
@@ -138,19 +152,6 @@ def row_to_retrieval_result(row) -> RetrievalResult:
     )
 
 
-async def load_active_chunks(session: AsyncSession, category: str | None = None) -> list[RetrievalResult]:
-    statement = (
-        select(DocumentChunk, Document)
-        .join(Document, Document.id == DocumentChunk.document_id)
-        .where(Document.is_active.is_(True), DocumentChunk.content != "")
-    )
-    if category:
-        statement = statement.where(Document.category == category)
-
-    result = await session.execute(statement)
-    return [row_to_retrieval_result(row) for row in result.all()]
-
-
 class HybridRetriever:
     def __init__(
         self,
@@ -171,20 +172,27 @@ class HybridRetriever:
         self.bm25_cache_dir = Path(bm25_cache_dir) if bm25_cache_dir else None
 
     async def ensure_bm25_index(self, session: AsyncSession, category: str | None = None) -> BM25Index:
+        index, _available, _error = await self._ensure_bm25_index_status(session, category)
+        return index
+
+    async def _ensure_bm25_index_status(
+        self,
+        session: AsyncSession,
+        category: str | None = None,
+    ) -> tuple[BM25Index, bool, str | None]:
         watermark = await session.scalar(select(func.max(DocumentChunk.created_at)))
         cached = self.bm25_cache.get(category)
         if cached and cached[0] == watermark:
-            return cached[1]
+            return cached[1], bool(cached[1].results), None
 
         file_cached = self._load_bm25_file_cache(category, watermark)
         if file_cached is not None:
             self.bm25_cache[category] = (watermark, file_cached)
-            return file_cached
+            return file_cached, True, None
 
-        chunks = await load_active_chunks(session, category)
-        bm25_index = BM25Index(chunks)
+        bm25_index = BM25Index([])
         self.bm25_cache[category] = (watermark, bm25_index)
-        return bm25_index
+        return bm25_index, False, "worker BM25 index is missing or stale"
 
     def _bm25_cache_path(self, category: str | None) -> Path | None:
         if self.bm25_cache_dir is None:
@@ -239,15 +247,57 @@ class HybridRetriever:
         semantic_top_n: int,
         bm25_top_n: int,
     ) -> list[RetrievalResult]:
-        bm25_index = await self.ensure_bm25_index(session, category)
-        semantic_results = await self.search_chroma(session, question, category, semantic_top_n)
+        response = await self.retrieve_with_status(
+            session,
+            question=question,
+            category=category,
+            semantic_top_n=semantic_top_n,
+            bm25_top_n=bm25_top_n,
+        )
+        return response.results
+
+    async def retrieve_with_status(
+        self,
+        session: AsyncSession,
+        *,
+        question: str,
+        category: str | None,
+        semantic_top_n: int,
+        bm25_top_n: int,
+    ) -> RetrievalResponse:
+        bm25_index, bm25_available, bm25_error = await self._ensure_bm25_index_status(session, category)
         bm25_results = bm25_index.search(question, bm25_top_n)
-        return merge_ranked_results(
+
+        semantic_available = True
+        semantic_error = None
+        try:
+            semantic_results = await self.search_chroma(session, question, category, semantic_top_n)
+        except Exception as exc:
+            semantic_available = False
+            semantic_error = type(exc).__name__
+            semantic_results = []
+
+        results = merge_ranked_results(
             semantic_results,
             bm25_results,
             self.semantic_weight,
             self.bm25_weight,
             self.final_top_k,
+        )
+        return RetrievalResponse(
+            results=results,
+            status=RetrievalStatus(
+                mode=_retrieval_mode(
+                    results=results,
+                    semantic_available=semantic_available,
+                    bm25_available=bm25_available,
+                ),
+                degraded=not semantic_available or not bm25_available,
+                semantic_available=semantic_available,
+                bm25_available=bm25_available,
+                semantic_error=semantic_error,
+                bm25_error=bm25_error,
+            ),
         )
 
     async def search_chroma(
@@ -356,3 +406,20 @@ def _distance_to_score(distance) -> float:
     if distance_value < 0:
         return 0
     return 1 / (1 + distance_value)
+
+
+def _retrieval_mode(
+    *,
+    results: list[RetrievalResult],
+    semantic_available: bool,
+    bm25_available: bool,
+) -> str:
+    if not results:
+        return "empty"
+    if semantic_available and bm25_available:
+        return "hybrid"
+    if semantic_available:
+        return "semantic_only"
+    if bm25_available:
+        return "keyword_only"
+    return "empty"

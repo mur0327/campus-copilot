@@ -1,7 +1,8 @@
 import json
 import os
-from hashlib import sha256
 from datetime import datetime
+from hashlib import sha256
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
@@ -10,8 +11,10 @@ from httpx import ASGITransport, AsyncClient
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://campus:campus@localhost/db")
 
 from app.api.routes import chat as chat_route  # noqa: E402
-from app.api.routes.chat import get_chat_dependencies  # noqa: E402
-from app.api.routes.chat import _cache_key  # noqa: E402
+from app.api.routes.chat import (
+    _cache_key,  # noqa: E402
+    get_chat_dependencies,  # noqa: E402
+)
 from app.main import app  # noqa: E402
 from app.schemas import ChatResponse, ConflictWarning  # noqa: E402
 from app.services.retriever import RetrievalResult  # noqa: E402
@@ -73,6 +76,15 @@ class FakeRetriever:
     async def retrieve(self, session, *, question, category, semantic_top_n, bm25_top_n):
         self.sessions.append(session)
         return self.results
+
+
+class FakeStatusRetriever:
+    def __init__(self, results, status):
+        self.results = results
+        self.status = status
+
+    async def retrieve_with_status(self, session, *, question, category, semantic_top_n, bm25_top_n):
+        return SimpleNamespace(results=self.results, status=self.status)
 
 
 class FakeProvider:
@@ -175,7 +187,7 @@ def test_default_chat_dependencies_include_lazy_redis_cache(monkeypatch):
 
 
 def test_chat_cache_key_uses_versioned_category_and_question_hash():
-    digest = sha256("휴학 신청은?".encode("utf-8")).hexdigest()
+    digest = sha256("휴학 신청은?".encode()).hexdigest()
 
     assert _cache_key("휴학 신청은?", "academic") == f"chat:v1:academic:{digest}"
 
@@ -258,8 +270,10 @@ async def test_chat_stream_uses_overridden_production_dependencies():
     assert done["procedure_steps"] == []
     assert done["conflict_warning"] == {"exists": False, "description": None}
     assert done["freshness"] == "recent"
+    assert done["retrieval_status"]["mode"] == "hybrid"
     assert logs[-1]["query"] == "휴학 신청은?"
     assert logs[-1]["sources"]["_meta"]["cache_hit"] is False
+    assert logs[-1]["sources"]["_meta"]["retrieval_status"]["mode"] == "hybrid"
     assert provider.closed is True
     assert provider.session_during_stream is None
 
@@ -296,6 +310,83 @@ async def test_chat_stream_treats_cache_read_failure_as_miss():
 
     assert [event["event"] for event in events] == ["metadata", "token", "token", "token", "procedure_steps", "done"]
     assert logs[-1]["sources"]["_meta"]["cache_hit"] is False
+
+
+@pytest.mark.asyncio
+async def test_chat_metadata_reports_keyword_only_degraded_retrieval():
+    retrieval_result = make_retrieval_result()
+    provider = FakeProvider(["BM25", " 답변"])
+    retrieval_status = {
+        "mode": "keyword_only",
+        "degraded": True,
+        "semantic_available": False,
+        "bm25_available": True,
+        "semantic_error": "RuntimeError",
+        "bm25_error": None,
+    }
+
+    def override_dependencies():
+        return {
+            "retriever": FakeStatusRetriever([retrieval_result], retrieval_status),
+            "llm_provider_factory": lambda: provider,
+            "cache": FakeCache(),
+            "query_log_writer": None,
+            "conflict_warning_loader": lambda session, chunk_ids: ConflictWarning(exists=False),
+            "session_factory": FakeSessionFactory(),
+        }
+
+    app.dependency_overrides[get_chat_dependencies] = override_dependencies
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chat",
+            json={"question": "휴학 신청은?"},
+            headers={"Accept": "text/event-stream"},
+        )
+
+    events = parse_events(response.text)
+
+    assert events[0]["event"] == "metadata"
+    assert events[0]["data"]["retrieval_status"] == retrieval_status
+    assert events[-1]["data"]["retrieval_status"] == retrieval_status
+    assert events[-1]["data"]["answer"] == "BM25 답변"
+
+
+@pytest.mark.asyncio
+async def test_chat_empty_retrieval_status_does_not_call_llm_provider():
+    retrieval_status = {
+        "mode": "empty",
+        "degraded": True,
+        "semantic_available": False,
+        "bm25_available": False,
+        "semantic_error": "RuntimeError",
+        "bm25_error": "worker BM25 index is missing or stale",
+    }
+
+    def override_dependencies():
+        return {
+            "retriever": FakeStatusRetriever([], retrieval_status),
+            "llm_provider_factory": lambda: FailingProvider(),
+            "cache": FakeCache(),
+            "query_log_writer": None,
+            "conflict_warning_loader": lambda session, chunk_ids: ConflictWarning(exists=False),
+            "session_factory": FakeSessionFactory(),
+        }
+
+    app.dependency_overrides[get_chat_dependencies] = override_dependencies
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chat",
+            json={"question": "휴학 신청은?"},
+            headers={"Accept": "text/event-stream"},
+        )
+
+    events = parse_events(response.text)
+
+    assert [event["event"] for event in events] == ["metadata", "procedure_steps", "done"]
+    assert events[0]["data"]["retrieval_status"] == retrieval_status
+    assert events[-1]["data"]["answer"] == "검색된 공식 문서 근거가 부족해 답변할 수 없습니다."
 
 
 @pytest.mark.asyncio

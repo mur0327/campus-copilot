@@ -132,8 +132,7 @@ async def test_hybrid_retriever_rebuilds_bm25_on_watermark_change():
             return self.watermarks.pop(0)
 
         async def execute(self, statement):
-            self.loads += 1
-            return FakeResult([make_row(uuid4())])
+            raise AssertionError("BM25 should not fall back to database loading")
 
     session = FakeSession()
     retriever = HybridRetriever(
@@ -147,16 +146,15 @@ async def test_hybrid_retriever_rebuilds_bm25_on_watermark_change():
     first_index = await retriever.ensure_bm25_index(session)
     second_index = await retriever.ensure_bm25_index(session)
 
-    assert session.loads == 2
+    assert session.loads == 0
     assert first_index is not second_index
 
 
 @pytest.mark.asyncio
-async def test_hybrid_retriever_falls_back_to_database_when_worker_bm25_cache_is_missing(
+async def test_hybrid_retriever_returns_empty_bm25_when_worker_cache_is_missing(
     tmp_path: Path,
 ):
     watermark = datetime(2026, 5, 1, tzinfo=UTC)
-    chunk_id = uuid4()
 
     class FakeSession:
         def __init__(self):
@@ -167,7 +165,7 @@ async def test_hybrid_retriever_falls_back_to_database_when_worker_bm25_cache_is
 
         async def execute(self, statement):
             self.loads += 1
-            return FakeResult([make_row(chunk_id)])
+            raise AssertionError("BM25 should not fall back to database loading")
 
     session = FakeSession()
     retriever = HybridRetriever(
@@ -180,8 +178,8 @@ async def test_hybrid_retriever_falls_back_to_database_when_worker_bm25_cache_is
     )
     loaded_index = await retriever.ensure_bm25_index(session, "academic")
 
-    assert loaded_index.search("휴학 신청", top_n=1)[0].chunk_id == chunk_id
-    assert session.loads == 1
+    assert loaded_index.search("휴학 신청", top_n=1) == []
+    assert session.loads == 0
     assert list(tmp_path.glob("*.pkl")) == []
 
 
@@ -226,25 +224,39 @@ async def test_hybrid_retriever_loads_worker_bm25_file_cache(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_retrieve_uses_bm25_index_snapshot_from_requested_category():
-    class CategorySession:
-        def __init__(self):
-            self.watermark = datetime(2026, 5, 1, tzinfo=UTC)
-            self.loads = []
-
-        async def scalar(self, statement):
-            return self.watermark
-
-        async def execute(self, statement):
-            category = statement.compile().params.get("category_1")
-            self.loads.append(category)
-            content = "휴학 신청은 포털에서 진행합니다." if category == "academic" else "장학금 안내입니다."
-            return FakeResult([make_row(uuid4(), content=content, category=category)])
+async def test_retrieve_uses_bm25_index_snapshot_from_requested_category(tmp_path: Path):
+    watermark = datetime(2026, 5, 1, tzinfo=UTC)
+    academic = make_result("휴학 신청은 포털에서 진행합니다.", category="academic")
+    scholarship = make_result("장학금 안내입니다.", category="scholarship")
 
     class RebuildingRetriever(HybridRetriever):
         async def search_chroma(self, session, question, category, semantic_top_n):
             await self.ensure_bm25_index(session, "scholarship")
             return []
+
+    class CategorySession:
+        async def scalar(self, statement):
+            return watermark
+
+    academic_path = tmp_path / "bm25-b8a98203ec9d769d.pkl"
+    scholarship_path = tmp_path / "bm25-f552935eea2a6d76.pkl"
+    for cache_path, category, result in [
+        (academic_path, "academic", academic),
+        (scholarship_path, "scholarship", scholarship),
+    ]:
+        worker_bm25 = BM25Index([result])
+        with cache_path.open("wb") as cache_file:
+            pickle.dump(
+                {
+                    "version": 1,
+                    "watermark": watermark,
+                    "category": category,
+                    "records": [result.model_dump(mode="json")],
+                    "corpus": worker_bm25.corpus,
+                    "index": worker_bm25.index,
+                },
+                cache_file,
+            )
 
     retriever = RebuildingRetriever(
         collection=FakeChromaCollection(),
@@ -252,6 +264,7 @@ async def test_retrieve_uses_bm25_index_snapshot_from_requested_category():
         semantic_weight=0.7,
         bm25_weight=0.3,
         final_top_k=6,
+        bm25_cache_dir=tmp_path,
     )
 
     results = await retriever.retrieve(
@@ -264,6 +277,124 @@ async def test_retrieve_uses_bm25_index_snapshot_from_requested_category():
 
     assert results[0].category == "academic"
     assert "휴학" in results[0].content
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_degrades_to_semantic_only_when_bm25_is_missing(tmp_path: Path):
+    chunk_id = uuid4()
+
+    class SemanticOnlySession:
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            return FakeResult([make_row(chunk_id)])
+
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[chunk_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        SemanticOnlySession(),
+        question="휴학 신청",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert response.status.mode == "semantic_only"
+    assert response.status.degraded is True
+    assert response.status.semantic_available is True
+    assert response.status.bm25_available is False
+    assert response.results[0].chunk_id == chunk_id
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_degrades_to_keyword_only_when_chroma_fails(tmp_path: Path):
+    watermark = datetime(2026, 5, 1, tzinfo=UTC)
+    result = make_result("휴학 신청은 포털에서 진행합니다.")
+    cache_path = tmp_path / "bm25-b8a98203ec9d769d.pkl"
+    worker_bm25 = BM25Index([result])
+    with cache_path.open("wb") as cache_file:
+        pickle.dump(
+            {
+                "version": 1,
+                "watermark": watermark,
+                "category": "academic",
+                "records": [result.model_dump(mode="json")],
+                "corpus": worker_bm25.corpus,
+                "index": worker_bm25.index,
+            },
+            cache_file,
+        )
+
+    class FailingChromaCollection(FakeChromaCollection):
+        def query(self, **kwargs):
+            raise RuntimeError("chroma unavailable")
+
+    class KeywordSession:
+        async def scalar(self, statement):
+            return watermark
+
+    retriever = HybridRetriever(
+        collection=FailingChromaCollection(),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        KeywordSession(),
+        question="휴학 신청",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert response.status.mode == "keyword_only"
+    assert response.status.degraded is True
+    assert response.status.semantic_available is False
+    assert response.status.bm25_available is True
+    assert response.results[0].chunk_id == result.chunk_id
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_returns_empty_when_chroma_and_bm25_are_unavailable(tmp_path: Path):
+    class FailingChromaCollection(FakeChromaCollection):
+        def query(self, **kwargs):
+            raise RuntimeError("chroma unavailable")
+
+    class EmptySession:
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+    retriever = HybridRetriever(
+        collection=FailingChromaCollection(),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        EmptySession(),
+        question="휴학 신청",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert response.status.mode == "empty"
+    assert response.status.degraded is True
+    assert response.results == []
 
 
 @pytest.mark.asyncio

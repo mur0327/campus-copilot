@@ -52,6 +52,7 @@ export interface ChatResponsePayload {
   procedure_steps: string[];
   conflict_warning: ConflictWarning;
   freshness: string;
+  retrieval_status?: RetrievalStatusPayload;
 }
 
 export interface ChatSourcePayload {
@@ -67,6 +68,16 @@ export interface ChatMetadataPayload {
   procedure_steps?: string[];
   conflict_warning?: ConflictWarning;
   freshness?: string;
+  retrieval_status?: RetrievalStatusPayload;
+}
+
+export interface RetrievalStatusPayload {
+  mode: "hybrid" | "semantic_only" | "keyword_only" | "empty" | string;
+  degraded: boolean;
+  semantic_available: boolean;
+  bm25_available: boolean;
+  semantic_error?: string | null;
+  bm25_error?: string | null;
 }
 
 export interface ChatTokenPayload {
