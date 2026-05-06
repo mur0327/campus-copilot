@@ -1,4 +1,5 @@
 import os
+from datetime import UTC, datetime
 
 import pytest
 
@@ -7,19 +8,22 @@ os.environ.setdefault(
     "postgresql+asyncpg://campus:campus@localhost:5432/campus_copilot",
 )
 
-from tasks.contracts import CrawlTarget
+from tasks.contracts import CrawlTarget, DocumentProcessingStatus, ParsedChunk, ParsedDocument
 from tasks.crawl import (
     build_graduation_pdf_targets,
     discover_html_targets,
     discover_html_targets_with_failures,
     discover_pdf_targets,
+    execute_ingestion,
     extract_article_box_targets,
     extract_department_sites,
     extract_menu_targets,
     extract_pdf_years,
+    index_crawl_documents,
     is_honam_url,
     is_redirect_page,
 )
+from tasks.embed import EmbedSummary
 
 
 def test_extract_menu_targets_skips_data_link_and_dedupes(fixture_text):
@@ -672,3 +676,303 @@ async def test_discover_pdf_targets_uses_www_root_even_when_config_order_changes
 
 def test_is_redirect_page_detects_page_moved_title(fixture_text):
     assert is_redirect_page(fixture_text("page_moved.html")) is True
+
+
+@pytest.mark.asyncio
+async def test_index_crawl_documents_repeats_batches_and_accumulates_summary(monkeypatch):
+    calls: list[str] = []
+
+    class FakeCollection:
+        pass
+
+    class FakeEmbedder:
+        pass
+
+    async def fake_embed_pending_chunks(*, connection, collection, embedder, batch_size):
+        calls.append("embed")
+        assert collection.__class__ is FakeCollection
+        assert embedder.__class__ is FakeEmbedder
+        assert batch_size == 64
+        if len(calls) == 1:
+            return EmbedSummary(chunks_seen=64, chunks_indexed=64, chunks_skipped=0, errors=[])
+        if len(calls) == 2:
+            return EmbedSummary(
+                chunks_seen=6,
+                chunks_indexed=5,
+                chunks_skipped=1,
+                errors=["skipped malformed row"],
+            )
+        return EmbedSummary(chunks_seen=0, chunks_indexed=0, chunks_skipped=0, errors=[])
+
+    async def fake_prune_orphan_vectors(connection, collection):
+        calls.append("prune")
+        return 3
+
+    monkeypatch.setattr("tasks.crawl.create_chroma_collection", lambda **kwargs: FakeCollection())
+    monkeypatch.setattr("tasks.crawl.create_embedder", lambda model_name: FakeEmbedder())
+    monkeypatch.setattr("tasks.crawl.embed_pending_chunks", fake_embed_pending_chunks)
+    monkeypatch.setattr("tasks.crawl.prune_orphan_vectors", fake_prune_orphan_vectors)
+
+    summary = await index_crawl_documents(connection=object())
+
+    assert calls == ["embed", "embed", "embed", "prune"]
+    assert summary.chunks_seen == 70
+    assert summary.chunks_indexed == 69
+    assert summary.chunks_skipped == 1
+    assert summary.vectors_pruned == 3
+    assert summary.errors == ["skipped malformed row"]
+
+
+@pytest.mark.asyncio
+async def test_execute_ingestion_runs_indexing_after_persistence_before_finish(monkeypatch):
+    target = CrawlTarget(
+        url="https://example.com/changed",
+        menu_path="공지",
+        source_type="html",
+    )
+    events: list[str] = []
+
+    class FakeConnection:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakePool:
+        def acquire(self):
+            return FakeConnection()
+
+        async def close(self):
+            events.append("close")
+
+    async def fake_create_pool():
+        return FakePool()
+
+    async def fake_create_crawl_job(connection):
+        return "job-1"
+
+    async def fake_load_existing_document_states(connection, urls):
+        return {}
+
+    def fake_fetch_html(url):
+        return "<html><body><article class='articleBox'><p>changed</p></article></body></html>"
+
+    async def fake_parse_html(target, html):
+        return ParsedDocument(
+            url=target.url,
+            title="Example",
+            menu_path=target.menu_path,
+            category=None,
+            source_type=target.source_type,
+            content_hash="hash-1",
+            crawled_at=datetime(2026, 5, 6, tzinfo=UTC),
+            chunks=[],
+        )
+
+    async def fake_persist_document(connection, document):
+        events.append("persist")
+        return "document-1"
+
+    async def fake_index_crawl_documents(connection):
+        events.append("index")
+
+    async def fake_finish_crawl_job(*args, **kwargs):
+        events.append("finish")
+
+    monkeypatch.setattr("tasks.crawl.create_pool", fake_create_pool)
+    monkeypatch.setattr("tasks.crawl.create_crawl_job", fake_create_crawl_job)
+    monkeypatch.setattr(
+        "tasks.crawl.load_existing_document_states",
+        fake_load_existing_document_states,
+    )
+    monkeypatch.setattr("tasks.crawl.fetch_html", fake_fetch_html)
+    monkeypatch.setattr("tasks.crawl.parse_html", fake_parse_html)
+    monkeypatch.setattr("tasks.crawl.persist_document", fake_persist_document)
+    monkeypatch.setattr("tasks.crawl.index_crawl_documents", fake_index_crawl_documents)
+    monkeypatch.setattr("tasks.crawl.finish_crawl_job", fake_finish_crawl_job)
+
+    stats = await execute_ingestion([target], [])
+
+    assert stats.status_counts == {DocumentProcessingStatus.CHANGED: 1}
+    assert events == ["persist", "index", "finish", "close"]
+
+
+@pytest.mark.asyncio
+async def test_execute_ingestion_runs_indexing_when_all_documents_are_skipped(monkeypatch):
+    target = CrawlTarget(
+        url="https://example.com/unchanged",
+        menu_path="공지",
+        source_type="html",
+    )
+    article_html = '<article class="articleBox"><p>same content</p></article>'
+    events: list[str] = []
+
+    class ExistingState:
+        content_hash = "same-hash"
+        chunk_count = 1
+
+    class FakeConnection:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakePool:
+        def acquire(self):
+            return FakeConnection()
+
+        async def close(self):
+            events.append("close")
+
+    async def fake_create_pool():
+        return FakePool()
+
+    async def fake_create_crawl_job(connection):
+        return "job-1"
+
+    async def fake_load_existing_document_states(connection, urls):
+        assert urls == [target.url]
+        return {target.url: ExistingState()}
+
+    def fake_build_content_hash(raw_content, target=None):
+        assert raw_content == article_html
+        return "same-hash"
+
+    def fake_fetch_html(url):
+        assert url == target.url
+        return f"<html><body>{article_html}</body></html>"
+
+    async def fake_parse_html(*args, **kwargs):
+        raise AssertionError("unchanged document should skip parse_html")
+
+    async def fake_persist_document(connection, document):
+        raise AssertionError("unchanged document should not be persisted")
+
+    async def fake_index_crawl_documents(connection):
+        events.append("index")
+
+    async def fake_finish_crawl_job(*args, **kwargs):
+        events.append("finish")
+
+    monkeypatch.setattr("tasks.crawl.create_pool", fake_create_pool)
+    monkeypatch.setattr("tasks.crawl.create_crawl_job", fake_create_crawl_job)
+    monkeypatch.setattr(
+        "tasks.crawl.load_existing_document_states",
+        fake_load_existing_document_states,
+    )
+    monkeypatch.setattr("tasks.crawl.build_content_hash", fake_build_content_hash)
+    monkeypatch.setattr("tasks.crawl.fetch_html", fake_fetch_html)
+    monkeypatch.setattr("tasks.crawl.parse_html", fake_parse_html)
+    monkeypatch.setattr("tasks.crawl.persist_document", fake_persist_document)
+    monkeypatch.setattr("tasks.crawl.index_crawl_documents", fake_index_crawl_documents)
+    monkeypatch.setattr("tasks.crawl.finish_crawl_job", fake_finish_crawl_job)
+
+    stats = await execute_ingestion([target], [])
+
+    assert stats.status_counts == {DocumentProcessingStatus.SKIPPED: 1}
+    assert events == ["index", "finish", "close"]
+
+
+@pytest.mark.asyncio
+async def test_execute_ingestion_appends_indexing_failure_without_failing_job(monkeypatch):
+    target = CrawlTarget(
+        url="https://example.com/changed",
+        menu_path="공지",
+        source_type="html",
+    )
+    recorded: dict[str, object] = {}
+
+    class FakeConnection:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakePool:
+        def acquire(self):
+            return FakeConnection()
+
+        async def close(self):
+            pass
+
+    async def fake_create_pool():
+        return FakePool()
+
+    async def fake_create_crawl_job(connection):
+        return "job-1"
+
+    async def fake_load_existing_document_states(connection, urls):
+        return {}
+
+    def fake_fetch_html(url):
+        return "<html><body><article class='articleBox'><p>changed</p></article></body></html>"
+
+    async def fake_parse_html(target, html):
+        return ParsedDocument(
+            url=target.url,
+            title="Example",
+            menu_path=target.menu_path,
+            category=None,
+            source_type=target.source_type,
+            content_hash="hash-1",
+            crawled_at=datetime(2026, 5, 6, tzinfo=UTC),
+            chunks=[ParsedChunk(chunk_index=0, content="changed", chunk_type="text")],
+        )
+
+    async def fake_persist_document(connection, document):
+        return "document-1"
+
+    async def fake_index_crawl_documents(connection):
+        raise RuntimeError("chroma unavailable")
+
+    async def fake_finish_crawl_job(
+        connection,
+        crawl_job_id,
+        *,
+        status,
+        pages_crawled,
+        pages_changed,
+        error,
+    ):
+        recorded["finished"] = {
+            "status": status,
+            "pages_crawled": pages_crawled,
+            "pages_changed": pages_changed,
+            "error": error,
+        }
+
+    monkeypatch.setattr("tasks.crawl.create_pool", fake_create_pool)
+    monkeypatch.setattr("tasks.crawl.create_crawl_job", fake_create_crawl_job)
+    monkeypatch.setattr(
+        "tasks.crawl.load_existing_document_states",
+        fake_load_existing_document_states,
+    )
+    monkeypatch.setattr("tasks.crawl.fetch_html", fake_fetch_html)
+    monkeypatch.setattr("tasks.crawl.parse_html", fake_parse_html)
+    monkeypatch.setattr("tasks.crawl.persist_document", fake_persist_document)
+    monkeypatch.setattr("tasks.crawl.index_crawl_documents", fake_index_crawl_documents)
+    monkeypatch.setattr("tasks.crawl.finish_crawl_job", fake_finish_crawl_job)
+
+    stats = await execute_ingestion(
+        [target],
+        [],
+        initial_failures=["https://timeout.honam.ac.kr/main: simulated timeout"],
+    )
+
+    assert stats.pages_changed == 1
+    assert stats.failures == [
+        "https://timeout.honam.ac.kr/main: simulated timeout",
+        "indexing: chroma unavailable",
+    ]
+    assert recorded["finished"] == {
+        "status": "completed",
+        "pages_crawled": 1,
+        "pages_changed": 1,
+        "error": (
+            "https://timeout.honam.ac.kr/main: simulated timeout\n"
+            "indexing: chroma unavailable"
+        ),
+    }

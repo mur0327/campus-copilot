@@ -22,6 +22,13 @@ from tasks.contracts import (
     DocumentProcessingStatus,
     ParsedDocument,
 )
+from tasks.embed import (
+    EmbedSummary,
+    create_chroma_collection,
+    create_embedder,
+    embed_pending_chunks,
+    prune_orphan_vectors,
+)
 from tasks.parse import build_content_hash, extract_article_html, parse_html, parse_pdf
 from tasks.storage import (
     ExistingDocumentState,
@@ -522,6 +529,51 @@ async def fetch_and_maybe_parse_documents(
     return await asyncio.gather(*(process(target) for target in targets))
 
 
+async def index_crawl_documents(connection):
+    collection = create_chroma_collection(
+        host=settings.chroma_host,
+        port=settings.chroma_port,
+        collection_name=settings.chroma_collection,
+    )
+    embedder = create_embedder(settings.embedding_model)
+    summary = EmbedSummary(errors=[])
+    while True:
+        batch_summary = await embed_pending_chunks(
+            connection=connection,
+            collection=collection,
+            embedder=embedder,
+            batch_size=settings.index_batch_size,
+        )
+        if batch_summary.chunks_seen == 0:
+            break
+
+        summary.chunks_seen += batch_summary.chunks_seen
+        summary.chunks_indexed += batch_summary.chunks_indexed
+        summary.chunks_skipped += batch_summary.chunks_skipped
+        if batch_summary.errors:
+            summary.errors = summary.errors or []
+            summary.errors.extend(batch_summary.errors)
+
+        if batch_summary.chunks_indexed == 0:
+            if not batch_summary.errors:
+                summary.errors = summary.errors or []
+                summary.errors.append(
+                    "embedding batch made no progress while pending chunks remained"
+                )
+            break
+
+    summary.vectors_pruned = await prune_orphan_vectors(connection, collection)
+    logger.info(
+        "crawl indexing completed: chunks_seen=%s chunks_indexed=%s "
+        "chunks_skipped=%s vectors_pruned=%s",
+        summary.chunks_seen,
+        summary.chunks_indexed,
+        summary.chunks_skipped,
+        summary.vectors_pruned,
+    )
+    return summary
+
+
 async def execute_ingestion(
     html_targets: list[CrawlTarget],
     pdf_targets: list[CrawlTarget],
@@ -572,6 +624,16 @@ async def execute_ingestion(
                 for document in parsed_documents:
                     await persist_document(connection, document)
                     pages_changed += 1
+
+                try:
+                    index_summary = await index_crawl_documents(connection)
+                    if index_summary and index_summary.errors:
+                        failures.extend(
+                            f"indexing: {error}" for error in index_summary.errors
+                        )
+                except Exception as exc:
+                    failures.append(f"indexing: {exc}")
+                    logger.exception("crawl indexing failed")
 
                 await finish_crawl_job(
                     connection,
