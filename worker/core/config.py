@@ -34,6 +34,11 @@ class WorkerSettings(BaseSettings):
     pdf_hybrid_backend: str | None = None
     pdf_hybrid_mode: str = "auto"
     pdf_hybrid_url: str = "http://localhost:5002"
+    chroma_host: str = "localhost"
+    chroma_port: int = 8001
+    chroma_collection: str = "campus_copilot_chunks"
+    embedding_model: str = "jhgan/ko-sroberta-multitask"
+    index_batch_size: int = 64
 
     @field_validator("crawl_target_urls", mode="before")
     @classmethod

@@ -5,6 +5,8 @@ class Source(BaseModel):
     title: str
     url: str
     crawled_at: str
+    freshness: str | None = None
+    chunk_id: str | None = None
 
 
 class ConflictWarning(BaseModel):
@@ -25,3 +27,17 @@ class ChatResponse(BaseModel):
         default_factory=lambda: ConflictWarning(exists=False)
     )
     freshness: str = "recent"
+
+
+class ChatMetadataEvent(BaseModel):
+    sources: list[Source]
+    freshness: str
+    conflict_warning: ConflictWarning
+
+
+class ChatTokenEvent(BaseModel):
+    text: str
+
+
+class ChatProcedureStepsEvent(BaseModel):
+    procedure_steps: list[str]

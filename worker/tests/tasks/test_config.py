@@ -27,6 +27,9 @@ def test_worker_settings_phase_two_defaults(monkeypatch):
     assert settings.crawl_ingestion_concurrency == 6
     assert settings.crawl_impersonate == "chrome120"
     assert settings.crawl4ai_base_directory == "/tmp/crawl4ai"
+    assert settings.embedding_model == "jhgan/ko-sroberta-multitask"
+    assert settings.chroma_collection == "campus_copilot_chunks"
+    assert settings.index_batch_size == 64
 
 
 def test_worker_settings_ignores_empty_pdf_hybrid_backend(monkeypatch):

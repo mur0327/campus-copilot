@@ -14,13 +14,24 @@ class Settings(BaseSettings):
 
     chroma_host: str = "localhost"
     chroma_port: int = 8001
+    chroma_collection: str = "campus_copilot_chunks"
 
     redis_url: str = "redis://localhost:6379/0"
 
-    llm_provider: str = "ollama"
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "gemma3:12b"
+    retriever_semantic_top_n: int = 20
+    retriever_bm25_top_n: int = 20
+    retriever_final_top_k: int = 6
+    retriever_semantic_weight: float = 0.7
+    retriever_bm25_weight: float = 0.3
+
+    freshness_stale_days: int = 180
+    chat_cache_ttl_seconds: int = 3600
+
+    llm_provider: str = "llama_cpp"
+    llama_cpp_base_url: str = "http://localhost:8080"
+    llama_cpp_model: str = "local"
     gemini_api_key: str = ""
+    gemini_model: str = ""
 
     crawl_target_url: str = "https://www.honam.ac.kr"
     crawl_content_selector: str = "article.articleBox"
