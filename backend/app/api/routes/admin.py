@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.db import get_db
 from app.models.document import ConflictPair, CrawlJob, Document, DocumentChunk, QueryLog
 from app.schemas.admin import AdminConflictResponse, AdminLogResponse, AdminStatusResponse
@@ -46,7 +47,24 @@ async def status(session: AsyncSession = Depends(get_db)) -> AdminStatusResponse
 
 @router.post("/crawl")
 async def trigger_crawl() -> dict[str, str]:
-    return {"status": "triggered"}
+    return await trigger_worker_crawl()
+
+
+async def trigger_worker_crawl() -> dict[str, str]:
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.post(settings.worker_crawl_url)
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="worker crawl trigger failed") from exc
+
+    payload = response.json()
+    status = payload.get("status")
+    if status not in {"triggered", "already_running"}:
+        raise HTTPException(status_code=502, detail="worker crawl trigger returned invalid status")
+    return {"status": status}
 
 
 @router.get("/conflicts", response_model=list[AdminConflictResponse])

@@ -9,6 +9,7 @@ from httpx import ASGITransport, AsyncClient
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://campus:campus@localhost/db")
 
+from app.api.routes import admin as admin_route  # noqa: E402
 from app.core.db import get_db  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -65,12 +66,35 @@ def override_session(fake_session: object) -> None:
 
 
 @pytest.mark.asyncio
-async def test_admin_crawl_trigger_returns_triggered_status():
+async def test_admin_crawl_trigger_delegates_to_worker(monkeypatch):
+    recorded: dict[str, object] = {}
+
+    async def fake_trigger_worker_crawl():
+        recorded["called"] = True
+        return {"status": "triggered"}
+
+    monkeypatch.setattr(admin_route, "trigger_worker_crawl", fake_trigger_worker_crawl)
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post("/api/v1/admin/crawl")
 
     assert response.status_code == 200
-    assert response.json()["status"] == "triggered"
+    assert response.json() == {"status": "triggered"}
+    assert recorded["called"] is True
+
+
+@pytest.mark.asyncio
+async def test_admin_crawl_trigger_exposes_already_running(monkeypatch):
+    async def fake_trigger_worker_crawl():
+        return {"status": "already_running"}
+
+    monkeypatch.setattr(admin_route, "trigger_worker_crawl", fake_trigger_worker_crawl)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/api/v1/admin/crawl")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "already_running"}
 
 
 @pytest.mark.asyncio

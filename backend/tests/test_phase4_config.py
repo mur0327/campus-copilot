@@ -18,6 +18,7 @@ def test_phase_four_backend_defaults(monkeypatch):
     assert settings.retriever_bm25_weight == 0.3
     assert settings.freshness_stale_days == 180
     assert settings.chat_cache_ttl_seconds == 3600
+    assert settings.worker_crawl_url == "http://worker:8088/internal/crawl"
 
 
 def test_gemini_provider_requires_model_and_key(monkeypatch):

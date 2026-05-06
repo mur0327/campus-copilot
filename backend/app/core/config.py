@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     crawl_content_selector: str = "article.articleBox"
     crawl_menu_selector: str = "ul#mainMenu"
     crawl_schedule: str = "0 3 * * *"
+    worker_crawl_url: str = "http://worker:8088/internal/crawl"
 
 
 settings = Settings()

@@ -17,4 +17,6 @@ RUN uv sync --no-dev
 
 COPY . .
 
+EXPOSE 8088
+
 CMD ["python", "-m", "tasks.scheduler"]

@@ -39,6 +39,8 @@ class WorkerSettings(BaseSettings):
     chroma_collection: str = "campus_copilot_chunks"
     embedding_model: str = "jhgan/ko-sroberta-multitask"
     index_batch_size: int = 64
+    trigger_host: str = "0.0.0.0"
+    trigger_port: int = 8088
 
     @field_validator("crawl_target_urls", mode="before")
     @classmethod
