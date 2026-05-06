@@ -1,9 +1,20 @@
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, categories, chat
+from app.core.db import warm_database_connection
 
-app = FastAPI(title="Campus Copilot API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    await warm_database_connection()
+    yield
+
+
+app = FastAPI(title="Campus Copilot API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
