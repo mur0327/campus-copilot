@@ -1,6 +1,9 @@
+import json
 import os
+import uuid
 from datetime import UTC, datetime
 
+import asyncpg
 import pytest
 
 os.environ.setdefault(
@@ -11,41 +14,7 @@ os.environ.setdefault(
 from core.db import normalize_asyncpg_dsn
 from tasks import storage
 from tasks.contracts import ParsedChunk, ParsedDocument
-from tasks.storage import build_chunk_rows, diff_documents_by_hash
-
-
-def test_diff_documents_by_hash_splits_changed_and_unchanged():
-    unchanged = ParsedDocument(
-        url="https://example.com/a",
-        title="A",
-        menu_path="입학",
-        category=None,
-        source_type="html",
-        content_hash="same",
-        crawled_at=datetime(2026, 4, 19, tzinfo=UTC),
-        chunks=[],
-    )
-    changed = ParsedDocument(
-        url="https://example.com/b",
-        title="B",
-        menu_path="장학",
-        category=None,
-        source_type="html",
-        content_hash="new-hash",
-        crawled_at=datetime(2026, 4, 19, tzinfo=UTC),
-        chunks=[],
-    )
-
-    changed_docs, unchanged_docs = diff_documents_by_hash(
-        documents=[unchanged, changed],
-        existing_hashes={
-            "https://example.com/a": "same",
-            "https://example.com/b": "old-hash",
-        },
-    )
-
-    assert [document.url for document in changed_docs] == ["https://example.com/b"]
-    assert [document.url for document in unchanged_docs] == ["https://example.com/a"]
+from tasks.storage import build_chunk_rows
 
 
 def test_build_chunk_rows_preserves_order():
@@ -68,6 +37,44 @@ def test_build_chunk_rows_preserves_order():
     assert rows[0]["chunk_index"] == 0
     assert rows[1]["chunk_type"] == "table"
     assert rows[1]["meta"]["page"] == 1
+
+
+@pytest.mark.asyncio
+async def test_replace_document_chunks_serializes_meta_for_asyncpg():
+    document = ParsedDocument(
+        url="https://example.com",
+        title="Example",
+        menu_path="입학",
+        category=None,
+        source_type="html",
+        content_hash="hash",
+        crawled_at=datetime(2026, 4, 19, tzinfo=UTC),
+        chunks=[
+            ParsedChunk(
+                chunk_index=0,
+                content="first",
+                chunk_type="text",
+                meta={"start_index": 0, "header_1": "안내"},
+            )
+        ],
+    )
+    executed: list[tuple[str, object]] = []
+    inserted_args: list[tuple] = []
+
+    class Connection:
+        async def execute(self, query, *args):
+            executed.append((query, args))
+
+        async def executemany(self, query, args):
+            inserted_args.extend(args)
+
+    await storage.replace_document_chunks(Connection(), "document-1", document)
+
+    assert len(executed) == 1
+    assert "DELETE FROM document_chunks" in executed[0][0]
+    assert len(inserted_args) == 1
+    assert isinstance(inserted_args[0][5], str)
+    assert json.loads(inserted_args[0][5]) == {"start_index": 0, "header_1": "안내"}
 
 
 @pytest.mark.asyncio
@@ -128,3 +135,69 @@ def test_normalize_asyncpg_dsn_only_rewrites_scheme():
     assert normalize_asyncpg_dsn(dsn) == (
         "postgresql://user:pa+asyncpgss@localhost:5432/db?application_name=app+asyncpg"
     )
+
+
+@pytest.mark.skipif(
+    os.getenv("RUN_DB_STORAGE") != "1",
+    reason="storage DB regression is opt-in; set RUN_DB_STORAGE=1",
+)
+@pytest.mark.asyncio
+async def test_asyncpg_jsonb_requires_serialized_meta():
+    connection = await asyncpg.connect(
+        normalize_asyncpg_dsn(os.environ["DATABASE_URL"]),
+        timeout=5,
+    )
+    try:
+        await connection.execute(
+            """
+            CREATE TEMP TABLE document_chunks_jsonb_probe (
+                id uuid,
+                document_id uuid,
+                chunk_index integer,
+                content text,
+                chunk_type text,
+                meta jsonb,
+                created_at timestamptz
+            )
+            """
+        )
+
+        with pytest.raises(asyncpg.DataError):
+            await connection.execute(
+                """
+                INSERT INTO document_chunks_jsonb_probe (
+                    id, document_id, chunk_index, content, chunk_type, meta, created_at
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                """,
+                uuid.uuid4(),
+                uuid.uuid4(),
+                0,
+                "content",
+                "text",
+                {"header_1": "안내", "start_index": 0},
+                datetime.now(UTC),
+            )
+
+        await connection.execute(
+            """
+            INSERT INTO document_chunks_jsonb_probe (
+                id, document_id, chunk_index, content, chunk_type, meta, created_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            """,
+            uuid.uuid4(),
+            uuid.uuid4(),
+            0,
+            "content",
+            "text",
+            json.dumps({"header_1": "안내", "start_index": 0}, ensure_ascii=False),
+            datetime.now(UTC),
+        )
+        stored = await connection.fetchval(
+            "SELECT meta->>'header_1' FROM document_chunks_jsonb_probe"
+        )
+
+        assert stored == "안내"
+    finally:
+        await connection.close()

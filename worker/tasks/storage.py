@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 import asyncpg
@@ -9,18 +11,10 @@ import asyncpg
 from tasks.contracts import ParsedDocument
 
 
-def diff_documents_by_hash(
-    documents: Sequence[ParsedDocument],
-    existing_hashes: dict[str, str],
-) -> tuple[list[ParsedDocument], list[ParsedDocument]]:
-    changed: list[ParsedDocument] = []
-    unchanged: list[ParsedDocument] = []
-    for document in documents:
-        if existing_hashes.get(document.url) == document.content_hash:
-            unchanged.append(document)
-        else:
-            changed.append(document)
-    return changed, unchanged
+@dataclass(slots=True)
+class ExistingDocumentState:
+    content_hash: str | None
+    chunk_count: int
 
 
 def build_chunk_rows(document_id: str, document: ParsedDocument) -> list[dict]:
@@ -51,17 +45,29 @@ async def create_crawl_job(connection: asyncpg.Connection) -> str:
     return crawl_job_id
 
 
-async def load_existing_hashes(
+async def load_existing_document_states(
     connection: asyncpg.Connection,
     urls: Sequence[str],
-) -> dict[str, str]:
+) -> dict[str, ExistingDocumentState]:
     if not urls:
         return {}
     rows = await connection.fetch(
-        "SELECT url, content_hash FROM documents WHERE url = ANY($1::text[])",
+        """
+        SELECT d.url, d.content_hash, count(c.id)::int AS chunk_count
+        FROM documents d
+        LEFT JOIN document_chunks c ON c.document_id = d.id
+        WHERE d.url = ANY($1::text[])
+        GROUP BY d.id
+        """,
         list(urls),
     )
-    return {row["url"]: row["content_hash"] for row in rows}
+    return {
+        row["url"]: ExistingDocumentState(
+            content_hash=row["content_hash"],
+            chunk_count=row["chunk_count"],
+        )
+        for row in rows
+    }
 
 
 async def upsert_document(connection: asyncpg.Connection, document: ParsedDocument) -> str:
@@ -115,7 +121,7 @@ async def replace_document_chunks(
                 row["chunk_index"],
                 row["content"],
                 row["chunk_type"],
-                row["meta"],
+                json.dumps(row["meta"], ensure_ascii=False),
                 datetime.now(UTC),
             )
             for row in rows
