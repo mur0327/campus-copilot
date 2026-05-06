@@ -98,11 +98,30 @@ async def upsert_document(connection: asyncpg.Connection, document: ParsedDocume
     )
 
 
+async def invalidate_conflicts_for_document(
+    connection: asyncpg.Connection,
+    document_id: str,
+) -> None:
+    await connection.execute(
+        """
+        DELETE FROM conflict_pairs
+        WHERE chunk_a_id IN (
+            SELECT id FROM document_chunks WHERE document_id = $1
+        )
+        OR chunk_b_id IN (
+            SELECT id FROM document_chunks WHERE document_id = $1
+        )
+        """,
+        document_id,
+    )
+
+
 async def replace_document_chunks(
     connection: asyncpg.Connection,
     document_id: str,
     document: ParsedDocument,
 ) -> None:
+    await invalidate_conflicts_for_document(connection, document_id)
     await connection.execute("DELETE FROM document_chunks WHERE document_id = $1", document_id)
     rows = build_chunk_rows(document_id=document_id, document=document)
     if not rows:

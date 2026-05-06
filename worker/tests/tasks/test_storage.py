@@ -70,8 +70,9 @@ async def test_replace_document_chunks_serializes_meta_for_asyncpg():
 
     await storage.replace_document_chunks(Connection(), "document-1", document)
 
-    assert len(executed) == 1
-    assert "DELETE FROM document_chunks" in executed[0][0]
+    assert len(executed) == 2
+    assert "DELETE FROM conflict_pairs" in executed[0][0]
+    assert "DELETE FROM document_chunks" in executed[1][0]
     assert len(inserted_args) == 1
     assert isinstance(inserted_args[0][5], str)
     assert json.loads(inserted_args[0][5]) == {"start_index": 0, "header_1": "안내"}
