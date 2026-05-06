@@ -83,6 +83,9 @@ describe("AdminPage", () => {
                 status: "running",
                 pages_crawled: 42,
                 pages_changed: 7,
+                total_pages: 50,
+                processed_pages: 42,
+                current_stage: "문서 수집 중",
                 conflicts_found: 1,
                 started_at: "2026-05-06T13:06:13Z",
                 completed_at: null,
@@ -104,6 +107,12 @@ describe("AdminPage", () => {
 
     expect(await screen.findByText("크롤링 진행 중")).toBeInTheDocument();
     expect(screen.getByText("42건 수집 · 7건 변경 · 1건 충돌")).toBeInTheDocument();
+    expect(screen.getByText("문서 수집 중")).toBeInTheDocument();
+    expect(screen.getByText("42/50 페이지 · 84%")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "크롤링 진행률" })).toHaveAttribute(
+      "aria-valuenow",
+      "84",
+    );
   });
 
   it("disables crawl while pending and shows success after trigger", async () => {

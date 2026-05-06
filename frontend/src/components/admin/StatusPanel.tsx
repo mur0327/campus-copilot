@@ -1,4 +1,4 @@
-import { Database } from "lucide-react";
+import { Database, Loader2 } from "lucide-react";
 
 import type { AdminStatus } from "../../api/admin";
 
@@ -33,12 +33,21 @@ function crawlStatusLabel(status: string | undefined) {
   }
 }
 
+function progressPercent(processed: number, total: number) {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((processed / total) * 100)));
+}
+
 export default function StatusPanel({
   status,
   isLoading,
   isError,
 }: StatusPanelProps) {
   const latestJob = status?.latest_crawl_job;
+  const isRunning = latestJob?.status === "running";
+  const processedPages = latestJob?.processed_pages ?? 0;
+  const totalPages = latestJob?.total_pages ?? 0;
+  const percent = progressPercent(processedPages, totalPages);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm">
@@ -70,8 +79,9 @@ export default function StatusPanel({
           </div>
           <div>
             <dt className="text-sm text-slate-500">현재 크롤링</dt>
-            <dd className="mt-2 text-sm font-semibold text-slate-800">
-              {isLoading ? "불러오는 중" : crawlStatusLabel(latestJob?.status)}
+            <dd className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+              {isRunning ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin text-sky-700" /> : null}
+              <span>{isLoading ? "불러오는 중" : crawlStatusLabel(latestJob?.status)}</span>
             </dd>
           </div>
           <div>
@@ -81,6 +91,26 @@ export default function StatusPanel({
                 ? "불러오는 중"
                 : `${latestJob?.pages_crawled ?? 0}건 수집 · ${latestJob?.pages_changed ?? 0}건 변경 · ${latestJob?.conflicts_found ?? 0}건 충돌`}
             </dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-sm text-slate-500">진행 단계</dt>
+            <dd className="mt-2 text-sm font-medium text-slate-800">
+              {isLoading ? "불러오는 중" : (latestJob?.current_stage ?? "대기 중")}
+            </dd>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+              <div
+                aria-label="크롤링 진행률"
+                aria-valuemax={100}
+                aria-valuemin={0}
+                aria-valuenow={percent}
+                className="h-full rounded-full bg-sky-700 transition-all"
+                role="progressbar"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs font-medium text-slate-500">
+              {totalPages > 0 ? `${processedPages}/${totalPages} 페이지 · ${percent}%` : "대상 수 확인 중"}
+            </p>
           </div>
         </dl>
       )}

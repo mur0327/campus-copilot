@@ -103,6 +103,9 @@ class CrawlJob(Base):
     status: Mapped[str] = mapped_column(Text, default="running", nullable=False)
     pages_crawled: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     pages_changed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_pages: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    processed_pages: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    current_stage: Mapped[str | None] = mapped_column(Text)
     conflicts_found: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

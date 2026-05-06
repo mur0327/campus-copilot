@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
@@ -37,6 +37,7 @@ from tasks.storage import (
     finish_crawl_job,
     load_existing_document_states,
     persist_document,
+    update_crawl_job_progress,
 )
 
 logger = logging.getLogger(__name__)
@@ -517,17 +518,26 @@ async def fetch_and_maybe_parse_document(
 async def fetch_and_maybe_parse_documents(
     targets: list[CrawlTarget],
     existing_states: dict[str, ExistingDocumentState],
+    on_result: Callable[[DocumentProcessingResult], Awaitable[None]] | None = None,
 ) -> list[DocumentProcessingResult]:
     semaphore = asyncio.Semaphore(settings.crawl_ingestion_concurrency)
 
-    async def process(target: CrawlTarget) -> DocumentProcessingResult:
+    async def process(index: int, target: CrawlTarget) -> tuple[int, DocumentProcessingResult]:
         async with semaphore:
-            return await fetch_and_maybe_parse_document(
+            result = await fetch_and_maybe_parse_document(
                 target=target,
                 existing_state=existing_states.get(target.url),
             )
+            if on_result is not None:
+                await on_result(result)
+            return index, result
 
-    return await asyncio.gather(*(process(target) for target in targets))
+    results: list[DocumentProcessingResult | None] = [None] * len(targets)
+    tasks = [asyncio.create_task(process(index, target)) for index, target in enumerate(targets)]
+    for task in asyncio.as_completed(tasks):
+        index, result = await task
+        results[index] = result
+    return [result for result in results if result is not None]
 
 
 async def index_crawl_documents(connection):
@@ -594,13 +604,42 @@ async def execute_ingestion(
         async with pool.acquire() as connection:
             crawl_job_id = await create_crawl_job(connection)
             try:
+                total_pages = len(targets)
+                processed_pages = 0
+                pages_crawled = 0
+                pages_changed = 0
+
+                async def update_progress(current_stage: str) -> None:
+                    try:
+                        await update_crawl_job_progress(
+                            connection,
+                            crawl_job_id,
+                            current_stage=current_stage,
+                            total_pages=total_pages,
+                            processed_pages=processed_pages,
+                            pages_crawled=pages_crawled,
+                            pages_changed=pages_changed,
+                        )
+                    except AttributeError:
+                        logger.debug("crawl progress update skipped by connection fake")
+
+                await update_progress("대상 확인 중")
                 existing_states = await load_existing_document_states(
                     connection,
                     [target.url for target in targets],
                 )
+
+                async def record_processing_progress(result: DocumentProcessingResult) -> None:
+                    nonlocal processed_pages, pages_crawled
+                    processed_pages += 1
+                    if result.crawled:
+                        pages_crawled += 1
+                    await update_progress("문서 수집 중")
+
                 processing_results = await fetch_and_maybe_parse_documents(
                     targets,
                     existing_states,
+                    on_result=record_processing_progress,
                 )
 
                 parsed_documents = [
@@ -626,8 +665,10 @@ async def execute_ingestion(
                 status_counts = {status: count for status, count in status_counts.items() if count}
 
                 for document in parsed_documents:
+                    await update_progress("문서 저장 중")
                     await persist_document(connection, document)
                     pages_changed += 1
+                await update_progress("색인 생성 중")
 
                 try:
                     index_summary = await index_crawl_documents(connection)

@@ -11,6 +11,9 @@ export interface AdminCrawlJob {
   status: string;
   pages_crawled: number;
   pages_changed: number;
+  total_pages: number;
+  processed_pages: number;
+  current_stage: string | null;
   conflicts_found: number;
   started_at: string;
   completed_at: string | null;

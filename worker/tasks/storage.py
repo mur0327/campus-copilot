@@ -35,14 +35,44 @@ async def create_crawl_job(connection: asyncpg.Connection) -> str:
     await connection.execute(
         """
         INSERT INTO crawl_jobs (
-            id, status, pages_crawled, pages_changed, conflicts_found, started_at
+            id, status, pages_crawled, pages_changed, total_pages,
+            processed_pages, current_stage, conflicts_found, started_at
         )
-        VALUES ($1, 'running', 0, 0, 0, $2)
+        VALUES ($1, 'running', 0, 0, 0, 0, '준비 중', 0, $2)
         """,
         crawl_job_id,
         datetime.now(UTC),
     )
     return crawl_job_id
+
+
+async def update_crawl_job_progress(
+    connection: asyncpg.Connection,
+    crawl_job_id: str,
+    *,
+    current_stage: str,
+    total_pages: int,
+    processed_pages: int,
+    pages_crawled: int,
+    pages_changed: int,
+) -> None:
+    await connection.execute(
+        """
+        UPDATE crawl_jobs
+        SET current_stage = $2,
+            total_pages = $3,
+            processed_pages = $4,
+            pages_crawled = $5,
+            pages_changed = $6
+        WHERE id = $1
+        """,
+        crawl_job_id,
+        current_stage,
+        total_pages,
+        processed_pages,
+        pages_crawled,
+        pages_changed,
+    )
 
 
 async def load_existing_document_states(
@@ -170,14 +200,17 @@ async def finish_crawl_job(
         SET status = $2,
             pages_crawled = $3,
             pages_changed = $4,
-            completed_at = $5,
-            error = $6
+            processed_pages = GREATEST(processed_pages, $3),
+            current_stage = $5,
+            completed_at = $6,
+            error = $7
         WHERE id = $1
         """,
         crawl_job_id,
         status,
         pages_crawled,
         pages_changed,
+        "완료" if status == "completed" else "실패",
         datetime.now(UTC),
         error,
     )

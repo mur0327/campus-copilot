@@ -17,6 +17,9 @@ class AdminCrawlJobResponse(BaseModel):
     status: str
     pages_crawled: int
     pages_changed: int
+    total_pages: int
+    processed_pages: int
+    current_stage: str | None
     conflicts_found: int
     started_at: datetime
     completed_at: datetime | None
