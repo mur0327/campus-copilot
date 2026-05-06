@@ -1,40 +1,60 @@
-const sections = [
-  "크롤 작업 상태",
-  "문서 적재 현황",
-  "충돌 탐지 목록",
-  "질문 로그",
-];
+import { useQuery } from "@tanstack/react-query";
+
+import {
+  fetchAdminConflicts,
+  fetchAdminLogs,
+  fetchAdminStatus,
+} from "../api/admin";
+import ConflictTable from "../components/admin/ConflictTable";
+import CrawlControl from "../components/admin/CrawlControl";
+import LogTable from "../components/admin/LogTable";
+import StatusPanel from "../components/admin/StatusPanel";
 
 export default function AdminPage() {
+  const statusQuery = useQuery({
+    queryKey: ["admin-status"],
+    queryFn: fetchAdminStatus,
+  });
+  const conflictsQuery = useQuery({
+    queryKey: ["admin-conflicts"],
+    queryFn: fetchAdminConflicts,
+  });
+  const logsQuery = useQuery({
+    queryKey: ["admin-logs"],
+    queryFn: fetchAdminLogs,
+  });
+
   return (
-    <main className="min-h-screen px-6 py-10 text-stone-50">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <header className="rounded-[2rem] border border-white/10 bg-white/6 px-8 py-7 backdrop-blur">
-          <p className="text-sm font-medium uppercase tracking-[0.3em] text-sky-200/80">
-            Admin
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">운영자 화면</h1>
-          <p className="mt-4 text-base leading-7 text-slate-300/80">
-            워커 상태, 적재 문서, 충돌 쌍, 로그 목록이 들어올 영역을 미리 배치해 둔 스캐폴드입니다.
-          </p>
+    <main className="min-h-screen bg-slate-100 px-5 py-6 text-slate-950 sm:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-5">
+        <header className="flex flex-col gap-2 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500">Campus Copilot</p>
+            <h1 className="mt-1 text-2xl font-semibold">운영자 화면</h1>
+          </div>
+          <p className="text-sm text-slate-500">관리자 API 기준 상태 모니터링</p>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {sections.map((section, index) => (
-            <article
-              key={section}
-              className="rounded-[1.5rem] border border-white/10 bg-slate-950/35 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.2)]"
-            >
-              <p className="text-xs uppercase tracking-[0.28em] text-slate-400">
-                Panel {index + 1}
-              </p>
-              <h2 className="mt-4 text-2xl font-semibold text-white">{section}</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300/75">
-                API 연결 전 상태라 실제 데이터 대신 패널 자리만 잡아 두었습니다.
-              </p>
-            </article>
-          ))}
-        </section>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
+          <StatusPanel
+            isError={statusQuery.isError}
+            isLoading={statusQuery.isLoading}
+            status={statusQuery.data}
+          />
+          <CrawlControl />
+        </div>
+
+        <ConflictTable
+          conflicts={conflictsQuery.data}
+          isError={conflictsQuery.isError}
+          isLoading={conflictsQuery.isLoading}
+        />
+
+        <LogTable
+          isError={logsQuery.isError}
+          isLoading={logsQuery.isLoading}
+          logs={logsQuery.data}
+        />
       </div>
     </main>
   );
