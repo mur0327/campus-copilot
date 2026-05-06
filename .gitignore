@@ -4,6 +4,7 @@
 .superpowers/
 .worktrees/
 .idea/
+.reference/
 /.data/
 .codex
 *.swp
