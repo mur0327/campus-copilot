@@ -115,6 +115,49 @@ describe("AdminPage", () => {
     );
   });
 
+  it("shows worker crawl status while the database job is not created yet", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith("/status")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              documents: 0,
+              chunks: 0,
+              indexed_chunks: 0,
+              last_crawled: null,
+              latest_crawl_job: null,
+              worker_crawl_status: {
+                status: "running",
+                current_stage: "대상 검색 중",
+                started_at: "2026-05-06T13:20:00Z",
+                completed_at: null,
+                error: null,
+              },
+            }),
+          ),
+        );
+      }
+
+      if (url.endsWith("/conflicts") || url.endsWith("/logs")) {
+        return Promise.resolve(new Response(JSON.stringify([])));
+      }
+
+      return Promise.resolve(new Response("not found", { status: 404 }));
+    });
+
+    renderAdminPage();
+
+    expect(await screen.findByText("크롤링 진행 중")).toBeInTheDocument();
+    expect(screen.getByText("대상 검색 중")).toBeInTheDocument();
+    expect(screen.getByText("대상 수 확인 중")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "크롤링 진행률" })).toHaveAttribute(
+      "aria-valuenow",
+      "0",
+    );
+  });
+
   it("disables crawl while pending and shows success after trigger", async () => {
     let resolveCrawl: (response: Response) => void = () => {};
     const crawlPromise = new Promise<Response>((resolve) => {

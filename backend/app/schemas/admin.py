@@ -10,6 +10,15 @@ class AdminStatusResponse(BaseModel):
     indexed_chunks: int
     last_crawled: datetime | None
     latest_crawl_job: "AdminCrawlJobResponse | None" = None
+    worker_crawl_status: "AdminWorkerCrawlStatusResponse | None" = None
+
+
+class AdminWorkerCrawlStatusResponse(BaseModel):
+    status: str
+    current_stage: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    error: str | None = None
 
 
 class AdminCrawlJobResponse(BaseModel):

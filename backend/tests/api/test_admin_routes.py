@@ -12,6 +12,7 @@ os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://campus:campus@localh
 from app.api.routes import admin as admin_route  # noqa: E402
 from app.core.db import get_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.schemas.admin import AdminWorkerCrawlStatusResponse  # noqa: E402
 
 
 class FakeScalarResult:
@@ -101,7 +102,11 @@ async def test_admin_crawl_trigger_exposes_already_running(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_admin_status_maps_database_counts_and_last_crawled():
+async def test_admin_status_maps_database_counts_and_last_crawled(monkeypatch):
+    async def fake_fetch_worker_crawl_status():
+        return None
+
+    monkeypatch.setattr(admin_route, "fetch_worker_crawl_status", fake_fetch_worker_crawl_status)
     last_crawled = datetime(2026, 5, 6, 10, 0, tzinfo=UTC)
     started_at = datetime(2026, 5, 6, 9, 59, tzinfo=UTC)
     fake_session = FakeSession(
@@ -150,8 +155,44 @@ async def test_admin_status_maps_database_counts_and_last_crawled():
         "completed_at": "2026-05-06T10:00:00Z",
         "error": None,
     }
+    assert body["worker_crawl_status"] is None
     assert len(fake_session.scalar_statements) == 4
     assert len(fake_session.execute_statements) == 1
+
+
+@pytest.mark.asyncio
+async def test_admin_status_includes_worker_crawl_status_before_db_job(monkeypatch):
+    started_at = datetime(2026, 5, 6, 13, 20, tzinfo=UTC)
+
+    async def fake_fetch_worker_crawl_status():
+        return AdminWorkerCrawlStatusResponse(
+            status="running",
+            current_stage="대상 검색 중",
+            started_at=started_at,
+            completed_at=None,
+            error=None,
+        )
+
+    monkeypatch.setattr(admin_route, "fetch_worker_crawl_status", fake_fetch_worker_crawl_status)
+    fake_session = FakeSession(
+        scalar_results=[0, 0, 0, None],
+        execute_results=[FakeResult([])],
+    )
+    override_session(fake_session)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/admin/status")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["latest_crawl_job"] is None
+    assert body["worker_crawl_status"] == {
+        "status": "running",
+        "current_stage": "대상 검색 중",
+        "started_at": "2026-05-06T13:20:00Z",
+        "completed_at": None,
+        "error": None,
+    }
 
 
 @pytest.mark.asyncio

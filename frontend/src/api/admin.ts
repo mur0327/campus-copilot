@@ -4,6 +4,15 @@ export interface AdminStatus {
   indexed_chunks: number;
   last_crawled: string | null;
   latest_crawl_job: AdminCrawlJob | null;
+  worker_crawl_status: AdminWorkerCrawlStatus | null;
+}
+
+export interface AdminWorkerCrawlStatus {
+  status: string;
+  current_stage: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  error: string | null;
 }
 
 export interface AdminCrawlJob {

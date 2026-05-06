@@ -57,6 +57,31 @@ async def test_trigger_rejects_duplicate_while_crawl_is_running():
 
 
 @pytest.mark.asyncio
+async def test_status_reports_running_before_crawl_job_exists():
+    release = asyncio.Event()
+
+    async def fake_run_crawl():
+        await release.wait()
+
+    service = CrawlTriggerService(run_crawl=fake_run_crawl)
+    app = create_app(service)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        trigger_response = await client.post("/internal/crawl")
+        status_response = await client.get("/internal/crawl/status")
+
+    assert trigger_response.json() == {"status": "triggered"}
+    assert status_response.status_code == 200
+    assert status_response.json()["status"] == "running"
+    assert status_response.json()["current_stage"] == "대상 검색 중"
+    assert status_response.json()["started_at"] is not None
+    assert status_response.json()["completed_at"] is None
+    assert status_response.json()["error"] is None
+    release.set()
+    await service.wait_for_idle()
+
+
+@pytest.mark.asyncio
 async def test_trigger_allows_new_crawl_after_previous_finishes():
     calls = 0
 

@@ -44,7 +44,14 @@ export default function StatusPanel({
   isError,
 }: StatusPanelProps) {
   const latestJob = status?.latest_crawl_job;
-  const isRunning = latestJob?.status === "running";
+  const workerStatus = status?.worker_crawl_status;
+  const effectiveStatus =
+    latestJob?.status ?? (workerStatus?.status === "running" ? workerStatus.status : undefined);
+  const effectiveStage =
+    latestJob?.current_stage ??
+    (workerStatus?.status === "running" ? workerStatus.current_stage : null);
+  const effectiveError = latestJob?.error ?? workerStatus?.error;
+  const isRunning = effectiveStatus === "running";
   const processedPages = latestJob?.processed_pages ?? 0;
   const totalPages = latestJob?.total_pages ?? 0;
   const percent = progressPercent(processedPages, totalPages);
@@ -81,7 +88,7 @@ export default function StatusPanel({
             <dt className="text-sm text-slate-500">현재 크롤링</dt>
             <dd className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
               {isRunning ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin text-sky-700" /> : null}
-              <span>{isLoading ? "불러오는 중" : crawlStatusLabel(latestJob?.status)}</span>
+              <span>{isLoading ? "불러오는 중" : crawlStatusLabel(effectiveStatus)}</span>
             </dd>
           </div>
           <div>
@@ -95,7 +102,7 @@ export default function StatusPanel({
           <div className="sm:col-span-2">
             <dt className="text-sm text-slate-500">진행 단계</dt>
             <dd className="mt-2 text-sm font-medium text-slate-800">
-              {isLoading ? "불러오는 중" : (latestJob?.current_stage ?? "대기 중")}
+              {isLoading ? "불러오는 중" : (effectiveStage ?? "대기 중")}
             </dd>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
               <div
@@ -114,9 +121,9 @@ export default function StatusPanel({
           </div>
         </dl>
       )}
-      {!isError && latestJob?.error ? (
+      {!isError && effectiveError ? (
         <p className="mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {latestJob.error}
+          {effectiveError}
         </p>
       ) : null}
     </section>

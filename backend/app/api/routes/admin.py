@@ -10,6 +10,7 @@ from app.schemas.admin import (
     AdminCrawlJobResponse,
     AdminLogResponse,
     AdminStatusResponse,
+    AdminWorkerCrawlStatusResponse,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -45,6 +46,7 @@ async def status(session: AsyncSession = Depends(get_db)) -> AdminStatusResponse
         select(CrawlJob).order_by(CrawlJob.started_at.desc()).limit(1)
     )
     latest_job = latest_job_result.scalars().first()
+    worker_crawl_status = await fetch_worker_crawl_status()
 
     return AdminStatusResponse(
         documents=documents or 0,
@@ -68,6 +70,7 @@ async def status(session: AsyncSession = Depends(get_db)) -> AdminStatusResponse
             if latest_job
             else None
         ),
+        worker_crawl_status=worker_crawl_status,
     )
 
 
@@ -91,6 +94,24 @@ async def trigger_worker_crawl() -> dict[str, str]:
     if status not in {"triggered", "already_running"}:
         raise HTTPException(status_code=502, detail="worker crawl trigger returned invalid status")
     return {"status": status}
+
+
+async def fetch_worker_crawl_status() -> AdminWorkerCrawlStatusResponse | None:
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=2) as client:
+            response = await client.get(settings.worker_crawl_status_url)
+        response.raise_for_status()
+    except httpx.HTTPError:
+        return None
+
+    payload = response.json()
+    status = payload.get("status")
+    if not isinstance(status, str):
+        return None
+
+    return AdminWorkerCrawlStatusResponse.model_validate(payload)
 
 
 @router.get("/conflicts", response_model=list[AdminConflictResponse])
