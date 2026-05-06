@@ -14,6 +14,7 @@ from curl_cffi import requests
 
 from core.config import settings
 from core.db import create_pool
+from tasks.bm25 import write_bm25_indexes
 from tasks.contracts import (
     CrawlDiscoveryResult,
     CrawlStats,
@@ -563,13 +564,16 @@ async def index_crawl_documents(connection):
             break
 
     summary.vectors_pruned = await prune_orphan_vectors(connection, collection)
+    bm25_summary = await write_bm25_indexes(connection, settings.bm25_cache_dir)
+    summary.bm25_indexes_written = bm25_summary.indexes_written
     logger.info(
         "crawl indexing completed: chunks_seen=%s chunks_indexed=%s "
-        "chunks_skipped=%s vectors_pruned=%s",
+        "chunks_skipped=%s vectors_pruned=%s bm25_indexes_written=%s",
         summary.chunks_seen,
         summary.chunks_indexed,
         summary.chunks_skipped,
         summary.vectors_pruned,
+        summary.bm25_indexes_written,
     )
     return summary
 

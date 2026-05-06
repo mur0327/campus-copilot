@@ -44,6 +44,7 @@ class EmbedSummary:
     chunks_indexed: int = 0
     chunks_skipped: int = 0
     vectors_pruned: int = 0
+    bm25_indexes_written: int = 0
     errors: list[str] | None = None
 
 

@@ -1,5 +1,7 @@
 import os
+import pickle
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
@@ -147,6 +149,80 @@ async def test_hybrid_retriever_rebuilds_bm25_on_watermark_change():
 
     assert session.loads == 2
     assert first_index is not second_index
+
+
+@pytest.mark.asyncio
+async def test_hybrid_retriever_falls_back_to_database_when_worker_bm25_cache_is_missing(
+    tmp_path: Path,
+):
+    watermark = datetime(2026, 5, 1, tzinfo=UTC)
+    chunk_id = uuid4()
+
+    class FakeSession:
+        def __init__(self):
+            self.loads = 0
+
+        async def scalar(self, statement):
+            return watermark
+
+        async def execute(self, statement):
+            self.loads += 1
+            return FakeResult([make_row(chunk_id)])
+
+    session = FakeSession()
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+    loaded_index = await retriever.ensure_bm25_index(session, "academic")
+
+    assert loaded_index.search("휴학 신청", top_n=1)[0].chunk_id == chunk_id
+    assert session.loads == 1
+    assert list(tmp_path.glob("*.pkl")) == []
+
+
+@pytest.mark.asyncio
+async def test_hybrid_retriever_loads_worker_bm25_file_cache(tmp_path: Path):
+    watermark = datetime(2026, 5, 1, tzinfo=UTC)
+    result = make_result("휴학 신청은 포털에서 진행합니다.")
+    cache_path = tmp_path / "bm25-b8a98203ec9d769d.pkl"
+    worker_bm25 = BM25Index([result])
+    with cache_path.open("wb") as cache_file:
+        pickle.dump(
+            {
+                "version": 1,
+                "watermark": watermark,
+                "category": "academic",
+                "records": [result.model_dump(mode="json")],
+                "corpus": worker_bm25.corpus,
+                "index": worker_bm25.index,
+            },
+            cache_file,
+        )
+
+    class LoadingSession:
+        async def scalar(self, statement):
+            return watermark
+
+        async def execute(self, statement):
+            raise AssertionError("BM25 should load from worker file cache")
+
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    loaded_index = await retriever.ensure_bm25_index(LoadingSession(), "academic")
+
+    assert loaded_index.search("휴학 신청", top_n=1)[0].chunk_id == result.chunk_id
 
 
 @pytest.mark.asyncio

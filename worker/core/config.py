@@ -39,6 +39,7 @@ class WorkerSettings(BaseSettings):
     chroma_collection: str = "campus_copilot_chunks"
     embedding_model: str = "jhgan/ko-sroberta-multitask"
     index_batch_size: int = 64
+    bm25_cache_dir: str = ".data/bm25"
     trigger_host: str = "0.0.0.0"
     trigger_port: int = 8088
 

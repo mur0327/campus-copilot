@@ -1,5 +1,6 @@
 import os
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 
@@ -708,18 +709,24 @@ async def test_index_crawl_documents_repeats_batches_and_accumulates_summary(mon
         calls.append("prune")
         return 3
 
+    async def fake_write_bm25_indexes(connection, cache_dir):
+        calls.append(f"bm25:{cache_dir}")
+        return SimpleNamespace(indexes_written=2)
+
     monkeypatch.setattr("tasks.crawl.create_chroma_collection", lambda **kwargs: FakeCollection())
     monkeypatch.setattr("tasks.crawl.create_embedder", lambda model_name: FakeEmbedder())
     monkeypatch.setattr("tasks.crawl.embed_pending_chunks", fake_embed_pending_chunks)
     monkeypatch.setattr("tasks.crawl.prune_orphan_vectors", fake_prune_orphan_vectors)
+    monkeypatch.setattr("tasks.crawl.write_bm25_indexes", fake_write_bm25_indexes)
 
     summary = await index_crawl_documents(connection=object())
 
-    assert calls == ["embed", "embed", "embed", "prune"]
+    assert calls == ["embed", "embed", "embed", "prune", "bm25:.data/bm25"]
     assert summary.chunks_seen == 70
     assert summary.chunks_indexed == 69
     assert summary.chunks_skipped == 1
     assert summary.vectors_pruned == 3
+    assert summary.bm25_indexes_written == 2
     assert summary.errors == ["skipped malformed row"]
 
 

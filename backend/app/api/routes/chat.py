@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import inspect
 import json
-from hashlib import sha256
 from collections.abc import AsyncIterator
 from contextlib import suppress
+from hashlib import sha256
 from time import perf_counter
 from typing import Any
 from uuid import UUID
@@ -469,6 +469,7 @@ def _get_default_retriever() -> HybridRetriever:
             semantic_weight=settings.retriever_semantic_weight,
             bm25_weight=settings.retriever_bm25_weight,
             final_top_k=settings.retriever_final_top_k,
+            bm25_cache_dir=settings.retriever_bm25_cache_dir,
         )
     return _default_retriever
 

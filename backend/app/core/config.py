@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     retriever_final_top_k: int = 6
     retriever_semantic_weight: float = 0.7
     retriever_bm25_weight: float = 0.3
+    retriever_bm25_cache_dir: str = ".data/bm25"
 
     freshness_stale_days: int = 180
     chat_cache_ttl_seconds: int = 3600

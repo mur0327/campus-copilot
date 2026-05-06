@@ -1,7 +1,10 @@
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
+from tasks.bm25 import build_bm25_cache_path, write_bm25_indexes
 from tasks.embed import build_chroma_id, embed_pending_chunks, prune_orphan_vectors
 
 
@@ -85,3 +88,45 @@ async def test_prune_orphan_vectors_deletes_vectors_without_db_chunks():
 
     assert pruned == 1
     assert collection.deleted == ["chunk:orphan"]
+
+
+@pytest.mark.asyncio
+async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Path):
+    class FakeConnection:
+        async def fetchval(self, query):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def fetch(self, query):
+            return [
+                {
+                    "chunk_id": "00000000-0000-0000-0000-000000000001",
+                    "document_id": "00000000-0000-0000-0000-000000000101",
+                    "content": "휴학 신청은 포털에서 진행합니다.",
+                    "chunk_type": "text",
+                    "title": "휴학",
+                    "url": "https://www.honam.ac.kr/a",
+                    "menu_path": "학사 > 휴학",
+                    "category": "academic",
+                    "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
+                    "meta": {"source": "test"},
+                },
+                {
+                    "chunk_id": "00000000-0000-0000-0000-000000000002",
+                    "document_id": "00000000-0000-0000-0000-000000000102",
+                    "content": "장학금 신청 안내입니다.",
+                    "chunk_type": "text",
+                    "title": "장학금",
+                    "url": "https://www.honam.ac.kr/b",
+                    "menu_path": "장학 > 신청",
+                    "category": "scholarship",
+                    "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
+                    "meta": None,
+                },
+            ]
+
+    summary = await write_bm25_indexes(FakeConnection(), tmp_path)
+
+    assert summary.indexes_written == 3
+    assert build_bm25_cache_path(tmp_path, None).exists()
+    assert build_bm25_cache_path(tmp_path, "academic").exists()
+    assert build_bm25_cache_path(tmp_path, "scholarship").exists()

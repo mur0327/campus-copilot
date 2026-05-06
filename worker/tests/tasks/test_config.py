@@ -30,6 +30,7 @@ def test_worker_settings_phase_two_defaults(monkeypatch):
     assert settings.embedding_model == "jhgan/ko-sroberta-multitask"
     assert settings.chroma_collection == "campus_copilot_chunks"
     assert settings.index_batch_size == 64
+    assert settings.bm25_cache_dir == ".data/bm25"
     assert settings.trigger_host == "0.0.0.0"
     assert settings.trigger_port == 8088
 

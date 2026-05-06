@@ -1,5 +1,8 @@
+import pickle
 import re
 from datetime import UTC, datetime
+from hashlib import sha256
+from pathlib import Path
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -8,7 +11,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.document import Document, DocumentChunk
-
 
 TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
 
@@ -32,10 +34,16 @@ def tokenize_korean_light(text: str) -> list[str]:
 
 
 class BM25Index:
-    def __init__(self, results: list[RetrievalResult]) -> None:
+    def __init__(
+        self,
+        results: list[RetrievalResult],
+        *,
+        corpus: list[list[str]] | None = None,
+        index: BM25Okapi | None = None,
+    ) -> None:
         self.results = results
-        self.corpus = [tokenize_korean_light(result.content) for result in results]
-        self.index = BM25Okapi(self.corpus) if any(self.corpus) else None
+        self.corpus = corpus if corpus is not None else [tokenize_korean_light(result.content) for result in results]
+        self.index = index if index is not None else BM25Okapi(self.corpus) if any(self.corpus) else None
 
     def search(self, query: str, top_n: int) -> list[RetrievalResult]:
         if self.index is None or top_n <= 0:
@@ -152,6 +160,7 @@ class HybridRetriever:
         semantic_weight: float,
         bm25_weight: float,
         final_top_k: int,
+        bm25_cache_dir: str | Path | None = None,
     ) -> None:
         self.collection = collection
         self.embedder = embedder
@@ -159,6 +168,7 @@ class HybridRetriever:
         self.bm25_weight = bm25_weight
         self.final_top_k = final_top_k
         self.bm25_cache: dict[str | None, tuple[datetime | None, BM25Index]] = {}
+        self.bm25_cache_dir = Path(bm25_cache_dir) if bm25_cache_dir else None
 
     async def ensure_bm25_index(self, session: AsyncSession, category: str | None = None) -> BM25Index:
         watermark = await session.scalar(select(func.max(DocumentChunk.created_at)))
@@ -166,10 +176,59 @@ class HybridRetriever:
         if cached and cached[0] == watermark:
             return cached[1]
 
+        file_cached = self._load_bm25_file_cache(category, watermark)
+        if file_cached is not None:
+            self.bm25_cache[category] = (watermark, file_cached)
+            return file_cached
+
         chunks = await load_active_chunks(session, category)
         bm25_index = BM25Index(chunks)
         self.bm25_cache[category] = (watermark, bm25_index)
         return bm25_index
+
+    def _bm25_cache_path(self, category: str | None) -> Path | None:
+        if self.bm25_cache_dir is None:
+            return None
+        category_key = category if category is not None else "_all"
+        digest = sha256(category_key.encode("utf-8")).hexdigest()[:16]
+        return self.bm25_cache_dir / f"bm25-{digest}.pkl"
+
+    def _load_bm25_file_cache(
+        self,
+        category: str | None,
+        watermark: datetime | None,
+    ) -> BM25Index | None:
+        cache_path = self._bm25_cache_path(category)
+        if cache_path is None or not cache_path.exists():
+            return None
+
+        try:
+            with cache_path.open("rb") as cache_file:
+                payload = pickle.load(cache_file)
+        except (OSError, pickle.PickleError, EOFError):
+            return None
+
+        if not isinstance(payload, dict):
+            return None
+        if payload.get("watermark") != watermark:
+            return None
+        if payload.get("category") != category:
+            return None
+        records = payload.get("records")
+        corpus = payload.get("corpus")
+        index = payload.get("index")
+        if not isinstance(records, list) or not isinstance(corpus, list):
+            return None
+        if index is not None and not isinstance(index, BM25Okapi):
+            return None
+
+        try:
+            results = [RetrievalResult.model_validate(record) for record in records]
+        except ValueError:
+            return None
+        if len(results) != len(corpus):
+            return None
+        return BM25Index(results, corpus=corpus, index=index)
 
     async def retrieve(
         self,
