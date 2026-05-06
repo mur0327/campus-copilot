@@ -9,6 +9,18 @@ class AdminStatusResponse(BaseModel):
     chunks: int
     indexed_chunks: int
     last_crawled: datetime | None
+    latest_crawl_job: "AdminCrawlJobResponse | None" = None
+
+
+class AdminCrawlJobResponse(BaseModel):
+    id: UUID
+    status: str
+    pages_crawled: int
+    pages_changed: int
+    conflicts_found: int
+    started_at: datetime
+    completed_at: datetime | None
+    error: str | None
 
 
 class AdminConflictResponse(BaseModel):

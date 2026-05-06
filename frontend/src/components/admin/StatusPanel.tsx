@@ -20,11 +20,26 @@ function formatCrawledAt(value: string | null | undefined) {
   }).format(date);
 }
 
+function crawlStatusLabel(status: string | undefined) {
+  switch (status) {
+    case "running":
+      return "크롤링 진행 중";
+    case "completed":
+      return "크롤링 완료";
+    case "failed":
+      return "크롤링 실패";
+    default:
+      return "크롤링 기록 없음";
+  }
+}
+
 export default function StatusPanel({
   status,
   isLoading,
   isError,
 }: StatusPanelProps) {
+  const latestJob = status?.latest_crawl_job;
+
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm">
       <div className="flex items-center justify-between gap-4">
@@ -53,8 +68,27 @@ export default function StatusPanel({
               {isLoading ? "불러오는 중" : formatCrawledAt(status?.last_crawled)}
             </dd>
           </div>
+          <div>
+            <dt className="text-sm text-slate-500">현재 크롤링</dt>
+            <dd className="mt-2 text-sm font-semibold text-slate-800">
+              {isLoading ? "불러오는 중" : crawlStatusLabel(latestJob?.status)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-slate-500">처리량</dt>
+            <dd className="mt-2 text-sm font-medium text-slate-800">
+              {isLoading
+                ? "불러오는 중"
+                : `${latestJob?.pages_crawled ?? 0}건 수집 · ${latestJob?.pages_changed ?? 0}건 변경 · ${latestJob?.conflicts_found ?? 0}건 충돌`}
+            </dd>
+          </div>
         </dl>
       )}
+      {!isError && latestJob?.error ? (
+        <p className="mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {latestJob.error}
+        </p>
+      ) : null}
     </section>
   );
 }

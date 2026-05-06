@@ -1,6 +1,20 @@
 export interface AdminStatus {
   documents: number;
+  chunks: number;
+  indexed_chunks: number;
   last_crawled: string | null;
+  latest_crawl_job: AdminCrawlJob | null;
+}
+
+export interface AdminCrawlJob {
+  id: string;
+  status: string;
+  pages_crawled: number;
+  pages_changed: number;
+  conflicts_found: number;
+  started_at: string;
+  completed_at: string | null;
+  error: string | null;
 }
 
 export interface AdminConflict {

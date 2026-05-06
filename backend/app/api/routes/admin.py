@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.db import get_db
 from app.models.document import ConflictPair, CrawlJob, Document, DocumentChunk, QueryLog
-from app.schemas.admin import AdminConflictResponse, AdminLogResponse, AdminStatusResponse
+from app.schemas.admin import (
+    AdminConflictResponse,
+    AdminCrawlJobResponse,
+    AdminLogResponse,
+    AdminStatusResponse,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -36,12 +41,30 @@ async def status(session: AsyncSession = Depends(get_db)) -> AdminStatusResponse
         .order_by(CrawlJob.completed_at.desc())
         .limit(1)
     )
+    latest_job_result = await session.execute(
+        select(CrawlJob).order_by(CrawlJob.started_at.desc()).limit(1)
+    )
+    latest_job = latest_job_result.scalars().first()
 
     return AdminStatusResponse(
         documents=documents or 0,
         chunks=chunks or 0,
         indexed_chunks=indexed_chunks or 0,
         last_crawled=last_crawled,
+        latest_crawl_job=(
+            AdminCrawlJobResponse(
+                id=latest_job.id,
+                status=latest_job.status,
+                pages_crawled=latest_job.pages_crawled,
+                pages_changed=latest_job.pages_changed,
+                conflicts_found=latest_job.conflicts_found,
+                started_at=latest_job.started_at,
+                completed_at=latest_job.completed_at,
+                error=latest_job.error,
+            )
+            if latest_job
+            else None
+        ),
     )
 
 

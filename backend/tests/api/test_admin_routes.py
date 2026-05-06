@@ -21,6 +21,9 @@ class FakeScalarResult:
     def all(self) -> list[object]:
         return self.values
 
+    def first(self) -> object | None:
+        return self.values[0] if self.values else None
+
 
 class FakeResult:
     def __init__(self, values: list[object]) -> None:
@@ -100,7 +103,26 @@ async def test_admin_crawl_trigger_exposes_already_running(monkeypatch):
 @pytest.mark.asyncio
 async def test_admin_status_maps_database_counts_and_last_crawled():
     last_crawled = datetime(2026, 5, 6, 10, 0, tzinfo=UTC)
-    fake_session = FakeSession(scalar_results=[12, 34, 20, last_crawled])
+    started_at = datetime(2026, 5, 6, 9, 59, tzinfo=UTC)
+    fake_session = FakeSession(
+        scalar_results=[12, 34, 20, last_crawled],
+        execute_results=[
+            FakeResult(
+                [
+                    SimpleNamespace(
+                        id=UUID("00000000-0000-0000-0000-000000000201"),
+                        status="completed",
+                        pages_crawled=42,
+                        pages_changed=7,
+                        conflicts_found=1,
+                        started_at=started_at,
+                        completed_at=last_crawled,
+                        error=None,
+                    )
+                ]
+            )
+        ],
+    )
     override_session(fake_session)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -112,7 +134,18 @@ async def test_admin_status_maps_database_counts_and_last_crawled():
     assert body["chunks"] == 34
     assert body["indexed_chunks"] == 20
     assert body["last_crawled"].startswith("2026-05-06T10:00:00")
+    assert body["latest_crawl_job"] == {
+        "id": "00000000-0000-0000-0000-000000000201",
+        "status": "completed",
+        "pages_crawled": 42,
+        "pages_changed": 7,
+        "conflicts_found": 1,
+        "started_at": "2026-05-06T09:59:00Z",
+        "completed_at": "2026-05-06T10:00:00Z",
+        "error": None,
+    }
     assert len(fake_session.scalar_statements) == 4
+    assert len(fake_session.execute_statements) == 1
 
 
 @pytest.mark.asyncio

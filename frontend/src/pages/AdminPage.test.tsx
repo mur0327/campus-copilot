@@ -38,7 +38,15 @@ describe("AdminPage", () => {
 
       if (url.endsWith("/status")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ documents: 0, last_crawled: null })),
+          new Response(
+            JSON.stringify({
+              documents: 0,
+              chunks: 0,
+              indexed_chunks: 0,
+              last_crawled: null,
+              latest_crawl_job: null,
+            }),
+          ),
         );
       }
 
@@ -53,8 +61,49 @@ describe("AdminPage", () => {
 
     expect(await screen.findByText("0")).toBeInTheDocument();
     expect(screen.getByText("아직 수집 기록 없음")).toBeInTheDocument();
+    expect(screen.getByText("크롤링 기록 없음")).toBeInTheDocument();
     expect(screen.getByText("표시할 충돌 없음")).toBeInTheDocument();
     expect(screen.getByText("표시할 로그 없음")).toBeInTheDocument();
+  });
+
+  it("shows the latest crawl job state and counts", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith("/status")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              documents: 12,
+              chunks: 34,
+              indexed_chunks: 20,
+              last_crawled: null,
+              latest_crawl_job: {
+                id: "00000000-0000-0000-0000-000000000201",
+                status: "running",
+                pages_crawled: 42,
+                pages_changed: 7,
+                conflicts_found: 1,
+                started_at: "2026-05-06T13:06:13Z",
+                completed_at: null,
+                error: null,
+              },
+            }),
+          ),
+        );
+      }
+
+      if (url.endsWith("/conflicts") || url.endsWith("/logs")) {
+        return Promise.resolve(new Response(JSON.stringify([])));
+      }
+
+      return Promise.resolve(new Response("not found", { status: 404 }));
+    });
+
+    renderAdminPage();
+
+    expect(await screen.findByText("크롤링 진행 중")).toBeInTheDocument();
+    expect(screen.getByText("42건 수집 · 7건 변경 · 1건 충돌")).toBeInTheDocument();
   });
 
   it("disables crawl while pending and shows success after trigger", async () => {
@@ -68,7 +117,15 @@ describe("AdminPage", () => {
 
       if (url.endsWith("/status")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ documents: 0, last_crawled: null })),
+          new Response(
+            JSON.stringify({
+              documents: 0,
+              chunks: 0,
+              indexed_chunks: 0,
+              last_crawled: null,
+              latest_crawl_job: null,
+            }),
+          ),
         );
       }
 
@@ -97,7 +154,9 @@ describe("AdminPage", () => {
 
     resolveCrawl(new Response(JSON.stringify({ status: "triggered" })));
 
-    expect(await screen.findByText("크롤링 요청됨")).toBeInTheDocument();
+    expect(
+      await screen.findByText("크롤링 작업이 시작되었습니다. 수집 상태가 자동으로 갱신됩니다."),
+    ).toBeInTheDocument();
     expect(button).toBeEnabled();
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith("/api/v1/admin/crawl", {
@@ -136,7 +195,15 @@ describe("AdminPage", () => {
 
       if (url.endsWith("/status")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ documents: 0, last_crawled: null })),
+          new Response(
+            JSON.stringify({
+              documents: 0,
+              chunks: 0,
+              indexed_chunks: 0,
+              last_crawled: null,
+              latest_crawl_job: null,
+            }),
+          ),
         );
       }
 
@@ -166,7 +233,15 @@ describe("AdminPage", () => {
 
       if (url.endsWith("/status")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ documents: 0, last_crawled: null })),
+          new Response(
+            JSON.stringify({
+              documents: 0,
+              chunks: 0,
+              indexed_chunks: 0,
+              last_crawled: null,
+              latest_crawl_job: null,
+            }),
+          ),
         );
       }
 
