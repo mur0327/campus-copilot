@@ -16,6 +16,8 @@ class AdminStatusResponse(BaseModel):
 class AdminWorkerCrawlStatusResponse(BaseModel):
     status: str
     current_stage: str | None = None
+    total_pages: int = 0
+    processed_pages: int = 0
     started_at: datetime | None = None
     completed_at: datetime | None = None
     error: str | None = None

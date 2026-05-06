@@ -45,15 +45,19 @@ export default function StatusPanel({
 }: StatusPanelProps) {
   const latestJob = status?.latest_crawl_job;
   const workerStatus = status?.worker_crawl_status;
+  const useWorkerStatus =
+    workerStatus?.status === "running" &&
+    (!latestJob || latestJob.status !== "running" || latestJob.total_pages <= 0);
   const effectiveStatus =
-    latestJob?.status ?? (workerStatus?.status === "running" ? workerStatus.status : undefined);
+    useWorkerStatus ? workerStatus.status : latestJob?.status;
   const effectiveStage =
-    latestJob?.current_stage ??
-    (workerStatus?.status === "running" ? workerStatus.current_stage : null);
-  const effectiveError = latestJob?.error ?? workerStatus?.error;
+    (useWorkerStatus ? workerStatus.current_stage : latestJob?.current_stage) ?? null;
+  const effectiveError = (useWorkerStatus ? workerStatus.error : latestJob?.error) ?? null;
   const isRunning = effectiveStatus === "running";
-  const processedPages = latestJob?.processed_pages ?? 0;
-  const totalPages = latestJob?.total_pages ?? 0;
+  const processedPages = useWorkerStatus
+    ? workerStatus.processed_pages
+    : (latestJob?.processed_pages ?? 0);
+  const totalPages = useWorkerStatus ? workerStatus.total_pages : (latestJob?.total_pages ?? 0);
   const percent = progressPercent(processedPages, totalPages);
 
   return (

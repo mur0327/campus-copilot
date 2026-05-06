@@ -116,13 +116,13 @@ async def test_main_sets_coalesce_for_crawl_job(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_run_crawl_returns_counts(monkeypatch):
-    async def fake_discover_html_targets_with_failures():
+    async def fake_discover_html_targets_with_failures(progress_callback=None):
         return CrawlDiscoveryResult(
             targets=[],
             failures=["https://timeout.honam.ac.kr/main: simulated timeout"],
         )
 
-    async def fake_discover_pdf_targets():
+    async def fake_discover_pdf_targets(progress_callback=None):
         return []
 
     async def fake_execute_ingestion(html_targets, pdf_targets, initial_failures=None):

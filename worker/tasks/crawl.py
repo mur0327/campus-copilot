@@ -41,6 +41,7 @@ from tasks.storage import (
 )
 
 logger = logging.getLogger(__name__)
+ProgressCallback = Callable[..., Awaitable[None]]
 DOWNLOAD_EXTENSIONS = {
     ".doc",
     ".docx",
@@ -286,19 +287,45 @@ async def validate_targets_with_failures(
     targets: list[CrawlTarget],
     fetcher: Callable[[str], str] = fetch_html,
     concurrency: int | None = None,
+    progress_callback: ProgressCallback | None = None,
+    progress_stage: str = "대상 URL 검증 중",
 ) -> CrawlDiscoveryResult:
     semaphore = asyncio.Semaphore(concurrency or settings.crawl_validation_concurrency)
+    total_targets = len(targets)
+    processed_targets = 0
 
     async def validate(target: CrawlTarget) -> tuple[CrawlTarget | None, str | None]:
+        nonlocal processed_targets
         try:
             async with semaphore:
                 html = await _fetch_html_in_thread(fetcher, target.url)
         except Exception as exc:
+            processed_targets += 1
+            if progress_callback is not None:
+                await progress_callback(
+                    progress_stage,
+                    processed_pages=processed_targets,
+                    total_pages=total_targets,
+                )
             return None, f"{target.url}: {exc}"
 
         if is_redirect_page(html):
+            processed_targets += 1
+            if progress_callback is not None:
+                await progress_callback(
+                    progress_stage,
+                    processed_pages=processed_targets,
+                    total_pages=total_targets,
+                )
             return None, None
 
+        processed_targets += 1
+        if progress_callback is not None:
+            await progress_callback(
+                progress_stage,
+                processed_pages=processed_targets,
+                total_pages=total_targets,
+            )
         return target, None
 
     results = await asyncio.gather(*(validate(target) for target in targets))
@@ -312,14 +339,26 @@ async def expand_article_box_targets_by_parent(
     targets: list[CrawlTarget],
     fetcher: Callable[[str], str] = fetch_html,
     concurrency: int | None = None,
+    progress_callback: ProgressCallback | None = None,
+    progress_stage: str = "상세 페이지 후보 확인 중",
 ) -> list[ArticleExpansionResult]:
     semaphore = asyncio.Semaphore(concurrency or settings.crawl_validation_concurrency)
+    total_targets = len(targets)
+    processed_targets = 0
 
     async def expand(target: CrawlTarget) -> ArticleExpansionResult:
+        nonlocal processed_targets
         try:
             async with semaphore:
                 html = await _fetch_html_in_thread(fetcher, target.url)
         except Exception as exc:
+            processed_targets += 1
+            if progress_callback is not None:
+                await progress_callback(
+                    progress_stage,
+                    processed_pages=processed_targets,
+                    total_pages=total_targets,
+                )
             return ArticleExpansionResult(
                 parent_url=target.url,
                 targets=[],
@@ -327,9 +366,23 @@ async def expand_article_box_targets_by_parent(
             )
 
         if is_redirect_page(html):
+            processed_targets += 1
+            if progress_callback is not None:
+                await progress_callback(
+                    progress_stage,
+                    processed_pages=processed_targets,
+                    total_pages=total_targets,
+                )
             return ArticleExpansionResult(parent_url=target.url, targets=[])
 
         article_targets = extract_article_box_targets(parent=target, html=html)
+        processed_targets += 1
+        if progress_callback is not None:
+            await progress_callback(
+                progress_stage,
+                processed_pages=processed_targets,
+                total_pages=total_targets,
+            )
         if article_targets:
             return ArticleExpansionResult(parent_url=target.url, targets=[target, *article_targets])
 
@@ -344,11 +397,19 @@ def failure_url(failure: str) -> str:
 
 async def discover_html_targets_with_failures(
     fetcher: Callable[[str], str] = fetch_html,
+    progress_callback: ProgressCallback | None = None,
 ) -> CrawlDiscoveryResult:
     targets: list[CrawlTarget] = []
     failures: list[str] = []
 
-    for root_url in settings.crawl_target_urls:
+    if progress_callback is not None:
+        await progress_callback(
+            "홈페이지 메뉴 수집 중",
+            processed_pages=0,
+            total_pages=len(settings.crawl_target_urls),
+        )
+
+    for root_index, root_url in enumerate(settings.crawl_target_urls, start=1):
         normalized_root_url = root_url.rstrip("/")
         main_url = urljoin(normalized_root_url, settings.crawl_main_path)
         try:
@@ -372,7 +433,20 @@ async def discover_html_targets_with_failures(
                 site_url=normalized_root_url,
             )
         )
-        for department_site in extract_department_sites(html, base_url=normalized_root_url):
+        if progress_callback is not None:
+            await progress_callback(
+                "홈페이지 메뉴 수집 중",
+                processed_pages=root_index,
+                total_pages=len(settings.crawl_target_urls),
+            )
+        department_sites = extract_department_sites(html, base_url=normalized_root_url)
+        if progress_callback is not None:
+            await progress_callback(
+                "학과 사이트 메뉴 수집 중",
+                processed_pages=0,
+                total_pages=len(department_sites),
+            )
+        for department_index, department_site in enumerate(department_sites, start=1):
             department_main_url = urljoin(department_site.url, settings.crawl_main_path)
             try:
                 department_html = await _fetch_html_in_thread(fetcher, department_main_url)
@@ -394,9 +468,20 @@ async def discover_html_targets_with_failures(
                     site_url=department_site.url,
                 )
             )
+            if progress_callback is not None:
+                await progress_callback(
+                    "학과 사이트 메뉴 수집 중",
+                    processed_pages=department_index,
+                    total_pages=len(department_sites),
+                )
 
     deduped_targets = dedupe_targets(targets)
-    first_pass_results = await expand_article_box_targets_by_parent(deduped_targets, fetcher)
+    first_pass_results = await expand_article_box_targets_by_parent(
+        deduped_targets,
+        fetcher,
+        progress_callback=progress_callback,
+        progress_stage="상세 페이지 후보 확인 중",
+    )
     first_pass_failures = [
         result.failure for result in first_pass_results if result.failure is not None
     ]
@@ -406,6 +491,8 @@ async def discover_html_targets_with_failures(
         retry_targets,
         fetcher=fetcher,
         concurrency=settings.crawl_retry_validation_concurrency,
+        progress_callback=progress_callback,
+        progress_stage="실패 후보 재확인 중",
     )
     retry_failures = [result.failure for result in retry_results if result.failure is not None]
     recovered_urls = {result.parent_url for result in retry_results if result.targets}
@@ -428,6 +515,8 @@ async def discover_html_targets_with_failures(
         dedupe_targets(ordered_targets),
         fetcher=fetcher,
         concurrency=settings.crawl_retry_validation_concurrency,
+        progress_callback=progress_callback,
+        progress_stage="대상 URL 최종 검증 중",
     )
 
     return CrawlDiscoveryResult(
@@ -440,7 +529,10 @@ async def discover_html_targets(fetcher: Callable[[str], str] = fetch_html) -> l
     return (await discover_html_targets_with_failures(fetcher=fetcher)).targets
 
 
-async def discover_pdf_targets(fetcher: Callable[[str], str] = fetch_html) -> list[CrawlTarget]:
+async def discover_pdf_targets(
+    fetcher: Callable[[str], str] = fetch_html,
+    progress_callback: ProgressCallback | None = None,
+) -> list[CrawlTarget]:
     base_url = next(
         (
             root_url.rstrip("/")
@@ -449,6 +541,8 @@ async def discover_pdf_targets(fetcher: Callable[[str], str] = fetch_html) -> li
         ),
         settings.crawl_target_urls[0].rstrip("/"),
     )
+    if progress_callback is not None:
+        await progress_callback("PDF 대상 확인 중", processed_pages=0, total_pages=1)
     html = await _fetch_html_in_thread(
         fetcher,
         urljoin(base_url, settings.crawl_graduation_path),
@@ -456,12 +550,15 @@ async def discover_pdf_targets(fetcher: Callable[[str], str] = fetch_html) -> li
     if is_redirect_page(html):
         return []
     years = extract_pdf_years(html)
-    return build_graduation_pdf_targets(
+    targets = build_graduation_pdf_targets(
         years=years,
         base_url=base_url,
         graduation_path=settings.crawl_graduation_path,
         year_limit=settings.crawl_pdf_year_limit,
     )
+    if progress_callback is not None:
+        await progress_callback("PDF 대상 확인 중", processed_pages=1, total_pages=1)
+    return targets
 
 
 def fetch_pdf_bytes(url: str, timeout: int | None = None) -> bytes:
@@ -710,11 +807,13 @@ async def execute_ingestion(
     )
 
 
-async def run_crawl() -> CrawlStats:
+async def run_crawl(progress_callback: ProgressCallback | None = None) -> CrawlStats:
     """Crawl Honam University pages and feed the indexing pipeline."""
+    if progress_callback is not None:
+        await progress_callback("대상 검색 시작", processed_pages=0, total_pages=0)
     html_discovery, pdf_targets = await asyncio.gather(
-        discover_html_targets_with_failures(),
-        discover_pdf_targets(),
+        discover_html_targets_with_failures(progress_callback=progress_callback),
+        discover_pdf_targets(progress_callback=progress_callback),
     )
     stats = await execute_ingestion(
         html_discovery.targets,

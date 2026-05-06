@@ -168,6 +168,8 @@ async def test_admin_status_includes_worker_crawl_status_before_db_job(monkeypat
         return AdminWorkerCrawlStatusResponse(
             status="running",
             current_stage="대상 검색 중",
+            total_pages=3,
+            processed_pages=1,
             started_at=started_at,
             completed_at=None,
             error=None,
@@ -189,6 +191,8 @@ async def test_admin_status_includes_worker_crawl_status_before_db_job(monkeypat
     assert body["worker_crawl_status"] == {
         "status": "running",
         "current_stage": "대상 검색 중",
+        "total_pages": 3,
+        "processed_pages": 1,
         "started_at": "2026-05-06T13:20:00Z",
         "completed_at": None,
         "error": None,

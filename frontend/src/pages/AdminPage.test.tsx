@@ -130,7 +130,9 @@ describe("AdminPage", () => {
               latest_crawl_job: null,
               worker_crawl_status: {
                 status: "running",
-                current_stage: "대상 검색 중",
+                current_stage: "상세 페이지 후보 확인 중",
+                total_pages: 3,
+                processed_pages: 1,
                 started_at: "2026-05-06T13:20:00Z",
                 completed_at: null,
                 error: null,
@@ -150,11 +152,11 @@ describe("AdminPage", () => {
     renderAdminPage();
 
     expect(await screen.findByText("크롤링 진행 중")).toBeInTheDocument();
-    expect(screen.getByText("대상 검색 중")).toBeInTheDocument();
-    expect(screen.getByText("대상 수 확인 중")).toBeInTheDocument();
+    expect(screen.getByText("상세 페이지 후보 확인 중")).toBeInTheDocument();
+    expect(screen.getByText("1/3 페이지 · 33%")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "크롤링 진행률" })).toHaveAttribute(
       "aria-valuenow",
-      "0",
+      "33",
     );
   });
 

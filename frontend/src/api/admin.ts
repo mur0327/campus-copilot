@@ -10,6 +10,8 @@ export interface AdminStatus {
 export interface AdminWorkerCrawlStatus {
   status: string;
   current_stage: string | null;
+  total_pages: number;
+  processed_pages: number;
   started_at: string | null;
   completed_at: string | null;
   error: string | null;

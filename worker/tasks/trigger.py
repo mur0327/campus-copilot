@@ -22,6 +22,8 @@ class CrawlTriggerService:
         self._started_at: datetime | None = None
         self._completed_at: datetime | None = None
         self._error: str | None = None
+        self._total_pages = 0
+        self._processed_pages = 0
 
     async def trigger(self) -> dict[str, str]:
         async with self._lock:
@@ -34,15 +36,39 @@ class CrawlTriggerService:
             self._started_at = datetime.now(UTC)
             self._completed_at = None
             self._error = None
+            self._total_pages = 0
+            self._processed_pages = 0
             self._task = asyncio.create_task(self._run())
             logger.info("manual crawl trigger accepted")
             return {"status": "triggered"}
 
-    async def status(self) -> dict[str, str | None]:
+    async def update_progress(
+        self,
+        current_stage: str,
+        *,
+        processed_pages: int | None = None,
+        total_pages: int | None = None,
+    ) -> None:
+        async with self._lock:
+            self._current_stage = current_stage
+            if processed_pages is not None:
+                self._processed_pages = processed_pages
+            if total_pages is not None:
+                self._total_pages = total_pages
+        logger.info(
+            "manual crawl progress: stage=%s processed_pages=%s total_pages=%s",
+            current_stage,
+            processed_pages,
+            total_pages,
+        )
+
+    async def status(self) -> dict[str, str | int | None]:
         async with self._lock:
             return {
                 "status": self._status,
                 "current_stage": self._current_stage,
+                "total_pages": self._total_pages,
+                "processed_pages": self._processed_pages,
                 "started_at": self._started_at.isoformat() if self._started_at else None,
                 "completed_at": self._completed_at.isoformat() if self._completed_at else None,
                 "error": self._error,
@@ -56,10 +82,11 @@ class CrawlTriggerService:
     async def _run(self) -> None:
         try:
             logger.info("manual crawl started")
-            await self.run_crawl()
+            await self.run_crawl(progress_callback=self.update_progress)  # type: ignore[call-arg]
             async with self._lock:
                 self._status = "completed"
                 self._current_stage = "완료"
+                self._processed_pages = self._total_pages
                 self._completed_at = datetime.now(UTC)
                 self._error = None
             logger.info("manual crawl completed")
@@ -86,7 +113,7 @@ def create_app(service: CrawlTriggerService | None = None) -> FastAPI:
         return await trigger_service.trigger()
 
     @app.get("/internal/crawl/status")
-    async def crawl_status() -> dict[str, str | None]:
+    async def crawl_status() -> dict[str, str | int | None]:
         return await trigger_service.status()
 
     @app.get("/internal/health")
