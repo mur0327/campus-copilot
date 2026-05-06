@@ -22,6 +22,14 @@ from tasks.scheduler import build_cron_trigger
 from tasks.storage import ExistingDocumentState
 
 
+@pytest.fixture(autouse=True)
+def no_op_crawl_indexing(monkeypatch):
+    async def fake_index_crawl_documents(connection):
+        return None
+
+    monkeypatch.setattr("tasks.crawl.index_crawl_documents", fake_index_crawl_documents)
+
+
 def test_build_cron_trigger_maps_five_part_expression():
     trigger = build_cron_trigger("0 3 * * *")
     assert "hour='3'" in str(trigger)
