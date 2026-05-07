@@ -4,7 +4,7 @@
 
 **Goal:** Phase 2에서 적재한 공식 문서 청크를 임베딩하고, ChromaDB + BM25 hybrid retrieval과 LLM provider를 통해 실제 `/api/v1/chat` SSE 질의응답을 키오스크 frontend까지 연결한다.
 
-**Architecture:** `worker`는 PostgreSQL `document_chunks`를 ChromaDB에 배치 인덱싱하고 `chroma_id`를 갱신한다. `backend`는 Chroma semantic search, in-memory BM25, freshness/conflict/query log, LLM provider, RAG orchestration을 service layer로 분리하고 chat route는 SSE event stream만 조립한다. `frontend`는 Phase 3 JSON chat/fallback 중심 연결을 `@microsoft/fetch-event-source` 기반 streaming client로 전환하고, fallback은 개발 전용 flag 뒤로 이동한다.
+**Architecture:** `worker`는 PostgreSQL `document_chunks`를 ChromaDB와 BM25 파일 인덱스로 배치 인덱싱하고 `chroma_id`를 갱신한다. `backend`는 Chroma semantic search와 worker가 생성한 BM25 파일 인덱스를 읽어 hybrid retrieval을 수행하며, freshness/conflict/query log, LLM provider, RAG orchestration을 service layer로 분리하고 chat route는 SSE event stream만 조립한다. `frontend`는 Phase 3 JSON chat/fallback 중심 연결을 `@microsoft/fetch-event-source` 기반 streaming client로 전환하고, fallback은 개발 전용 flag 뒤로 이동한다.
 
 **Tech Stack:** Python 3.12, FastAPI, SQLAlchemy async, asyncpg, ChromaDB, sentence-transformers, rank-bm25, aiocache Redis, sse-starlette, httpx, google-genai, llama.cpp server, pytest, pytest-asyncio, React 19, TypeScript, Vite, Zustand, React Query, @microsoft/fetch-event-source, vitest.
 
@@ -296,11 +296,16 @@ Add:
 EMBEDDING_MODEL=jhgan/ko-sroberta-multitask
 CHROMA_COLLECTION=campus_copilot_chunks
 INDEX_BATCH_SIZE=64
+BM25_CACHE_DIR=.data/bm25
+CRAWL_MARKDOWN_CONCURRENCY=1
+CRAWL_MARKDOWN_TIMEOUT_SECONDS=45
+CRAWL_DOCUMENT_TIMEOUT_SECONDS=120
 RETRIEVER_SEMANTIC_TOP_N=20
 RETRIEVER_BM25_TOP_N=20
 RETRIEVER_FINAL_TOP_K=6
 RETRIEVER_SEMANTIC_WEIGHT=0.7
 RETRIEVER_BM25_WEIGHT=0.3
+RETRIEVER_BM25_CACHE_DIR=.data/bm25
 FRESHNESS_STALE_DAYS=180
 CHAT_CACHE_TTL_SECONDS=3600
 LLM_PROVIDER=llama_cpp
@@ -590,7 +595,8 @@ After changed documents are persisted and before `finish_crawl_job()`, call an i
 2. creates the embedder
 3. calls `embed_pending_chunks()`
 4. calls `prune_orphan_vectors()`
-5. appends indexing errors or summary failures to the same crawl job error text
+5. writes BM25 file indexes under `.data/bm25/`
+6. appends indexing errors or summary failures to the same crawl job error text
 
 Do not convert a successful crawl into a total failure solely because indexing failed. The crawl job should remain `completed` with an error summary that admin status can show.
 

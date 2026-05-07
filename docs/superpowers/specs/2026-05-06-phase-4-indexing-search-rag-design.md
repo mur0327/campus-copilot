@@ -99,6 +99,7 @@ flowchart LR
     WK["worker embed task"]
     PG[("PostgreSQL documents/chunks/logs/conflicts")]
     CH[("ChromaDB embeddings")]
+    BM[("BM25 file indexes")]
     RD[("Redis cache")]
     FE["frontend kiosk"]
     API["backend chat API"]
@@ -108,10 +109,12 @@ flowchart LR
 
     WK --> PG
     WK --> CH
+    WK --> BM
     FE --> API
     API --> RD
     API --> RET
     RET --> CH
+    RET --> BM
     RET --> PG
     API --> RAG
     RAG --> LLM
@@ -146,6 +149,9 @@ Phase 2는 문서 변경 시 기존 청크를 삭제하고 새 청크를 삽입�
 EMBEDDING_MODEL=jhgan/ko-sroberta-multitask
 CHROMA_COLLECTION=campus_copilot_chunks
 INDEX_BATCH_SIZE=64
+CRAWL_MARKDOWN_CONCURRENCY=1
+CRAWL_MARKDOWN_TIMEOUT_SECONDS=45
+CRAWL_DOCUMENT_TIMEOUT_SECONDS=120
 ```
 
 worker와 backend가 같은 collection 이름을 사용해야 하므로 collection 이름은 공통 config로 둔다.
@@ -190,7 +196,8 @@ sequenceDiagram
 
     API->>RET: question, category
     RET->>CH: semantic search top_n
-    RET->>PG: BM25/keyword search top_n
+    RET->>PG: load current chunk watermark
+    RET->>RET: load BM25 file index top_n
     RET->>RET: normalize and merge scores
     RET->>PG: load documents and chunks
     RET-->>API: ranked retrieval results
@@ -208,9 +215,9 @@ ChromaDB는 semantic recall을 담당한다. 질문을 같은 embedding model로
 
 ### 7.3 BM25 Search
 
-BM25는 한국어 학사 용어, 메뉴명, 표 안의 짧은 키워드 검색을 보강한다. Phase 4에서는 PostgreSQL의 활성 청크를 읽어 BM25 corpus를 구성한다.
+BM25는 한국어 학사 용어, 메뉴명, 표 안의 짧은 키워드 검색을 보강한다. Phase 4에서는 worker가 PostgreSQL의 활성 청크를 읽어 BM25 corpus를 구성하고 파일 인덱스로 저장한다.
 
-초기 구현은 backend process memory에 BM25 index를 lazy build하고, `document_chunks.created_at` watermark가 바뀌면 query 시작 시 재생성한다. 운영에서 별도 search service로 분리하는 것은 Phase 5 이후로 미룬다.
+BM25 파일은 ChromaDB 벡터 인덱싱과 같은 worker 인덱싱 산출물이다. backend는 query 시점에 `.data/bm25/`의 BM25 파일을 읽어 Chroma semantic search 결과와 병합한다. 파일이 없거나 `document_chunks.created_at` watermark가 맞지 않으면 backend는 요청 시점에 PostgreSQL 청크로 임시 인덱스를 재생성하지 않고, BM25 경로를 degraded 상태로 보고한 뒤 semantic search 결과만 사용한다. 운영에서 별도 search service로 분리하는 것은 Phase 5 이후로 미룬다.
 
 한국어 형태소 분석기는 Phase 4에서 새 인프라 부담을 만들지 않는다. 초기 tokenizer는 공백, 숫자, 한글/영문 토큰 정규화 기반으로 두고, 검색 품질 문제가 확인되면 구현 계획에서 형태소 분석기 도입을 별도 검토한다.
 
@@ -495,14 +502,13 @@ backend/app/services/
 
 ### 11.3 Database Access
 
-backend는 SQLAlchemy async session을 사용한다. ChromaDB client와 BM25 index는 app lifecycle에서 초기화하거나 lazy singleton으로 관리한다.
+backend는 SQLAlchemy async session을 사용한다. ChromaDB client와 BM25 파일 reader는 app lifecycle에서 초기화하거나 lazy singleton으로 관리한다.
 
-BM25 index는 backend process memory에 두되, DB 청크 변경을 놓치지 않도록 watermark 기반 lazy rebuild를 사용한다. backend는 마지막으로 본 `max(document_chunks.created_at)` 값을 보관하고, query 시작 시 현재 watermark가 달라졌으면 BM25 index를 재생성한다.
+BM25 index 파일은 worker가 `.data/bm25/`에 생성한다. backend는 마지막으로 본 `max(document_chunks.created_at)` 값을 보관하고, query 시작 시 현재 watermark와 파일 payload의 watermark가 같으면 파일 인덱스를 사용한다. watermark가 다르거나 파일이 없으면 backend는 BM25를 unavailable로 표시하고 파일을 쓰거나 요청 중 임시 인덱스를 만들지 않는다.
 
-- backend 시작 시
 - query 시작 시 `document_chunks.created_at` watermark 변경 감지
-- admin crawl 요청이 같은 backend process 안에서 완료된 경우 즉시 refresh
-- 수동 refresh internal function 호출
+- worker crawl/indexing 완료 시 BM25 파일 갱신
+- backend query 시 BM25 파일 watermark 검증
 
 ## 12. Worker Integration
 
@@ -685,11 +691,16 @@ Phase 4에서 필요한 설정값:
 EMBEDDING_MODEL=jhgan/ko-sroberta-multitask
 CHROMA_COLLECTION=campus_copilot_chunks
 INDEX_BATCH_SIZE=64
+BM25_CACHE_DIR=.data/bm25
+CRAWL_MARKDOWN_CONCURRENCY=1
+CRAWL_MARKDOWN_TIMEOUT_SECONDS=45
+CRAWL_DOCUMENT_TIMEOUT_SECONDS=120
 RETRIEVER_SEMANTIC_TOP_N=20
 RETRIEVER_BM25_TOP_N=20
 RETRIEVER_FINAL_TOP_K=6
 RETRIEVER_SEMANTIC_WEIGHT=0.7
 RETRIEVER_BM25_WEIGHT=0.3
+RETRIEVER_BM25_CACHE_DIR=.data/bm25
 FRESHNESS_STALE_DAYS=180
 CHAT_CACHE_TTL_SECONDS=3600
 LLM_PROVIDER=llama_cpp
