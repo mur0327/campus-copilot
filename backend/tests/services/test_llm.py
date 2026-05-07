@@ -1,6 +1,6 @@
 import pytest
 
-from app.services.llm import LLMMessage, LlamaCppProvider, StaticLLMProvider, validate_provider_settings
+from app.services.llm import LlamaCppProvider, LLMMessage, StaticLLMProvider, validate_provider_settings
 
 
 def test_static_provider_streams_answer_tokens():

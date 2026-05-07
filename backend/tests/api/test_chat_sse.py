@@ -435,13 +435,21 @@ async def test_chat_cache_hit_emits_metadata_and_done_without_tokens():
 async def test_chat_stream_emits_error_event_and_closes_provider_on_failure():
     logs = []
     provider = FailingProvider()
+    retrieval_status = {
+        "mode": "hybrid",
+        "degraded": False,
+        "semantic_available": True,
+        "bm25_available": True,
+        "semantic_error": None,
+        "bm25_error": None,
+    }
 
     async def query_log_writer(session, **kwargs):
         logs.append(kwargs)
 
     def override_dependencies():
         return {
-            "retriever": FakeRetriever([make_retrieval_result()]),
+            "retriever": FakeStatusRetriever([make_retrieval_result()], retrieval_status),
             "llm_provider_factory": lambda: provider,
             "cache": FakeCache(),
             "query_log_writer": query_log_writer,
@@ -464,4 +472,5 @@ async def test_chat_stream_emits_error_event_and_closes_provider_on_failure():
     assert events[-1]["data"] == {"message": "답변 생성 중 오류가 발생했습니다.", "retryable": True}
     assert logs[-1]["sources"]["_meta"]["status"] == "failure"
     assert logs[-1]["sources"]["_meta"]["error_type"] == "RuntimeError"
+    assert logs[-1]["sources"]["_meta"]["retrieval_status"] == retrieval_status
     assert provider.closed is True

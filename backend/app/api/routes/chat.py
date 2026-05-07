@@ -90,6 +90,7 @@ async def _chat_events(
     normalized_question = normalize_query(payload.question)
     cache_key = _cache_key(normalized_question, payload.category)
     started_at = perf_counter()
+    retrieval_status = RetrievalStatusPayload(mode="empty")
 
     try:
         cached_response = _coerce_chat_response(
@@ -177,14 +178,7 @@ async def _chat_events(
             procedure_steps=[],
             conflict_warning=ConflictWarning(exists=False),
             freshness="stale",
-            retrieval_status=RetrievalStatusPayload(
-                mode="empty",
-                degraded=True,
-                semantic_available=False,
-                bm25_available=False,
-                semantic_error=type(exc).__name__,
-                bm25_error=type(exc).__name__,
-            ),
+            retrieval_status=retrieval_status,
         )
         await _safe_write_chat_log_with_session(
             dependencies,

@@ -34,25 +34,34 @@ class FakeResult:
         return FakeScalarResult(self.values)
 
 
+class FakeUpdateResult:
+    def __init__(self, rowcount: int) -> None:
+        self.rowcount = rowcount
+
+
 class FakeSession:
     def __init__(
         self,
         *,
         scalar_results: list[object] | None = None,
-        execute_results: list[FakeResult] | None = None,
+        execute_results: list[object] | None = None,
     ) -> None:
         self.scalar_results = scalar_results or []
         self.execute_results = execute_results or []
         self.scalar_statements: list[object] = []
         self.execute_statements: list[object] = []
+        self.commits = 0
 
     async def scalar(self, statement: object) -> object:
         self.scalar_statements.append(statement)
         return self.scalar_results.pop(0)
 
-    async def execute(self, statement: object) -> FakeResult:
+    async def execute(self, statement: object) -> object:
         self.execute_statements.append(statement)
         return self.execute_results.pop(0)
+
+    async def commit(self) -> None:
+        self.commits += 1
 
 
 @pytest.fixture(autouse=True)
@@ -178,7 +187,7 @@ async def test_admin_status_includes_worker_crawl_status_before_db_job(monkeypat
     monkeypatch.setattr(admin_route, "fetch_worker_crawl_status", fake_fetch_worker_crawl_status)
     fake_session = FakeSession(
         scalar_results=[0, 0, 0, None],
-        execute_results=[FakeResult([])],
+        execute_results=[FakeUpdateResult(0), FakeResult([])],
     )
     override_session(fake_session)
 
@@ -197,6 +206,114 @@ async def test_admin_status_includes_worker_crawl_status_before_db_job(monkeypat
         "completed_at": None,
         "error": None,
     }
+    assert fake_session.commits == 0
+
+
+@pytest.mark.asyncio
+async def test_admin_status_marks_older_running_db_job_stale_when_worker_started_newer(monkeypatch):
+    worker_started_at = datetime(2026, 5, 7, 8, 19, tzinfo=UTC)
+    db_started_at = datetime(2026, 5, 7, 7, 40, tzinfo=UTC)
+
+    async def fake_fetch_worker_crawl_status():
+        return AdminWorkerCrawlStatusResponse(
+            status="running",
+            current_stage="학과 사이트 메뉴 수집 중",
+            total_pages=47,
+            processed_pages=34,
+            started_at=worker_started_at,
+            completed_at=None,
+            error=None,
+        )
+
+    monkeypatch.setattr(admin_route, "fetch_worker_crawl_status", fake_fetch_worker_crawl_status)
+    fake_session = FakeSession(
+        scalar_results=[1, 1, 0, None],
+        execute_results=[
+            FakeUpdateResult(1),
+            FakeResult(
+                [
+                    SimpleNamespace(
+                        id=UUID("00000000-0000-0000-0000-000000000301"),
+                        status="failed",
+                        pages_crawled=0,
+                        pages_changed=0,
+                        total_pages=7026,
+                        processed_pages=7026,
+                        current_stage="중단됨",
+                        conflicts_found=0,
+                        started_at=db_started_at,
+                        completed_at=worker_started_at,
+                        error=admin_route.STALE_CRAWL_JOB_ERROR,
+                    )
+                ]
+            ),
+        ],
+    )
+    override_session(fake_session)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/admin/status")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["latest_crawl_job"]["status"] == "failed"
+    assert body["latest_crawl_job"]["current_stage"] == "중단됨"
+    assert body["latest_crawl_job"]["error"] == admin_route.STALE_CRAWL_JOB_ERROR
+    assert body["worker_crawl_status"]["current_stage"] == "학과 사이트 메뉴 수집 중"
+    assert fake_session.commits == 1
+    assert len(fake_session.execute_statements) == 2
+
+
+@pytest.mark.asyncio
+async def test_admin_status_marks_running_db_job_stale_when_worker_is_idle(monkeypatch):
+    db_started_at = datetime(2026, 5, 7, 7, 40, tzinfo=UTC)
+    completed_at = datetime(2026, 5, 7, 8, 30, tzinfo=UTC)
+
+    async def fake_fetch_worker_crawl_status():
+        return AdminWorkerCrawlStatusResponse(
+            status="idle",
+            current_stage=None,
+            total_pages=0,
+            processed_pages=0,
+            started_at=None,
+            completed_at=None,
+            error=None,
+        )
+
+    monkeypatch.setattr(admin_route, "fetch_worker_crawl_status", fake_fetch_worker_crawl_status)
+    fake_session = FakeSession(
+        scalar_results=[1, 1, 0, None],
+        execute_results=[
+            FakeUpdateResult(1),
+            FakeResult(
+                [
+                    SimpleNamespace(
+                        id=UUID("00000000-0000-0000-0000-000000000302"),
+                        status="failed",
+                        pages_crawled=0,
+                        pages_changed=0,
+                        total_pages=7026,
+                        processed_pages=7026,
+                        current_stage="중단됨",
+                        conflicts_found=0,
+                        started_at=db_started_at,
+                        completed_at=completed_at,
+                        error=admin_route.STALE_CRAWL_JOB_ERROR,
+                    )
+                ]
+            ),
+        ],
+    )
+    override_session(fake_session)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/admin/status")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["latest_crawl_job"]["status"] == "failed"
+    assert body["latest_crawl_job"]["current_stage"] == "중단됨"
+    assert fake_session.commits == 1
 
 
 @pytest.mark.asyncio

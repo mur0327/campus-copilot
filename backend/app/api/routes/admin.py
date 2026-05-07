@@ -1,5 +1,7 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -14,6 +16,8 @@ from app.schemas.admin import (
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+STALE_CRAWL_JOB_ERROR = "stale running crawl job cleaned up by admin status"
 
 
 @router.get("/status", response_model=AdminStatusResponse)
@@ -38,15 +42,19 @@ async def status(session: AsyncSession = Depends(get_db)) -> AdminStatusResponse
     )
     last_crawled = await session.scalar(
         select(CrawlJob.completed_at)
-        .where(CrawlJob.completed_at.is_not(None))
+        .where(
+            CrawlJob.status == "completed",
+            CrawlJob.completed_at.is_not(None),
+        )
         .order_by(CrawlJob.completed_at.desc())
         .limit(1)
     )
+    worker_crawl_status = await fetch_worker_crawl_status()
+    await cleanup_stale_running_crawl_jobs(session, worker_crawl_status)
     latest_job_result = await session.execute(
         select(CrawlJob).order_by(CrawlJob.started_at.desc()).limit(1)
     )
     latest_job = latest_job_result.scalars().first()
-    worker_crawl_status = await fetch_worker_crawl_status()
 
     return AdminStatusResponse(
         documents=documents or 0,
@@ -112,6 +120,33 @@ async def fetch_worker_crawl_status() -> AdminWorkerCrawlStatusResponse | None:
         return None
 
     return AdminWorkerCrawlStatusResponse.model_validate(payload)
+
+
+async def cleanup_stale_running_crawl_jobs(
+    session: AsyncSession,
+    worker_crawl_status: AdminWorkerCrawlStatusResponse | None,
+) -> None:
+    if worker_crawl_status is None:
+        return
+
+    conditions = [CrawlJob.status == "running"]
+    if worker_crawl_status.status == "running":
+        if worker_crawl_status.started_at is None:
+            return
+        conditions.append(CrawlJob.started_at < worker_crawl_status.started_at)
+
+    result = await session.execute(
+        update(CrawlJob)
+        .where(*conditions)
+        .values(
+            status="failed",
+            current_stage="중단됨",
+            completed_at=datetime.now(UTC),
+            error=STALE_CRAWL_JOB_ERROR,
+        )
+    )
+    if getattr(result, "rowcount", 0):
+        await session.commit()
 
 
 @router.get("/conflicts", response_model=list[AdminConflictResponse])

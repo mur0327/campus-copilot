@@ -6,7 +6,6 @@ from app.services.freshness import calculate_source_freshness, calculate_top_lev
 from app.services.llm import LLMMessage, LLMProvider
 from app.services.retriever import RetrievalResult
 
-
 NO_GROUNDED_CONTEXT_ANSWER = "검색된 공식 문서 근거가 부족해 답변할 수 없습니다."
 PROCEDURE_KEYWORDS = (
     "신청",
