@@ -40,6 +40,32 @@ def test_build_chunk_rows_preserves_order():
 
 
 @pytest.mark.asyncio
+async def test_update_crawl_job_progress_writes_stage_and_counts():
+    executed: list[tuple[str, tuple]] = []
+
+    class Connection:
+        async def execute(self, query, *args):
+            executed.append((query, args))
+
+    await storage.update_crawl_job_progress(
+        Connection(),
+        "job-1",
+        current_stage="문서 수집 중",
+        total_pages=50,
+        processed_pages=12,
+        pages_crawled=10,
+        pages_changed=3,
+    )
+
+    assert len(executed) == 1
+    query, args = executed[0]
+    assert "current_stage = $2" in query
+    assert "total_pages = $3" in query
+    assert "processed_pages = $4" in query
+    assert args == ("job-1", "문서 수집 중", 50, 12, 10, 3)
+
+
+@pytest.mark.asyncio
 async def test_replace_document_chunks_serializes_meta_for_asyncpg():
     document = ParsedDocument(
         url="https://example.com",
@@ -70,8 +96,9 @@ async def test_replace_document_chunks_serializes_meta_for_asyncpg():
 
     await storage.replace_document_chunks(Connection(), "document-1", document)
 
-    assert len(executed) == 1
-    assert "DELETE FROM document_chunks" in executed[0][0]
+    assert len(executed) == 2
+    assert "DELETE FROM conflict_pairs" in executed[0][0]
+    assert "DELETE FROM document_chunks" in executed[1][0]
     assert len(inserted_args) == 1
     assert isinstance(inserted_args[0][5], str)
     assert json.loads(inserted_args[0][5]) == {"start_index": 0, "header_1": "안내"}

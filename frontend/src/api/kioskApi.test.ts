@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchCategories } from "./categories";
 import { fetchFAQ } from "./faq";
@@ -8,6 +8,11 @@ import type { Category, FAQItem, PopularItem } from "../types/kiosk";
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
+beforeEach(() => {
+  vi.stubEnv("VITE_ENABLE_KIOSK_FALLBACK", "true");
 });
 
 describe("kiosk API adapters", () => {
@@ -32,6 +37,20 @@ describe("kiosk API adapters", () => {
 
     fetchMock.mockRejectedValueOnce(new Error("network"));
     await expect(fetchCategories()).resolves.not.toEqual([]);
+  });
+
+  it("rejects category failures and empty responses when kiosk fallback is disabled", async () => {
+    vi.stubEnv("VITE_ENABLE_KIOSK_FALLBACK", "false");
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 404 } as Response);
+    await expect(fetchCategories()).rejects.toThrow("categories fetch failed: 404");
+
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+    await expect(fetchCategories()).rejects.toThrow("network");
+
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] } as Response);
+    await expect(fetchCategories()).rejects.toThrow("categories response was empty");
   });
 
   it("logs a visible server warning before falling back on 500 categories response", async () => {
@@ -81,6 +100,20 @@ describe("kiosk API adapters", () => {
     await expect(fetchFAQ("academic")).resolves.not.toEqual([]);
   });
 
+  it("rejects FAQ failures when kiosk fallback is disabled but preserves 200 empty category results", async () => {
+    vi.stubEnv("VITE_ENABLE_KIOSK_FALLBACK", "false");
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 404 } as Response);
+    await expect(fetchFAQ(null)).rejects.toThrow("faq fetch failed: 404");
+
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+    await expect(fetchFAQ("academic")).rejects.toThrow("network");
+
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] } as Response);
+    await expect(fetchFAQ("academic")).resolves.toEqual([]);
+  });
+
   it("requests popular questions and falls back on empty response or 404", async () => {
     const popular: PopularItem[] = [{ rank: 1, question: "등록금 납부 기간?", view_count: 10 }];
     const fetchMock = vi.spyOn(globalThis, "fetch");
@@ -93,6 +126,20 @@ describe("kiosk API adapters", () => {
 
     fetchMock.mockResolvedValueOnce({ ok: false, status: 404 } as Response);
     await expect(fetchPopular()).resolves.not.toEqual([]);
+  });
+
+  it("rejects popular failures when kiosk fallback is disabled and allows 200 empty results", async () => {
+    vi.stubEnv("VITE_ENABLE_KIOSK_FALLBACK", "false");
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 404 } as Response);
+    await expect(fetchPopular()).rejects.toThrow("popular fetch failed: 404");
+
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+    await expect(fetchPopular()).rejects.toThrow("network");
+
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] } as Response);
+    await expect(fetchPopular()).resolves.toEqual([]);
   });
 
   it("posts JSON chat payload to POST /api/v1/chat", async () => {

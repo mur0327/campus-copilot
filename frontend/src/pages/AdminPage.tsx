@@ -14,6 +14,7 @@ export default function AdminPage() {
   const statusQuery = useQuery({
     queryKey: ["admin-status"],
     queryFn: fetchAdminStatus,
+    refetchInterval: 3_000,
   });
   const conflictsQuery = useQuery({
     queryKey: ["admin-conflicts"],

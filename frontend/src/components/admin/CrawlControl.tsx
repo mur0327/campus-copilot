@@ -14,6 +14,7 @@ export default function CrawlControl() {
   });
 
   const isPending = crawlMutation.isPending;
+  const crawlStatus = crawlMutation.data?.status;
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm">
@@ -38,8 +39,13 @@ export default function CrawlControl() {
 
       <div className="mt-5 min-h-6 text-sm">
         {isPending ? <p className="text-slate-600">요청 중</p> : null}
-        {crawlMutation.isSuccess ? (
-          <p className="font-medium text-emerald-700">크롤링 요청됨</p>
+        {crawlStatus === "triggered" ? (
+          <p className="font-medium text-emerald-700">
+            크롤링 작업이 시작되었습니다. 수집 상태가 자동으로 갱신됩니다.
+          </p>
+        ) : null}
+        {crawlStatus === "already_running" ? (
+          <p className="font-medium text-sky-700">이미 크롤링이 진행 중입니다.</p>
         ) : null}
         {crawlMutation.isError ? (
           <p className="rounded-md bg-rose-50 px-3 py-2 text-rose-700">

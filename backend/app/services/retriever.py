@@ -1,0 +1,425 @@
+import pickle
+import re
+from datetime import UTC, datetime
+from hashlib import sha256
+from pathlib import Path
+from uuid import UUID
+
+from pydantic import BaseModel
+from rank_bm25 import BM25Okapi
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.document import Document, DocumentChunk
+
+TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
+
+
+class RetrievalResult(BaseModel):
+    chunk_id: UUID
+    document_id: UUID
+    content: str
+    chunk_type: str
+    score: float
+    title: str | None
+    url: str
+    menu_path: str | None
+    category: str | None
+    crawled_at: datetime | None
+    meta: dict | None
+
+
+class RetrievalStatus(BaseModel):
+    mode: str
+    degraded: bool = False
+    semantic_available: bool = True
+    bm25_available: bool = True
+    semantic_error: str | None = None
+    bm25_error: str | None = None
+
+
+class RetrievalResponse(BaseModel):
+    results: list[RetrievalResult]
+    status: RetrievalStatus
+
+
+def tokenize_korean_light(text: str) -> list[str]:
+    return [token.lower() for token in TOKEN_RE.findall(text)]
+
+
+class BM25Index:
+    def __init__(
+        self,
+        results: list[RetrievalResult],
+        *,
+        corpus: list[list[str]] | None = None,
+        index: BM25Okapi | None = None,
+    ) -> None:
+        self.results = results
+        self.corpus = corpus if corpus is not None else [tokenize_korean_light(result.content) for result in results]
+        self.index = index if index is not None else BM25Okapi(self.corpus) if any(self.corpus) else None
+
+    def search(self, query: str, top_n: int) -> list[RetrievalResult]:
+        if self.index is None or top_n <= 0:
+            return []
+
+        query_tokens = tokenize_korean_light(query)
+        raw_scores = self.index.get_scores(query_tokens)
+        scored = [
+            (result, float(raw_score), _token_overlap(tokens, query_tokens))
+            for result, tokens, raw_score in zip(self.results, self.corpus, raw_scores, strict=True)
+        ]
+        ranked = sorted(
+            scored,
+            key=lambda item: (item[1], item[2]),
+            reverse=True,
+        )
+
+        results = []
+        for result, raw_score, overlap in ranked[:top_n]:
+            score = raw_score if raw_score > 0 else float(overlap)
+            if score > 0:
+                results.append(result.model_copy(update={"score": score}))
+        return results
+
+
+def _token_overlap(tokens: list[str], query_tokens: list[str]) -> int:
+    if not tokens or not query_tokens:
+        return 0
+    return len(set(tokens) & set(query_tokens))
+
+
+def normalize_scores(results: list[RetrievalResult]) -> list[RetrievalResult]:
+    if not results:
+        return []
+    max_score = max(max(result.score for result in results), 1.0)
+    return [result.model_copy(update={"score": round(result.score / max_score, 6)}) for result in results]
+
+
+def merge_ranked_results(
+    semantic_results: list[RetrievalResult],
+    bm25_results: list[RetrievalResult],
+    semantic_weight: float,
+    bm25_weight: float,
+    final_top_k: int,
+) -> list[RetrievalResult]:
+    merged: dict[UUID, RetrievalResult] = {}
+
+    for result in normalize_scores(semantic_results):
+        merged[result.chunk_id] = result.model_copy(update={"score": round(result.score * semantic_weight, 6)})
+
+    for result in normalize_scores(bm25_results):
+        existing = merged.get(result.chunk_id)
+        score = result.score * bm25_weight
+        if existing:
+            merged[result.chunk_id] = existing.model_copy(update={"score": round(existing.score + score, 6)})
+        else:
+            merged[result.chunk_id] = result.model_copy(update={"score": round(score, 6)})
+
+    return sorted(
+        merged.values(),
+        key=lambda result: (
+            result.score,
+            _rank_datetime(result.crawled_at),
+            result.chunk_type == "table",
+        ),
+        reverse=True,
+    )[:final_top_k]
+
+
+def _rank_datetime(value: datetime | None) -> datetime:
+    if value is None:
+        return datetime.min.replace(tzinfo=UTC)
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
+
+
+def row_to_retrieval_result(row) -> RetrievalResult:
+    chunk, document = row
+    return RetrievalResult(
+        chunk_id=chunk.id,
+        document_id=document.id,
+        content=chunk.content,
+        chunk_type=chunk.chunk_type,
+        score=0,
+        title=document.title,
+        url=document.url,
+        menu_path=document.menu_path,
+        category=document.category,
+        crawled_at=document.crawled_at,
+        meta=chunk.meta,
+    )
+
+
+class HybridRetriever:
+    def __init__(
+        self,
+        *,
+        collection,
+        embedder,
+        semantic_weight: float,
+        bm25_weight: float,
+        final_top_k: int,
+        bm25_cache_dir: str | Path | None = None,
+    ) -> None:
+        self.collection = collection
+        self.embedder = embedder
+        self.semantic_weight = semantic_weight
+        self.bm25_weight = bm25_weight
+        self.final_top_k = final_top_k
+        self.bm25_cache: dict[str | None, tuple[datetime | None, BM25Index]] = {}
+        self.bm25_cache_dir = Path(bm25_cache_dir) if bm25_cache_dir else None
+
+    async def ensure_bm25_index(self, session: AsyncSession, category: str | None = None) -> BM25Index:
+        index, _available, _error = await self._ensure_bm25_index_status(session, category)
+        return index
+
+    async def _ensure_bm25_index_status(
+        self,
+        session: AsyncSession,
+        category: str | None = None,
+    ) -> tuple[BM25Index, bool, str | None]:
+        watermark = await session.scalar(select(func.max(DocumentChunk.created_at)))
+        cached = self.bm25_cache.get(category)
+        if cached and cached[0] == watermark:
+            return cached[1], bool(cached[1].results), None
+
+        file_cached = self._load_bm25_file_cache(category, watermark)
+        if file_cached is not None:
+            self.bm25_cache[category] = (watermark, file_cached)
+            return file_cached, True, None
+
+        bm25_index = BM25Index([])
+        self.bm25_cache[category] = (watermark, bm25_index)
+        return bm25_index, False, "worker BM25 index is missing or stale"
+
+    def _bm25_cache_path(self, category: str | None) -> Path | None:
+        if self.bm25_cache_dir is None:
+            return None
+        category_key = category if category is not None else "_all"
+        digest = sha256(category_key.encode("utf-8")).hexdigest()[:16]
+        return self.bm25_cache_dir / f"bm25-{digest}.pkl"
+
+    def _load_bm25_file_cache(
+        self,
+        category: str | None,
+        watermark: datetime | None,
+    ) -> BM25Index | None:
+        cache_path = self._bm25_cache_path(category)
+        if cache_path is None or not cache_path.exists():
+            return None
+
+        try:
+            with cache_path.open("rb") as cache_file:
+                payload = pickle.load(cache_file)
+        except (OSError, pickle.PickleError, EOFError):
+            return None
+
+        if not isinstance(payload, dict):
+            return None
+        if payload.get("watermark") != watermark:
+            return None
+        if payload.get("category") != category:
+            return None
+        records = payload.get("records")
+        corpus = payload.get("corpus")
+        index = payload.get("index")
+        if not isinstance(records, list) or not isinstance(corpus, list):
+            return None
+        if index is not None and not isinstance(index, BM25Okapi):
+            return None
+
+        try:
+            results = [RetrievalResult.model_validate(record) for record in records]
+        except ValueError:
+            return None
+        if len(results) != len(corpus):
+            return None
+        return BM25Index(results, corpus=corpus, index=index)
+
+    async def retrieve(
+        self,
+        session: AsyncSession,
+        *,
+        question: str,
+        category: str | None,
+        semantic_top_n: int,
+        bm25_top_n: int,
+    ) -> list[RetrievalResult]:
+        response = await self.retrieve_with_status(
+            session,
+            question=question,
+            category=category,
+            semantic_top_n=semantic_top_n,
+            bm25_top_n=bm25_top_n,
+        )
+        return response.results
+
+    async def retrieve_with_status(
+        self,
+        session: AsyncSession,
+        *,
+        question: str,
+        category: str | None,
+        semantic_top_n: int,
+        bm25_top_n: int,
+    ) -> RetrievalResponse:
+        bm25_index, bm25_available, bm25_error = await self._ensure_bm25_index_status(session, category)
+        bm25_results = bm25_index.search(question, bm25_top_n)
+
+        semantic_available = True
+        semantic_error = None
+        try:
+            semantic_results = await self.search_chroma(session, question, category, semantic_top_n)
+        except Exception as exc:
+            semantic_available = False
+            semantic_error = type(exc).__name__
+            semantic_results = []
+
+        results = merge_ranked_results(
+            semantic_results,
+            bm25_results,
+            self.semantic_weight,
+            self.bm25_weight,
+            self.final_top_k,
+        )
+        return RetrievalResponse(
+            results=results,
+            status=RetrievalStatus(
+                mode=_retrieval_mode(
+                    results=results,
+                    semantic_available=semantic_available,
+                    bm25_available=bm25_available,
+                ),
+                degraded=not semantic_available or not bm25_available,
+                semantic_available=semantic_available,
+                bm25_available=bm25_available,
+                semantic_error=semantic_error,
+                bm25_error=bm25_error,
+            ),
+        )
+
+    async def search_chroma(
+        self,
+        session: AsyncSession,
+        question: str,
+        category: str | None,
+        semantic_top_n: int,
+    ) -> list[RetrievalResult]:
+        query_vector = _first_vector(self.embedder.encode([question]))
+        query_kwargs = {
+            "query_embeddings": [query_vector],
+            "n_results": semantic_top_n,
+            "include": ["metadatas", "distances"],
+        }
+        if category:
+            query_kwargs["where"] = {"category": category}
+
+        response = self.collection.query(**query_kwargs)
+        chroma_ids = _first_response_list(response.get("ids"))
+        metadatas = _first_response_list(response.get("metadatas"))
+        distances = _first_response_list(response.get("distances"))
+
+        chunk_ids: list[UUID] = []
+        semantic_scores: dict[UUID, float] = {}
+        for index in range(max(len(metadatas), len(chroma_ids))):
+            metadata = metadatas[index] if index < len(metadatas) else None
+            chroma_id = chroma_ids[index] if index < len(chroma_ids) else None
+            chunk_id = _extract_chunk_id(metadata, chroma_id)
+            if chunk_id is None or chunk_id in semantic_scores:
+                continue
+            chunk_ids.append(chunk_id)
+            distance = distances[index] if index < len(distances) else None
+            semantic_scores[chunk_id] = _distance_to_score(distance)
+
+        if not chunk_ids:
+            return []
+
+        statement = (
+            select(DocumentChunk, Document)
+            .join(Document, Document.id == DocumentChunk.document_id)
+            .where(
+                DocumentChunk.id.in_(chunk_ids),
+                Document.is_active.is_(True),
+                DocumentChunk.content != "",
+            )
+        )
+        if category:
+            statement = statement.where(Document.category == category)
+
+        result = await session.execute(statement)
+        rows_by_id = {
+            retrieval_result.chunk_id: retrieval_result
+            for retrieval_result in (row_to_retrieval_result(row) for row in result.all())
+        }
+
+        ordered_results = []
+        for chunk_id in chunk_ids:
+            retrieval_result = rows_by_id.get(chunk_id)
+            if retrieval_result:
+                ordered_results.append(
+                    retrieval_result.model_copy(update={"score": round(semantic_scores.get(chunk_id, 0), 6)})
+                )
+        return ordered_results
+
+
+def _first_vector(encoded) -> list[float]:
+    vector = encoded[0] if hasattr(encoded, "__getitem__") else encoded
+    if hasattr(vector, "tolist"):
+        vector = vector.tolist()
+    return [float(value) for value in vector]
+
+
+def _first_response_list(value) -> list:
+    if not value:
+        return []
+    return list(value[0] or [])
+
+
+def _parse_uuid(value) -> UUID | None:
+    try:
+        return UUID(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _extract_chunk_id(metadata, chroma_id) -> UUID | None:
+    if isinstance(metadata, dict):
+        chunk_id = _parse_uuid(metadata.get("chunk_id"))
+        if chunk_id:
+            return chunk_id
+
+    if not isinstance(chroma_id, str):
+        return None
+    raw_id = chroma_id.removeprefix("chunk:")
+    return _parse_uuid(raw_id)
+
+
+def _distance_to_score(distance) -> float:
+    if distance is None:
+        return 0
+    try:
+        distance_value = float(distance)
+    except (TypeError, ValueError):
+        return 0
+    if distance_value < 0:
+        return 0
+    return 1 / (1 + distance_value)
+
+
+def _retrieval_mode(
+    *,
+    results: list[RetrievalResult],
+    semantic_available: bool,
+    bm25_available: bool,
+) -> str:
+    if not results:
+        return "empty"
+    if semantic_available and bm25_available:
+        return "hybrid"
+    if semantic_available:
+        return "semantic_only"
+    if bm25_available:
+        return "keyword_only"
+    return "empty"

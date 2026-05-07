@@ -10,4 +10,12 @@ describe("AnswerText", () => {
     expect(screen.getByText("답변")).toBeInTheDocument();
     expect(screen.getByTestId("streaming-cursor")).toBeInTheDocument();
   });
+
+  it("renders markdown emphasis instead of raw markdown markers", () => {
+    render(<AnswerText isStreaming={false} text="**중요** 안내입니다." />);
+
+    const emphasized = screen.getByText("중요");
+    expect(emphasized.tagName).toBe("STRONG");
+    expect(screen.queryByText("**중요** 안내입니다.")).not.toBeInTheDocument();
+  });
 });

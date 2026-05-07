@@ -22,6 +22,14 @@ from tasks.scheduler import build_cron_trigger
 from tasks.storage import ExistingDocumentState
 
 
+@pytest.fixture(autouse=True)
+def no_op_crawl_indexing(monkeypatch):
+    async def fake_index_crawl_documents(connection):
+        return None
+
+    monkeypatch.setattr("tasks.crawl.index_crawl_documents", fake_index_crawl_documents)
+
+
 def test_build_cron_trigger_maps_five_part_expression():
     trigger = build_cron_trigger("0 3 * * *")
     assert "hour='3'" in str(trigger)
@@ -103,18 +111,19 @@ async def test_main_sets_coalesce_for_crawl_job(monkeypatch):
     await scheduler_module.main()
 
     assert recorded["started"] is True
+    assert recorded["func"].__name__ == "run_scheduled"
     assert recorded["kwargs"]["coalesce"] is True
 
 
 @pytest.mark.asyncio
 async def test_run_crawl_returns_counts(monkeypatch):
-    async def fake_discover_html_targets_with_failures():
+    async def fake_discover_html_targets_with_failures(progress_callback=None):
         return CrawlDiscoveryResult(
             targets=[],
             failures=["https://timeout.honam.ac.kr/main: simulated timeout"],
         )
 
-    async def fake_discover_pdf_targets():
+    async def fake_discover_pdf_targets(progress_callback=None):
         return []
 
     async def fake_execute_ingestion(html_targets, pdf_targets, initial_failures=None):
@@ -206,7 +215,7 @@ async def test_execute_ingestion_records_partial_failure_without_failing_job(mon
             raise RuntimeError("boom")
         return f'<html><body><article class="articleBox"><p>{url}</p></article></body></html>'
 
-    async def fake_parse_html(target, html):
+    async def fake_parse_html(target, html, markdown_renderer=None):
         return ParsedDocument(
             url=target.url,
             title="Example",
@@ -486,7 +495,7 @@ async def test_execute_ingestion_processes_changed_html_with_limited_parallelism
     def fake_fetch_html(url):
         return f'<html><body><article class="articleBox"><p>{url}</p></article></body></html>'
 
-    async def fake_parse_html(target, html):
+    async def fake_parse_html(target, html, markdown_renderer=None):
         nonlocal active, max_active
         active += 1
         max_active = max(max_active, active)

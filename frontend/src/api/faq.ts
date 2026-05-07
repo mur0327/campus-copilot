@@ -1,4 +1,5 @@
 import type { FAQItem } from "../types/kiosk";
+import { isKioskFallbackEnabled } from "./kioskFallback";
 import { fallbackFAQForCategory } from "./mockKioskData";
 
 export async function fetchFAQ(categoryId: string | null): Promise<FAQItem[]> {
@@ -12,12 +13,21 @@ export async function fetchFAQ(categoryId: string | null): Promise<FAQItem[]> {
 
     if (!response.ok) {
       warnOnServerError("faq", response.status);
+      if (!isKioskFallbackEnabled()) {
+        throw new Error(`faq fetch failed: ${response.status}`);
+      }
       return fallback;
     }
 
     const data = (await response.json()) as FAQItem[];
-    return data.length > 0 ? data.slice(0, 6) : fallback;
-  } catch {
+    if (data.length > 0) {
+      return data.slice(0, 6);
+    }
+    return isKioskFallbackEnabled() ? fallback : [];
+  } catch (error) {
+    if (!isKioskFallbackEnabled()) {
+      throw error;
+    }
     return fallbackFAQForCategory(categoryId);
   }
 }

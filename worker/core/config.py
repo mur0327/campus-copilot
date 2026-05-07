@@ -27,13 +27,27 @@ class WorkerSettings(BaseSettings):
     crawl_timeout_seconds: int = 30
     crawl_validation_concurrency: int = 12
     crawl_retry_validation_concurrency: int = 3
+    crawl_final_validation_concurrency: int = 24
+    crawl_final_validation_timeout_seconds: int = 8
     crawl_ingestion_concurrency: int = 6
+    crawl_markdown_concurrency: int = 1
+    crawl_markdown_timeout_seconds: int = 45
+    crawl_document_timeout_seconds: int = 120
+    crawl_target_limit: int = 0
     crawl_impersonate: str = "chrome120"
     crawl_schedule: str = "0 3 * * *"
     crawl4ai_base_directory: str = "/tmp/crawl4ai"
     pdf_hybrid_backend: str | None = None
     pdf_hybrid_mode: str = "auto"
     pdf_hybrid_url: str = "http://localhost:5002"
+    chroma_host: str = "localhost"
+    chroma_port: int = 8001
+    chroma_collection: str = "campus_copilot_chunks"
+    embedding_model: str = "jhgan/ko-sroberta-multitask"
+    index_batch_size: int = 64
+    bm25_cache_dir: str = ".data/bm25"
+    trigger_host: str = "0.0.0.0"
+    trigger_port: int = 8088
 
     @field_validator("crawl_target_urls", mode="before")
     @classmethod

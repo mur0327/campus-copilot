@@ -5,12 +5,14 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import tempfile
 from collections.abc import Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from bs4 import BeautifulSoup
 from langchain_core.documents import Document
@@ -30,6 +32,7 @@ from tasks.parsers.roadmap import build_semester_roadmap_chunks
 
 MarkdownRenderer = Callable[[str], Awaitable[str]]
 PARSER_VERSION = "phase2-parser-v2"
+logger = logging.getLogger(__name__)
 
 
 def _target_hash_payload(target: CrawlTarget | None) -> dict[str, object]:
@@ -86,14 +89,76 @@ def get_crawl4ai_components() -> tuple[type, object, type]:
     return AsyncWebCrawler, CacheMode, CrawlerRunConfig
 
 
+class ArticleMarkdownRenderer:
+    def __init__(self, *, concurrency: int | None = None) -> None:
+        self._concurrency = max(1, concurrency or get_settings().crawl_markdown_concurrency)
+        self._semaphore = asyncio.Semaphore(self._concurrency)
+        self._start_lock = asyncio.Lock()
+        self._crawler: Any | None = None
+        self._crawler_context: Any | None = None
+        self._config: Any | None = None
+
+    async def __aenter__(self) -> MarkdownRenderer:
+        return self.render
+
+    async def __aexit__(self, exc_type, exc, tb) -> bool:
+        await self._close_crawler(exc_type, exc, tb)
+        return False
+
+    async def _close_crawler(self, exc_type=None, exc=None, tb=None) -> None:
+        if self._crawler_context is not None:
+            await self._crawler_context.__aexit__(exc_type, exc, tb)
+            self._crawler_context = None
+            self._crawler = None
+
+    async def _ensure_crawler(self) -> None:
+        if self._crawler is not None:
+            return
+
+        async with self._start_lock:
+            if self._crawler is not None:
+                return
+
+            worker_settings = get_settings()
+            async_web_crawler, cache_mode, crawler_run_config = get_crawl4ai_components()
+            self._config = crawler_run_config(cache_mode=cache_mode.BYPASS)
+            self._crawler_context = async_web_crawler(
+                base_directory=worker_settings.crawl4ai_base_directory
+            )
+            self._crawler = await self._crawler_context.__aenter__()
+
+    async def render(self, article_html: str) -> str:
+        async with self._semaphore:
+            await self._ensure_crawler()
+            try:
+                result = await asyncio.wait_for(
+                    self._crawler.arun(url=f"raw:{article_html}", config=self._config),
+                    timeout=get_settings().crawl_markdown_timeout_seconds,
+                )
+            except TimeoutError:
+                logger.warning(
+                    "crawl4ai markdown rendering timed out after %s seconds",
+                    get_settings().crawl_markdown_timeout_seconds,
+                )
+                await self._close_crawler()
+                raise
+            except Exception:
+                await self._close_crawler()
+                raise
+        markdown = result.markdown.fit_markdown or result.markdown.raw_markdown
+        return markdown.strip()
+
+
+def create_article_markdown_renderer(*, concurrency: int | None = None) -> ArticleMarkdownRenderer:
+    return ArticleMarkdownRenderer(concurrency=concurrency)
+
+
 async def render_markdown_from_article(article_html: str) -> str:
     worker_settings = get_settings()
-    async_web_crawler, cache_mode, crawler_run_config = get_crawl4ai_components()
-    config = crawler_run_config(cache_mode=cache_mode.BYPASS)
-    async with async_web_crawler(base_directory=worker_settings.crawl4ai_base_directory) as crawler:
-        result = await crawler.arun(url=f"raw:{article_html}", config=config)
-    markdown = result.markdown.fit_markdown or result.markdown.raw_markdown
-    return markdown.strip()
+    async with create_article_markdown_renderer(
+        concurrency=worker_settings.crawl_markdown_concurrency
+    ) as renderer:
+        return await renderer(article_html)
 
 
 def load_pdf_markdown_documents(pdf_path: str) -> list[Document]:
