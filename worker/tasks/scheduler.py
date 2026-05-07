@@ -9,8 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from core.config import settings
-from tasks.crawl import run_crawl
-from tasks.trigger import create_app
+from tasks.trigger import CrawlTriggerService, create_app
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,11 +26,11 @@ def build_cron_trigger(cron_expr: str) -> CronTrigger:
     )
 
 
-async def start_trigger_server() -> None:
+async def start_trigger_server(service: CrawlTriggerService) -> None:
     import uvicorn
 
     config = uvicorn.Config(
-        create_app(),
+        create_app(service),
         host=settings.trigger_host,
         port=settings.trigger_port,
         log_level="info",
@@ -42,10 +41,11 @@ async def start_trigger_server() -> None:
 
 async def main() -> None:
     scheduler = AsyncIOScheduler()
+    crawl_service = CrawlTriggerService()
     cron_expr = os.getenv("CRAWL_SCHEDULE", "0 3 * * *")
 
     scheduler.add_job(
-        run_crawl,
+        crawl_service.run_scheduled,
         build_cron_trigger(cron_expr),
         id="crawl_job",
         coalesce=True,
@@ -53,7 +53,7 @@ async def main() -> None:
         misfire_grace_time=600,
     )
     scheduler.start()
-    trigger_server_task = asyncio.create_task(start_trigger_server())
+    trigger_server_task = asyncio.create_task(start_trigger_server(crawl_service))
     logger.info(
         "Scheduler started. Trigger server listening on %s:%s.",
         settings.trigger_host,

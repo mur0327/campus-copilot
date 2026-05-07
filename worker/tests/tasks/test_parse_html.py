@@ -72,6 +72,62 @@ async def test_render_markdown_from_article_uses_fit_markdown(monkeypatch):
     assert isinstance(FakeCrawler.arun_config, FakeCrawlerRunConfig)
 
 
+@pytest.mark.asyncio
+async def test_article_markdown_renderer_reuses_crawler(monkeypatch):
+    class FakeMarkdown:
+        raw_markdown = "raw output"
+
+        def __init__(self, value: str) -> None:
+            self.fit_markdown = value
+
+    class FakeResult:
+        def __init__(self, value: str) -> None:
+            self.markdown = FakeMarkdown(value)
+
+    class FakeCrawlerRunConfig:
+        def __init__(self, *, cache_mode):
+            self.cache_mode = cache_mode
+
+    class FakeCrawler:
+        enter_count = 0
+        exit_count = 0
+        arun_urls: list[str] = []
+
+        def __init__(self, *, base_directory):
+            self.base_directory = base_directory
+
+        async def __aenter__(self):
+            FakeCrawler.enter_count += 1
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            FakeCrawler.exit_count += 1
+            return False
+
+        async def arun(self, *, url, config):
+            FakeCrawler.arun_urls.append(url)
+            return FakeResult(f"fit output {len(FakeCrawler.arun_urls)}")
+
+    monkeypatch.setattr(
+        parse_module,
+        "get_crawl4ai_components",
+        lambda: (FakeCrawler, SimpleNamespace(BYPASS="bypass"), FakeCrawlerRunConfig),
+    )
+
+    async with parse_module.create_article_markdown_renderer(concurrency=1) as renderer:
+        first = await renderer("<article>첫번째</article>")
+        second = await renderer("<article>두번째</article>")
+
+    assert first == "fit output 1"
+    assert second == "fit output 2"
+    assert FakeCrawler.enter_count == 1
+    assert FakeCrawler.exit_count == 1
+    assert FakeCrawler.arun_urls == [
+        "raw:<article>첫번째</article>",
+        "raw:<article>두번째</article>",
+    ]
+
+
 def test_markdown_to_text_chunks_preserves_header_metadata():
     chunks = markdown_to_text_chunks("# 장학 안내\n\n장학금 신청 절차를 안내합니다.")
 

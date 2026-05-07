@@ -9,7 +9,7 @@ from tasks.crawl import run_crawl
 
 logger = logging.getLogger(__name__)
 
-RunCrawl = Callable[[], Awaitable[object]]
+RunCrawl = Callable[..., Awaitable[object]]
 
 
 class CrawlTriggerService:
@@ -31,16 +31,30 @@ class CrawlTriggerService:
                 logger.info("manual crawl trigger ignored: already running")
                 return {"status": "already_running"}
 
-            self._status = "running"
-            self._current_stage = "대상 검색 중"
-            self._started_at = datetime.now(UTC)
-            self._completed_at = None
-            self._error = None
-            self._total_pages = 0
-            self._processed_pages = 0
-            self._task = asyncio.create_task(self._run())
+            self._start_locked()
+            self._task = asyncio.create_task(self._run("manual crawl"))
             logger.info("manual crawl trigger accepted")
             return {"status": "triggered"}
+
+    async def run_scheduled(self) -> None:
+        async with self._lock:
+            if self._task is not None and not self._task.done():
+                logger.info("scheduled crawl skipped: already running")
+                return
+
+            self._start_locked()
+            self._task = asyncio.current_task()
+
+        await self._run("scheduled crawl")
+
+    def _start_locked(self) -> None:
+        self._status = "running"
+        self._current_stage = "대상 검색 중"
+        self._started_at = datetime.now(UTC)
+        self._completed_at = None
+        self._error = None
+        self._total_pages = 0
+        self._processed_pages = 0
 
     async def update_progress(
         self,
@@ -56,7 +70,7 @@ class CrawlTriggerService:
             if total_pages is not None:
                 self._total_pages = total_pages
         logger.info(
-            "manual crawl progress: stage=%s processed_pages=%s total_pages=%s",
+            "crawl progress: stage=%s processed_pages=%s total_pages=%s",
             current_stage,
             processed_pages,
             total_pages,
@@ -79,9 +93,9 @@ class CrawlTriggerService:
         if task is not None:
             await task
 
-    async def _run(self) -> None:
+    async def _run(self, label: str) -> None:
         try:
-            logger.info("manual crawl started")
+            logger.info("%s started", label)
             await self.run_crawl(progress_callback=self.update_progress)  # type: ignore[call-arg]
             async with self._lock:
                 self._status = "completed"
@@ -89,10 +103,10 @@ class CrawlTriggerService:
                 self._processed_pages = self._total_pages
                 self._completed_at = datetime.now(UTC)
                 self._error = None
-            logger.info("manual crawl completed")
+            logger.info("%s completed", label)
         except Exception:
-            error = "manual crawl trigger failed"
-            logger.exception("manual crawl trigger failed")
+            error = f"{label} failed"
+            logger.exception("%s failed", label)
             async with self._lock:
                 self._status = "failed"
                 self._current_stage = "실패"

@@ -30,6 +30,10 @@ class WorkerSettings(BaseSettings):
     crawl_final_validation_concurrency: int = 24
     crawl_final_validation_timeout_seconds: int = 8
     crawl_ingestion_concurrency: int = 6
+    crawl_markdown_concurrency: int = 1
+    crawl_markdown_timeout_seconds: int = 45
+    crawl_document_timeout_seconds: int = 120
+    crawl_target_limit: int = 0
     crawl_impersonate: str = "chrome120"
     crawl_schedule: str = "0 3 * * *"
     crawl4ai_base_directory: str = "/tmp/crawl4ai"

@@ -14,6 +14,7 @@ RUN pip install uv --no-cache-dir
 
 COPY pyproject.toml ./
 RUN uv sync --no-dev
+RUN playwright install --with-deps chromium
 
 COPY . .
 

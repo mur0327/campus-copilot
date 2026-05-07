@@ -37,6 +37,15 @@ ORDER BY d.crawled_at DESC NULLS LAST, c.created_at ASC
 LIMIT $1
 """
 
+PENDING_CHUNKS_COUNT_SQL = """
+SELECT count(*)
+FROM document_chunks c
+JOIN documents d ON d.id = c.document_id
+WHERE d.is_active = TRUE
+  AND c.content <> ''
+  AND c.chroma_id IS NULL
+"""
+
 
 @dataclass(slots=True)
 class EmbedSummary:
@@ -54,6 +63,10 @@ def build_chroma_id(chunk_id: str) -> str:
 
 def _metadata_text(value: object) -> str:
     return "" if value is None else str(value)
+
+
+def normalize_embedding(vector) -> list[float]:
+    return [float(value) for value in vector]
 
 
 async def embed_pending_chunks(connection, collection, embedder, batch_size: int) -> EmbedSummary:
@@ -83,7 +96,7 @@ async def embed_pending_chunks(connection, collection, embedder, batch_size: int
 
     collection.upsert(
         ids=ids,
-        embeddings=[list(vector) for vector in embeddings],
+        embeddings=[normalize_embedding(vector) for vector in embeddings],
         documents=texts,
         metadatas=metadatas,
     )
@@ -97,6 +110,10 @@ async def embed_pending_chunks(connection, collection, embedder, batch_size: int
         summary.chunks_indexed += 1
 
     return summary
+
+
+async def count_pending_chunks(connection) -> int:
+    return int(await connection.fetchval(PENDING_CHUNKS_COUNT_SQL) or 0)
 
 
 def create_embedder(model_name: str):
@@ -124,8 +141,3 @@ async def prune_orphan_vectors(connection, collection) -> int:
     if orphan_ids:
         collection.delete(ids=orphan_ids)
     return len(orphan_ids)
-
-
-async def embed_chunks(chunks: list[dict]) -> None:
-    """Embed parsed chunks into the vector store."""
-    logger.info("embed_chunks stub: %d chunks", len(chunks))

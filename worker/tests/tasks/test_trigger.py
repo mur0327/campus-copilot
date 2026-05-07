@@ -89,6 +89,32 @@ async def test_status_reports_running_before_crawl_job_exists():
 
 
 @pytest.mark.asyncio
+async def test_scheduled_crawl_updates_shared_status():
+    release = asyncio.Event()
+    updated = asyncio.Event()
+
+    async def fake_run_crawl(progress_callback=None):
+        if progress_callback is not None:
+            await progress_callback("예약 수집 중", processed_pages=2, total_pages=5)
+            updated.set()
+        await release.wait()
+
+    service = CrawlTriggerService(run_crawl=fake_run_crawl)
+    task = asyncio.create_task(service.run_scheduled())
+    await asyncio.wait_for(updated.wait(), timeout=1)
+
+    status = await service.status()
+
+    assert status["status"] == "running"
+    assert status["current_stage"] == "예약 수집 중"
+    assert status["processed_pages"] == 2
+    assert status["total_pages"] == 5
+
+    release.set()
+    await task
+
+
+@pytest.mark.asyncio
 async def test_trigger_allows_new_crawl_after_previous_finishes():
     calls = 0
 

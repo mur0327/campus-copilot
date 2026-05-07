@@ -5,11 +5,27 @@ from pathlib import Path
 import pytest
 
 from tasks.bm25 import build_bm25_cache_path, write_bm25_indexes
-from tasks.embed import build_chroma_id, embed_pending_chunks, prune_orphan_vectors
+from tasks.embed import (
+    build_chroma_id,
+    embed_pending_chunks,
+    normalize_embedding,
+    prune_orphan_vectors,
+)
 
 
 def test_build_chroma_id_uses_chunk_uuid():
     assert build_chroma_id("abc-123") == "chunk:abc-123"
+
+
+def test_normalize_embedding_converts_values_to_python_float():
+    class FloatLike:
+        def __float__(self):
+            return 0.25
+
+    embedding = normalize_embedding([FloatLike(), 1])
+
+    assert embedding == [0.25, 1.0]
+    assert all(type(value) is float for value in embedding)
 
 
 @pytest.mark.asyncio
@@ -63,6 +79,7 @@ async def test_embed_pending_chunks_updates_chroma_ids():
     assert summary.chunks_seen == 1
     assert summary.chunks_indexed == 1
     assert collection.upserts[0][0] == ["chunk:chunk-1"]
+    assert all(type(value) is float for value in collection.upserts[0][1][0])
     assert connection.updated == [("chunk:chunk-1", "chunk-1")]
 
 

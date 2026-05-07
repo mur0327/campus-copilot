@@ -111,6 +111,7 @@ async def test_main_sets_coalesce_for_crawl_job(monkeypatch):
     await scheduler_module.main()
 
     assert recorded["started"] is True
+    assert recorded["func"].__name__ == "run_scheduled"
     assert recorded["kwargs"]["coalesce"] is True
 
 
@@ -214,7 +215,7 @@ async def test_execute_ingestion_records_partial_failure_without_failing_job(mon
             raise RuntimeError("boom")
         return f'<html><body><article class="articleBox"><p>{url}</p></article></body></html>'
 
-    async def fake_parse_html(target, html):
+    async def fake_parse_html(target, html, markdown_renderer=None):
         return ParsedDocument(
             url=target.url,
             title="Example",
@@ -494,7 +495,7 @@ async def test_execute_ingestion_processes_changed_html_with_limited_parallelism
     def fake_fetch_html(url):
         return f'<html><body><article class="articleBox"><p>{url}</p></article></body></html>'
 
-    async def fake_parse_html(target, html):
+    async def fake_parse_html(target, html, markdown_renderer=None):
         nonlocal active, max_active
         active += 1
         max_active = max(max_active, active)

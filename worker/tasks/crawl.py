@@ -25,12 +25,20 @@ from tasks.contracts import (
 )
 from tasks.embed import (
     EmbedSummary,
+    count_pending_chunks,
     create_chroma_collection,
     create_embedder,
     embed_pending_chunks,
     prune_orphan_vectors,
 )
-from tasks.parse import build_content_hash, extract_article_html, parse_html, parse_pdf
+from tasks.parse import (
+    MarkdownRenderer,
+    build_content_hash,
+    create_article_markdown_renderer,
+    extract_article_html,
+    parse_html,
+    parse_pdf,
+)
 from tasks.storage import (
     ExistingDocumentState,
     create_crawl_job,
@@ -50,6 +58,8 @@ DOWNLOAD_EXTENSIONS = {
     ".pdf",
     ".ppt",
     ".pptx",
+    ".mp3",
+    ".mp4",
     ".xls",
     ".xlsx",
     ".zip",
@@ -80,6 +90,39 @@ class ArticleExpansionResult:
     parent_url: str
     targets: list[CrawlTarget]
     failure: str | None = None
+
+
+def apply_crawl_target_limit(
+    html_targets: list[CrawlTarget],
+    pdf_targets: list[CrawlTarget],
+) -> tuple[list[CrawlTarget], list[CrawlTarget]]:
+    if settings.crawl_target_limit <= 0:
+        return html_targets, pdf_targets
+
+    combined_targets = [*html_targets, *pdf_targets]
+    limited_targets = combined_targets[: settings.crawl_target_limit]
+    limited_html_targets = [
+        target for target in limited_targets if target.source_type == "html"
+    ]
+    limited_pdf_targets = [
+        target for target in limited_targets if target.source_type == "pdf"
+    ]
+    logger.info(
+        "crawl target limit applied: limit=%s original_total=%s limited_total=%s "
+        "limited_html=%s limited_pdf=%s",
+        settings.crawl_target_limit,
+        len(combined_targets),
+        len(limited_targets),
+        len(limited_html_targets),
+        len(limited_pdf_targets),
+    )
+    return limited_html_targets, limited_pdf_targets
+
+
+def limit_crawl_targets(targets: list[CrawlTarget]) -> list[CrawlTarget]:
+    if settings.crawl_target_limit <= 0:
+        return targets
+    return targets[: settings.crawl_target_limit]
 
 
 def root_site_name(root_url: str) -> str:
@@ -210,7 +253,7 @@ def extract_article_box_targets(parent: CrawlTarget, html: str) -> list[CrawlTar
 
 def is_download_url(url: str) -> bool:
     path = urlparse(url).path.casefold()
-    if "/pdfdownload/" in path:
+    if "/pdfdownload/" in path or "/download/" in path:
         return True
     return any(path.endswith(extension) for extension in DOWNLOAD_EXTENSIONS)
 
@@ -265,13 +308,18 @@ def is_redirect_page(html: str) -> bool:
     return title_text.casefold() == "page moved"
 
 
+def has_crawl_content(html: str) -> bool:
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.select_one(settings.crawl_content_selector) is not None
+
+
 async def _fetch_html_in_thread(fetcher: Callable[[str], str], url: str) -> str:
     loop = asyncio.get_running_loop()
     executor = ThreadPoolExecutor(max_workers=1)
     try:
         return await loop.run_in_executor(executor, fetcher, url)
     finally:
-        executor.shutdown(wait=True)
+        executor.shutdown(wait=False, cancel_futures=True)
 
 
 async def _fetch_bytes_in_thread(fetcher: Callable[[str], bytes], url: str) -> bytes:
@@ -280,7 +328,7 @@ async def _fetch_bytes_in_thread(fetcher: Callable[[str], bytes], url: str) -> b
     try:
         return await loop.run_in_executor(executor, fetcher, url)
     finally:
-        executor.shutdown(wait=True)
+        executor.shutdown(wait=False, cancel_futures=True)
 
 
 async def validate_targets_with_failures(
@@ -309,7 +357,7 @@ async def validate_targets_with_failures(
                 )
             return None, f"{target.url}: {exc}"
 
-        if is_redirect_page(html):
+        if is_redirect_page(html) or not has_crawl_content(html):
             processed_targets += 1
             if progress_callback is not None:
                 await progress_callback(
@@ -365,7 +413,7 @@ async def expand_article_box_targets_by_parent(
                 failure=f"{target.url}: {exc}",
             )
 
-        if is_redirect_page(html):
+        if is_redirect_page(html) or not has_crawl_content(html):
             processed_targets += 1
             if progress_callback is not None:
                 await progress_callback(
@@ -433,6 +481,7 @@ async def discover_html_targets_with_failures(
                 site_url=normalized_root_url,
             )
         )
+        targets = limit_crawl_targets(dedupe_targets(targets))
         if progress_callback is not None:
             await progress_callback(
                 "홈페이지 메뉴 수집 중",
@@ -447,6 +496,15 @@ async def discover_html_targets_with_failures(
                 total_pages=len(department_sites),
             )
         for department_index, department_site in enumerate(department_sites, start=1):
+            if (
+                settings.crawl_target_limit > 0
+                and len(dedupe_targets(targets)) >= settings.crawl_target_limit
+            ):
+                logger.info(
+                    "crawl target limit reached before department expansion: limit=%s",
+                    settings.crawl_target_limit,
+                )
+                break
             department_main_url = urljoin(department_site.url, settings.crawl_main_path)
             try:
                 department_html = await _fetch_html_in_thread(fetcher, department_main_url)
@@ -468,6 +526,7 @@ async def discover_html_targets_with_failures(
                     site_url=department_site.url,
                 )
             )
+            targets = limit_crawl_targets(dedupe_targets(targets))
             if progress_callback is not None:
                 await progress_callback(
                     "학과 사이트 메뉴 수집 중",
@@ -475,7 +534,13 @@ async def discover_html_targets_with_failures(
                     total_pages=len(department_sites),
                 )
 
-    deduped_targets = dedupe_targets(targets)
+    deduped_targets = limit_crawl_targets(dedupe_targets(targets))
+    if settings.crawl_target_limit > 0:
+        logger.info(
+            "crawl discovery target limit prepared: limit=%s discovery_parents=%s",
+            settings.crawl_target_limit,
+            len(deduped_targets),
+        )
     first_pass_results = await expand_article_box_targets_by_parent(
         deduped_targets,
         fetcher,
@@ -506,22 +571,33 @@ async def discover_html_targets_with_failures(
     }
     ordered_targets: list[CrawlTarget] = []
     verified_urls: set[str] = set()
+
+    def append_ordered_targets(new_targets: list[CrawlTarget]) -> None:
+        if settings.crawl_target_limit <= 0:
+            ordered_targets.extend(new_targets)
+            return
+        remaining_slots = settings.crawl_target_limit - len(dedupe_targets(ordered_targets))
+        if remaining_slots <= 0:
+            return
+        ordered_targets.extend(new_targets[:remaining_slots])
+
     for result in first_pass_results:
         if result.failure is not None:
-            ordered_targets.extend(retry_targets_by_parent.get(result.parent_url, []))
+            append_ordered_targets(retry_targets_by_parent.get(result.parent_url, []))
             if result.parent_url in recovered_urls:
                 verified_urls.add(result.parent_url)
             continue
-        ordered_targets.extend(result.targets)
+        append_ordered_targets(result.targets)
         verified_urls.add(result.parent_url)
 
+    deduped_ordered_targets = limit_crawl_targets(dedupe_targets(ordered_targets))
     final_validation_fetcher = (
         fetcher
         if fetcher is not fetch_html
         else lambda url: fetch_html(url, timeout=settings.crawl_final_validation_timeout_seconds)
     )
     final_validation = await validate_targets_with_failures(
-        [target for target in dedupe_targets(ordered_targets) if target.url not in verified_urls],
+        [target for target in deduped_ordered_targets if target.url not in verified_urls],
         fetcher=final_validation_fetcher,
         concurrency=settings.crawl_final_validation_concurrency,
         progress_callback=progress_callback,
@@ -532,7 +608,7 @@ async def discover_html_targets_with_failures(
     return CrawlDiscoveryResult(
         targets=[
             target
-            for target in dedupe_targets(ordered_targets)
+            for target in deduped_ordered_targets
             if target.url in verified_urls or target.url in final_targets_by_url
         ],
         failures=[*failures, *unresolved_failures, *final_validation.failures],
@@ -599,18 +675,26 @@ def should_skip_existing_document(
 async def fetch_and_maybe_parse_document(
     target: CrawlTarget,
     existing_state: ExistingDocumentState | None,
+    markdown_renderer: MarkdownRenderer | None = None,
 ) -> DocumentProcessingResult:
     try:
         if target.source_type == "html":
             html = await _fetch_html_in_thread(fetch_html, target.url)
-            article_html = extract_article_html(html)
+            try:
+                article_html = extract_article_html(html)
+            except ValueError:
+                return DocumentProcessingResult(target=target)
             content_hash = build_content_hash(article_html, target=target)
             if should_skip_existing_document(existing_state, content_hash):
                 return DocumentProcessingResult(target=target)
 
             return DocumentProcessingResult(
                 target=target,
-                document=await parse_html(target=target, html=html),
+                document=await parse_html(
+                    target=target,
+                    html=html,
+                    markdown_renderer=markdown_renderer,
+                ),
             )
 
         pdf_bytes = await _fetch_bytes_in_thread(fetch_pdf_bytes, target.url)
@@ -630,15 +714,34 @@ async def fetch_and_maybe_parse_documents(
     targets: list[CrawlTarget],
     existing_states: dict[str, ExistingDocumentState],
     on_result: Callable[[DocumentProcessingResult], Awaitable[None]] | None = None,
+    markdown_renderer: MarkdownRenderer | None = None,
 ):
     semaphore = asyncio.Semaphore(settings.crawl_ingestion_concurrency)
 
     async def process(index: int, target: CrawlTarget) -> tuple[int, DocumentProcessingResult]:
         async with semaphore:
-            result = await fetch_and_maybe_parse_document(
-                target=target,
-                existing_state=existing_states.get(target.url),
-            )
+            try:
+                result = await asyncio.wait_for(
+                    fetch_and_maybe_parse_document(
+                        target=target,
+                        existing_state=existing_states.get(target.url),
+                        markdown_renderer=markdown_renderer,
+                    ),
+                    timeout=settings.crawl_document_timeout_seconds,
+                )
+            except TimeoutError:
+                logger.warning(
+                    "crawl document processing timed out: url=%s timeout_seconds=%s",
+                    target.url,
+                    settings.crawl_document_timeout_seconds,
+                )
+                result = DocumentProcessingResult(
+                    target=target,
+                    failure=(
+                        f"{target.url}: document processing timed out after "
+                        f"{settings.crawl_document_timeout_seconds} seconds"
+                    ),
+                )
             return index, result
 
     results: list[DocumentProcessingResult | None] = [None] * len(targets)
@@ -652,19 +755,40 @@ async def fetch_and_maybe_parse_documents(
 
 
 async def index_crawl_documents(connection):
+    pending_before = await count_pending_chunks(connection)
+    logger.info("crawl indexing starting: pending_chunks=%s", pending_before)
     collection = create_chroma_collection(
         host=settings.chroma_host,
         port=settings.chroma_port,
         collection_name=settings.chroma_collection,
     )
+    logger.info("crawl indexing chroma collection ready: collection=%s", settings.chroma_collection)
+    logger.info("crawl indexing embedder loading: model=%s", settings.embedding_model)
     embedder = create_embedder(settings.embedding_model)
+    logger.info("crawl indexing embedder loaded: model=%s", settings.embedding_model)
     summary = EmbedSummary(errors=[])
+    batch_number = 0
     while True:
+        batch_number += 1
+        logger.info(
+            "crawl indexing batch starting: batch=%s batch_size=%s",
+            batch_number,
+            settings.index_batch_size,
+        )
         batch_summary = await embed_pending_chunks(
             connection=connection,
             collection=collection,
             embedder=embedder,
             batch_size=settings.index_batch_size,
+        )
+        logger.info(
+            "crawl indexing batch completed: batch=%s chunks_seen=%s "
+            "chunks_indexed=%s chunks_skipped=%s errors=%s",
+            batch_number,
+            batch_summary.chunks_seen,
+            batch_summary.chunks_indexed,
+            batch_summary.chunks_skipped,
+            len(batch_summary.errors or []),
         )
         if batch_summary.chunks_seen == 0:
             break
@@ -684,17 +808,24 @@ async def index_crawl_documents(connection):
                 )
             break
 
+    logger.info("crawl indexing prune starting")
     summary.vectors_pruned = await prune_orphan_vectors(connection, collection)
+    logger.info("crawl indexing prune completed: vectors_pruned=%s", summary.vectors_pruned)
+    logger.info("crawl indexing bm25 writing: cache_dir=%s", settings.bm25_cache_dir)
     bm25_summary = await write_bm25_indexes(connection, settings.bm25_cache_dir)
     summary.bm25_indexes_written = bm25_summary.indexes_written
+    pending_after = await count_pending_chunks(connection)
     logger.info(
         "crawl indexing completed: chunks_seen=%s chunks_indexed=%s "
-        "chunks_skipped=%s vectors_pruned=%s bm25_indexes_written=%s",
+        "chunks_skipped=%s vectors_pruned=%s bm25_indexes_written=%s "
+        "pending_before=%s pending_after=%s",
         summary.chunks_seen,
         summary.chunks_indexed,
         summary.chunks_skipped,
         summary.vectors_pruned,
         summary.bm25_indexes_written,
+        pending_before,
+        pending_after,
     )
     return summary
 
@@ -709,6 +840,16 @@ async def execute_ingestion(
     pages_changed = 0
     pages_skipped = 0
     failures = list(initial_failures or [])
+    logger.info(
+        "crawl ingestion starting: total_targets=%s html_targets=%s pdf_targets=%s "
+        "initial_failures=%s ingestion_concurrency=%s markdown_concurrency=%s",
+        len(targets),
+        len(html_targets),
+        len(pdf_targets),
+        len(failures),
+        settings.crawl_ingestion_concurrency,
+        settings.crawl_markdown_concurrency,
+    )
 
     pool = await create_pool()
     try:
@@ -745,23 +886,83 @@ async def execute_ingestion(
                     processed_pages += 1
                     if result.crawled:
                         pages_crawled += 1
+                    log_context = {
+                        "processed_pages": processed_pages,
+                        "total_pages": total_pages,
+                        "status": result.status.value,
+                        "source_type": result.target.source_type,
+                        "url": result.target.url,
+                        "pages_crawled": pages_crawled,
+                        "pages_changed": pages_changed,
+                    }
+                    if result.failure is not None:
+                        logger.warning(
+                            "crawl document result: processed=%s/%s status=%s "
+                            "source_type=%s pages_crawled=%s pages_changed=%s "
+                            "url=%s failure=%s",
+                            log_context["processed_pages"],
+                            log_context["total_pages"],
+                            log_context["status"],
+                            log_context["source_type"],
+                            log_context["pages_crawled"],
+                            log_context["pages_changed"],
+                            log_context["url"],
+                            result.failure[:500],
+                        )
+                    else:
+                        logger.info(
+                            "crawl document result: processed=%s/%s status=%s "
+                            "source_type=%s pages_crawled=%s pages_changed=%s url=%s",
+                            log_context["processed_pages"],
+                            log_context["total_pages"],
+                            log_context["status"],
+                            log_context["source_type"],
+                            log_context["pages_crawled"],
+                            log_context["pages_changed"],
+                            log_context["url"],
+                        )
                     await update_progress("문서 수집 중")
 
                 status_counts: dict[DocumentProcessingStatus, int] = {}
-                async for result in fetch_and_maybe_parse_documents(
-                    targets,
-                    existing_states,
-                    on_result=record_processing_progress,
-                ):
-                    status_counts[result.status] = status_counts.get(result.status, 0) + 1
-                    if result.failure is not None:
-                        failures.append(result.failure)
-                    if result.status == DocumentProcessingStatus.SKIPPED:
-                        pages_skipped += 1
-                    if result.document is not None:
-                        await update_progress("문서 저장 중")
-                        await persist_document(connection, result.document)
-                        pages_changed += 1
+                async with create_article_markdown_renderer(
+                    concurrency=settings.crawl_markdown_concurrency
+                ) as markdown_renderer:
+                    document_results = fetch_and_maybe_parse_documents(
+                        targets,
+                        existing_states,
+                        on_result=record_processing_progress,
+                        markdown_renderer=markdown_renderer,
+                    )
+
+                    async for result in document_results:
+                        status_counts[result.status] = status_counts.get(result.status, 0) + 1
+                        if result.failure is not None:
+                            failures.append(result.failure)
+                        if result.status == DocumentProcessingStatus.SKIPPED:
+                            pages_skipped += 1
+                        if result.document is not None:
+                            await update_progress("문서 저장 중")
+                            await persist_document(connection, result.document)
+                            pages_changed += 1
+                            logger.info(
+                                "crawl document persisted: changed=%s processed=%s/%s "
+                                "url=%s chunks=%s",
+                                pages_changed,
+                                processed_pages,
+                                total_pages,
+                                result.document.url,
+                                len(result.document.chunks),
+                            )
+                logger.info(
+                    "crawl ingestion documents completed: processed=%s total=%s "
+                    "crawled=%s changed=%s skipped=%s failed=%s",
+                    processed_pages,
+                    total_pages,
+                    pages_crawled,
+                    pages_changed,
+                    pages_skipped,
+                    status_counts.get(DocumentProcessingStatus.FAILED, 0),
+                )
                 await update_progress("색인 생성 중")
 
                 try:
@@ -770,9 +971,39 @@ async def execute_ingestion(
                         failures.extend(
                             f"indexing: {error}" for error in index_summary.errors
                         )
+                        await finish_crawl_job(
+                            connection,
+                            crawl_job_id,
+                            status="failed",
+                            pages_crawled=pages_crawled,
+                            pages_changed=pages_changed,
+                            error="\n".join(failures),
+                        )
+                        return CrawlStats(
+                            pages_crawled=pages_crawled,
+                            pages_changed=pages_changed,
+                            pages_skipped=pages_skipped,
+                            status_counts=status_counts,
+                            failures=failures,
+                        )
                 except Exception as exc:
                     failures.append(f"indexing: {exc}")
                     logger.exception("crawl indexing failed")
+                    await finish_crawl_job(
+                        connection,
+                        crawl_job_id,
+                        status="failed",
+                        pages_crawled=pages_crawled,
+                        pages_changed=pages_changed,
+                        error="\n".join(failures),
+                    )
+                    return CrawlStats(
+                        pages_crawled=pages_crawled,
+                        pages_changed=pages_changed,
+                        pages_skipped=pages_skipped,
+                        status_counts=status_counts,
+                        failures=failures,
+                    )
 
                 await finish_crawl_job(
                     connection,
@@ -812,8 +1043,12 @@ async def run_crawl(progress_callback: ProgressCallback | None = None) -> CrawlS
         discover_html_targets_with_failures(progress_callback=progress_callback),
         discover_pdf_targets(progress_callback=progress_callback),
     )
-    stats = await execute_ingestion(
+    html_targets, pdf_targets = apply_crawl_target_limit(
         html_discovery.targets,
+        pdf_targets,
+    )
+    stats = await execute_ingestion(
+        html_targets,
         pdf_targets,
         initial_failures=html_discovery.failures,
     )
