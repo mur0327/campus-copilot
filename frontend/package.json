@@ -17,6 +17,7 @@
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-markdown": "^10.1.0",
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.14.0",
     "react-simple-keyboard": "^3.8.201",

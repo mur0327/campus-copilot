@@ -38,6 +38,33 @@ function progressPercent(processed: number, total: number) {
   return Math.min(100, Math.max(0, Math.round((processed / total) * 100)));
 }
 
+function timestamp(value: string | null | undefined) {
+  if (!value) return null;
+
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
+function formatCrawlError(error: string) {
+  const lines = error.split("\n").filter(Boolean);
+  const entries = lines.reduce<string[]>((acc, line) => {
+    if (/^(https?:\/\/|indexing:)/.test(line) || acc.length === 0) {
+      acc.push(line);
+      return acc;
+    }
+
+    acc[acc.length - 1] = `${acc[acc.length - 1]}\n${line}`;
+    return acc;
+  }, []);
+
+  if (entries.length <= 5) return error;
+
+  return `${entries
+    .slice(0, 5)
+    .map((entry) => entry.split("\n")[0])
+    .join("\n")}\n외 ${entries.length - 5}건의 오류가 더 있습니다.`;
+}
+
 export default function StatusPanel({
   status,
   isLoading,
@@ -45,9 +72,14 @@ export default function StatusPanel({
 }: StatusPanelProps) {
   const latestJob = status?.latest_crawl_job;
   const workerStatus = status?.worker_crawl_status;
+  const workerStartedAt = timestamp(workerStatus?.started_at);
+  const latestJobStartedAt = timestamp(latestJob?.started_at);
+  const workerIsNewer =
+    workerStartedAt !== null &&
+    (latestJobStartedAt === null || workerStartedAt > latestJobStartedAt);
   const useWorkerStatus =
     workerStatus?.status === "running" &&
-    (!latestJob || latestJob.status !== "running" || latestJob.total_pages <= 0);
+    (!latestJob || latestJob.status !== "running" || latestJob.total_pages <= 0 || workerIsNewer);
   const effectiveStatus =
     useWorkerStatus ? workerStatus.status : latestJob?.status;
   const effectiveStage =
@@ -126,8 +158,8 @@ export default function StatusPanel({
         </dl>
       )}
       {!isError && effectiveError ? (
-        <p className="mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {effectiveError}
+        <p className="mt-4 whitespace-pre-line rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {formatCrawlError(effectiveError)}
         </p>
       ) : null}
     </section>

@@ -160,6 +160,112 @@ describe("AdminPage", () => {
     );
   });
 
+  it("prefers a newer running worker status over a stale running database job", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith("/status")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              documents: 1,
+              chunks: 1,
+              indexed_chunks: 0,
+              last_crawled: null,
+              latest_crawl_job: {
+                id: "00000000-0000-0000-0000-000000000301",
+                status: "running",
+                pages_crawled: 0,
+                pages_changed: 0,
+                total_pages: 7026,
+                processed_pages: 7026,
+                current_stage: "색인 생성 중",
+                conflicts_found: 0,
+                started_at: "2026-05-07T07:40:28Z",
+                completed_at: null,
+                error: null,
+              },
+              worker_crawl_status: {
+                status: "running",
+                current_stage: "학과 사이트 메뉴 수집 중",
+                total_pages: 47,
+                processed_pages: 34,
+                started_at: "2026-05-07T08:19:08Z",
+                completed_at: null,
+                error: null,
+              },
+            }),
+          ),
+        );
+      }
+
+      if (url.endsWith("/conflicts") || url.endsWith("/logs")) {
+        return Promise.resolve(new Response(JSON.stringify([])));
+      }
+
+      return Promise.resolve(new Response("not found", { status: 404 }));
+    });
+
+    renderAdminPage();
+
+    expect(await screen.findByText("크롤링 진행 중")).toBeInTheDocument();
+    expect(screen.getByText("학과 사이트 메뉴 수집 중")).toBeInTheDocument();
+    expect(screen.getByText("34/47 페이지 · 72%")).toBeInTheDocument();
+    expect(screen.queryByText("색인 생성 중")).not.toBeInTheDocument();
+  });
+
+  it("summarizes crawl errors by failure entry instead of line count", async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith("/status")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              documents: 1,
+              chunks: 1,
+              indexed_chunks: 0,
+              last_crawled: null,
+              latest_crawl_job: {
+                id: "00000000-0000-0000-0000-000000000401",
+                status: "completed",
+                pages_crawled: 1,
+                pages_changed: 1,
+                total_pages: 6,
+                processed_pages: 6,
+                current_stage: "완료",
+                conflicts_found: 0,
+                started_at: "2026-05-07T08:19:08Z",
+                completed_at: "2026-05-07T08:25:08Z",
+                error: [
+                  "https://www.honam.ac.kr/1: failed",
+                  "BrowserType.launch: missing browser",
+                  "╔════════════════════╗",
+                  "https://www.honam.ac.kr/2: failed",
+                  "https://www.honam.ac.kr/3: failed",
+                  "https://www.honam.ac.kr/4: failed",
+                  "https://www.honam.ac.kr/5: failed",
+                  "https://www.honam.ac.kr/6: failed",
+                ].join("\n"),
+              },
+            }),
+          ),
+        );
+      }
+
+      if (url.endsWith("/conflicts") || url.endsWith("/logs")) {
+        return Promise.resolve(new Response(JSON.stringify([])));
+      }
+
+      return Promise.resolve(new Response("not found", { status: 404 }));
+    });
+
+    renderAdminPage();
+
+    expect(await screen.findByText(/외 1건의 오류가 더 있습니다./)).toBeInTheDocument();
+    expect(screen.queryByText(/외 3건의 오류가 더 있습니다./)).not.toBeInTheDocument();
+  });
+
   it("disables crawl while pending and shows success after trigger", async () => {
     let resolveCrawl: (response: Response) => void = () => {};
     const crawlPromise = new Promise<Response>((resolve) => {

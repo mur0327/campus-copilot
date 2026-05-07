@@ -51,4 +51,18 @@ describe("useIdleTimer", () => {
 
     expect(onIdle).not.toHaveBeenCalled();
   });
+
+  it("does not call reset callback while disabled", () => {
+    const onIdle = vi.fn();
+    const { rerender } = renderHook(({ enabled }) => useIdleTimer(onIdle, 30_000, enabled), {
+      initialProps: { enabled: false },
+    });
+
+    act(() => vi.advanceTimersByTime(30_000));
+    expect(onIdle).not.toHaveBeenCalled();
+
+    rerender({ enabled: true });
+    act(() => vi.advanceTimersByTime(30_000));
+    expect(onIdle).toHaveBeenCalledTimes(1);
+  });
 });

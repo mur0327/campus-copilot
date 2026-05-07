@@ -6,12 +6,13 @@ import { useKioskStore } from "../store/kioskStore";
 
 export default function KioskPage() {
   const mode = useKioskStore((state) => state.mode);
+  const isStreaming = useKioskStore((state) => state.answerData?.isStreaming ?? false);
   const resetToMain = useKioskStore((state) => state.resetToMain);
 
   useIdleTimer(() => {
     // Future TTS integration should stop active speech as part of idle reset.
     resetToMain();
-  });
+  }, 30_000, !isStreaming);
 
   return (
     <main className="h-screen w-screen overflow-hidden">
