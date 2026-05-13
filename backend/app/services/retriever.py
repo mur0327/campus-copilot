@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.document import Document, DocumentChunk
 
 TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
+DETAIL_QUERY_KEYWORDS = ("학점", "요건", "구성표", "기간", "금액", "시간", "기준")
+DETAIL_TABLE_MIN_CHARS = 80
 
 
 class RetrievalResult(BaseModel):
@@ -20,6 +22,7 @@ class RetrievalResult(BaseModel):
     document_id: UUID
     content: str
     chunk_type: str
+    chunk_index: int | None = None
     score: float
     title: str | None
     url: str
@@ -142,6 +145,7 @@ def row_to_retrieval_result(row) -> RetrievalResult:
         document_id=document.id,
         content=chunk.content,
         chunk_type=chunk.chunk_type,
+        chunk_index=chunk.chunk_index,
         score=0,
         title=document.title,
         url=document.url,
@@ -284,6 +288,7 @@ class HybridRetriever:
             self.bm25_weight,
             self.final_top_k,
         )
+        results = await self.expand_detail_context(session, results, question=question, category=category)
         return RetrievalResponse(
             results=results,
             status=RetrievalStatus(
@@ -363,6 +368,59 @@ class HybridRetriever:
                 )
         return ordered_results
 
+    async def expand_detail_context(
+        self,
+        session: AsyncSession,
+        results: list[RetrievalResult],
+        *,
+        question: str,
+        category: str | None,
+    ) -> list[RetrievalResult]:
+        if not _should_expand_detail_context(question, results):
+            return results
+
+        existing_chunk_ids = {result.chunk_id for result in results}
+        candidate_results = [
+            result
+            for result in results
+            if _is_heading_like_result(result) and not _has_detail_table_for_document(results, result.document_id)
+        ]
+        if not candidate_results:
+            return results
+
+        statement = (
+            select(DocumentChunk, Document)
+            .join(Document, Document.id == DocumentChunk.document_id)
+            .where(
+                DocumentChunk.document_id.in_(list({result.document_id for result in candidate_results})),
+                DocumentChunk.chunk_type == "table",
+                DocumentChunk.content != "",
+                func.length(DocumentChunk.content) >= DETAIL_TABLE_MIN_CHARS,
+                Document.is_active.is_(True),
+            )
+            .order_by(DocumentChunk.document_id, DocumentChunk.chunk_index)
+        )
+        if category:
+            statement = statement.where(Document.category == category)
+
+        expansion_rows = await session.execute(statement)
+        table_results = [row_to_retrieval_result(row) for row in expansion_rows.all()]
+        expansion_by_document = _nearest_following_tables(candidate_results, table_results)
+        if not expansion_by_document:
+            return results
+
+        expanded_results: list[RetrievalResult] = []
+        added_chunk_ids = set(existing_chunk_ids)
+        for result in results:
+            expanded_results.append(result)
+            expansion = expansion_by_document.get(result.document_id)
+            if expansion is None or expansion.chunk_id in added_chunk_ids:
+                continue
+            expanded_results.append(expansion.model_copy(update={"score": result.score}))
+            added_chunk_ids.add(expansion.chunk_id)
+
+        return expanded_results[: self.final_top_k]
+
 
 def _first_vector(encoded) -> list[float]:
     vector = encoded[0] if hasattr(encoded, "__getitem__") else encoded
@@ -406,6 +464,55 @@ def _distance_to_score(distance) -> float:
     if distance_value < 0:
         return 0
     return 1 / (1 + distance_value)
+
+
+def _should_expand_detail_context(question: str, results: list[RetrievalResult]) -> bool:
+    if not results or not any(keyword in question for keyword in DETAIL_QUERY_KEYWORDS):
+        return False
+    return any(_is_heading_like_result(result) for result in results)
+
+
+def _is_heading_like_result(result: RetrievalResult) -> bool:
+    content = result.content.strip()
+    if not content:
+        return True
+    if len(content) <= DETAIL_TABLE_MIN_CHARS:
+        return True
+    first_line = content.splitlines()[0].strip()
+    return first_line.startswith("#") or "계속" in first_line
+
+
+def _has_detail_table_for_document(results: list[RetrievalResult], document_id: UUID) -> bool:
+    return any(
+        result.document_id == document_id
+        and result.chunk_type == "table"
+        and not _is_heading_like_result(result)
+        for result in results
+    )
+
+
+def _nearest_following_tables(
+    candidate_results: list[RetrievalResult],
+    table_results: list[RetrievalResult],
+) -> dict[UUID, RetrievalResult]:
+    candidate_index_by_document: dict[UUID, int] = {}
+    for result in candidate_results:
+        if result.chunk_index is None:
+            continue
+        current = candidate_index_by_document.get(result.document_id)
+        if current is None or result.chunk_index < current:
+            candidate_index_by_document[result.document_id] = result.chunk_index
+
+    expansion_by_document: dict[UUID, RetrievalResult] = {}
+    for table_result in table_results:
+        candidate_index = candidate_index_by_document.get(table_result.document_id)
+        if candidate_index is None or table_result.chunk_index is None:
+            continue
+        if table_result.chunk_index <= candidate_index:
+            continue
+        if table_result.document_id not in expansion_by_document:
+            expansion_by_document[table_result.document_id] = table_result
+    return expansion_by_document
 
 
 def _retrieval_mode(

@@ -17,6 +17,7 @@ SELECT
     c.document_id,
     c.content,
     c.chunk_type,
+    c.chunk_index,
     c.meta,
     d.url,
     d.title,
@@ -93,6 +94,7 @@ def _row_to_record(row) -> dict:
         "document_id": row["document_id"],
         "content": row["content"],
         "chunk_type": row["chunk_type"],
+        "chunk_index": _row_value(row, "chunk_index", 0),
         "score": 0,
         "title": row["title"],
         "url": row["url"],
@@ -101,3 +103,10 @@ def _row_to_record(row) -> dict:
         "crawled_at": row["crawled_at"],
         "meta": row["meta"],
     }
+
+
+def _row_value(row, key: str, default):
+    try:
+        return row[key]
+    except KeyError:
+        return default

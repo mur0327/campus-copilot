@@ -18,12 +18,20 @@ from app.services.retriever import (  # noqa: E402
 )
 
 
-def make_result(content: str, *, category: str | None = "academic") -> RetrievalResult:
+def make_result(
+    content: str,
+    *,
+    category: str | None = "academic",
+    chunk_index: int = 0,
+    chunk_type: str = "text",
+    document_id=None,
+) -> RetrievalResult:
     return RetrievalResult(
         chunk_id=uuid4(),
-        document_id=uuid4(),
+        document_id=document_id or uuid4(),
         content=content,
-        chunk_type="text",
+        chunk_type=chunk_type,
+        chunk_index=chunk_index,
         score=0,
         title="휴학",
         url="https://example.test/a",
@@ -39,19 +47,25 @@ def make_row(
     *,
     content: str = "휴학 신청은 포털에서 진행합니다.",
     category: str | None = "academic",
+    chunk_index: int = 0,
+    chunk_type: str = "text",
+    document_id=None,
+    title: str = "휴학",
+    url: str = "https://example.test/a",
 ):
-    document_id = uuid4()
+    document_id = document_id or uuid4()
     chunk = SimpleNamespace(
         id=chunk_id,
         document_id=document_id,
         content=content,
-        chunk_type="text",
+        chunk_type=chunk_type,
+        chunk_index=chunk_index,
         meta={"source": "fake-db"},
     )
     document = SimpleNamespace(
         id=document_id,
-        title="휴학",
-        url="https://example.test/a",
+        title=title,
+        url=url,
         menu_path="학사 > 휴학",
         category=category,
         crawled_at=datetime(2026, 5, 1, tzinfo=UTC),
@@ -312,6 +326,76 @@ async def test_retrieve_with_status_degrades_to_semantic_only_when_bm25_is_missi
     assert response.status.semantic_available is True
     assert response.status.bm25_available is False
     assert response.results[0].chunk_id == chunk_id
+
+
+@pytest.mark.asyncio
+async def test_retrieve_expands_heading_with_following_table_for_detail_question(tmp_path: Path):
+    document_id = uuid4()
+    heading_id = uuid4()
+    detail_id = uuid4()
+
+    class DetailSession:
+        def __init__(self):
+            self.execute_calls = 0
+
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            self.execute_calls += 1
+            if self.execute_calls == 1:
+                return FakeResult(
+                    [
+                        make_row(
+                            heading_id,
+                            content="# 2025학년도 입학생 졸업학점 구성표",
+                            chunk_index=0,
+                            chunk_type="text",
+                            document_id=document_id,
+                            title="졸업학점 2025",
+                            url="https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+                        )
+                    ]
+                )
+            return FakeResult(
+                [
+                    make_row(
+                        detail_id,
+                        content=(
+                            "학과(부): 컴퓨터공학과 | 교양영역: 12 | 전공영역: 60 | "
+                            "자유선택: 30 | 졸업 이수 학점: 120 | "
+                            "학과별 졸업 최소이수학점 구성표 상세 행입니다."
+                        ),
+                        chunk_index=1,
+                        chunk_type="table",
+                        document_id=document_id,
+                        title="졸업학점 2025",
+                        url="https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+                    )
+                ]
+            )
+
+    session = DetailSession()
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[heading_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=4,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        session,
+        question="졸업학점에 대해서 설명해주세요",
+        category=None,
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert [result.chunk_id for result in response.results] == [heading_id, detail_id]
+    assert response.results[1].chunk_type == "table"
+    assert "졸업 이수 학점: 120" in response.results[1].content
 
 
 @pytest.mark.asyncio
