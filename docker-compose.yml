@@ -18,6 +18,7 @@ services:
       retries: 5
 
   chromadb:
+    image: ghcr.io/mur0327/campus-copilot-chromadb:dev
     build:
       context: ./chromadb
       dockerfile: Dockerfile
@@ -45,6 +46,7 @@ services:
       retries: 5
 
   backend:
+    image: ghcr.io/mur0327/campus-copilot-backend:dev
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -79,6 +81,7 @@ services:
       start_period: 5s
 
   worker:
+    image: ghcr.io/mur0327/campus-copilot-worker:dev
     build:
       context: ./worker
       dockerfile: Dockerfile
@@ -98,6 +101,7 @@ services:
         hard: 65536
 
   frontend:
+    image: ghcr.io/mur0327/campus-copilot-frontend:dev
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -110,3 +114,7 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend/src:/app/src
+
+networks:
+  default:
+    name: campus-copilot-network
