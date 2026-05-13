@@ -1,7 +1,9 @@
 import type { Source } from "../../../types/kiosk";
+import { MarkdownText } from "./MarkdownText";
 
 interface SourceListProps {
   sources: Source[];
+  isLoading?: boolean;
 }
 
 function freshnessLabel(source: Source) {
@@ -12,31 +14,45 @@ function freshnessClass(source: Source) {
   return source.freshness === "recent" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
 }
 
-export function SourceList({ sources }: SourceListProps) {
+export function SourceList({ sources, isLoading = false }: SourceListProps) {
   return (
-    <section className="rounded-lg bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">출처</h2>
-      <div className="mt-4 grid gap-3">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg bg-white p-4 shadow-sm">
+      <h2 className="shrink-0 text-xl font-bold tracking-tight">출처</h2>
+      <div className="mt-3 grid min-h-0 gap-3 overflow-auto pr-1">
         {sources.length ? (
           sources.map((source) => (
-            <a
-              className="rounded-md border border-slate-200 p-4 transition-colors hover:border-slate-300"
-              href={source.url}
+            <article
+              className="min-h-20 rounded-md border border-slate-200 p-3 transition-colors hover:border-slate-300"
               key={`${source.title}-${source.url}`}
-              rel="noreferrer"
-              target="_blank"
             >
-              <span className="flex items-start justify-between gap-3">
-                <strong className="line-clamp-2 min-w-0">{source.title}</strong>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 text-base font-bold text-slate-950">
+                  <MarkdownText variant="compact">{source.title}</MarkdownText>
+                </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${freshnessClass(source)}`}>
                   {freshnessLabel(source)}
                 </span>
-              </span>
-              <span className="mt-2 block text-sm text-slate-500">{source.crawled_at}</span>
-            </a>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-sm text-slate-500">
+                <span>{source.crawled_at}</span>
+                <a className="shrink-0 font-semibold text-blue-700 underline" href={source.url} rel="noreferrer" target="_blank">
+                  원문 열기
+                </a>
+              </div>
+            </article>
           ))
+        ) : isLoading ? (
+          <div aria-label="출처를 불러오는 중" className="grid gap-3" data-testid="source-loading-skeleton">
+            {[0, 1, 2].map((item) => (
+              <div className="min-h-20 rounded-md border border-slate-100 p-3" key={item}>
+                <span className="source-skeleton-line w-2/3" />
+                <span className="source-skeleton-line mt-3 w-full" />
+                <span className="source-skeleton-line mt-2 w-11/12" />
+              </div>
+            ))}
+          </div>
         ) : (
-          <p className="rounded-md bg-slate-50 p-4 text-sm text-slate-500">표시할 출처 없음</p>
+          <p className="min-h-20 rounded-md bg-slate-50 p-4 text-base text-slate-500">표시할 출처 없음</p>
         )}
       </div>
     </section>
