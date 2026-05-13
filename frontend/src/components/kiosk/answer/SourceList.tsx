@@ -14,16 +14,20 @@ function freshnessClass(source: Source) {
   return source.freshness === "recent" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
 }
 
+function sourceKey(source: Source, index: number) {
+  return source.chunk_id ?? `${source.url}-${index}`;
+}
+
 export function SourceList({ sources, isLoading = false }: SourceListProps) {
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg bg-white p-4 shadow-sm">
       <h2 className="shrink-0 text-xl font-bold tracking-tight">출처</h2>
       <div className="mt-3 grid min-h-0 gap-3 overflow-auto pr-1">
         {sources.length ? (
-          sources.map((source) => (
+          sources.map((source, index) => (
             <article
               className="min-h-20 rounded-md border border-slate-200 p-3 transition-colors hover:border-slate-300"
-              key={`${source.title}-${source.url}`}
+              key={sourceKey(source, index)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1 text-base font-bold text-slate-950">

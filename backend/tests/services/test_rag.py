@@ -61,6 +61,32 @@ async def test_generate_answer_returns_sources_and_steps():
 
 
 @pytest.mark.asyncio
+async def test_generate_answer_deduplicates_sources_by_url():
+    first = make_result()
+    second = make_result().model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": first.document_id,
+            "url": first.url,
+            "title": "중복 휴학 안내",
+        }
+    )
+
+    result = await generate_answer(
+        question="휴학은?",
+        category="academic",
+        retrieval_results=[first, second],
+        conflict_warning=ConflictWarning(exists=False),
+        provider=StaticLLMProvider("휴학 신청은 포털에서 신청합니다."),
+        stale_days=180,
+    )
+
+    assert len(result.sources) == 1
+    assert result.sources[0].chunk_id == str(first.chunk_id)
+    assert result.sources[0].title == "휴학 안내"
+
+
+@pytest.mark.asyncio
 async def test_generate_answer_without_retrieval_results_does_not_call_provider():
     result = await generate_answer(
         question="휴학은?",

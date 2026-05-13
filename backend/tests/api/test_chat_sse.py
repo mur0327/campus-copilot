@@ -279,6 +279,57 @@ async def test_chat_stream_uses_overridden_production_dependencies():
 
 
 @pytest.mark.asyncio
+async def test_chat_stream_deduplicates_sources_by_url():
+    logs = []
+    first = make_retrieval_result()
+    second = make_retrieval_result().model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": first.document_id,
+            "url": first.url,
+            "title": "중복 휴학 안내",
+        }
+    )
+    provider = FakeProvider(["휴학", " 답변"])
+    conflict_chunk_ids = []
+
+    async def conflict_warning_loader(session, chunk_ids):
+        conflict_chunk_ids.extend(chunk_ids)
+        return ConflictWarning(exists=False)
+
+    async def query_log_writer(session, **kwargs):
+        logs.append(kwargs)
+
+    def override_dependencies():
+        return {
+            "retriever": FakeRetriever([first, second]),
+            "llm_provider_factory": lambda: provider,
+            "cache": FakeCache(),
+            "query_log_writer": query_log_writer,
+            "conflict_warning_loader": conflict_warning_loader,
+            "session_factory": FakeSessionFactory(),
+        }
+
+    app.dependency_overrides[get_chat_dependencies] = override_dependencies
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chat",
+            json={"question": "휴학 신청은?"},
+            headers={"Accept": "text/event-stream"},
+        )
+
+    events = parse_events(response.text)
+
+    assert response.status_code == 200
+    assert len(events[0]["data"]["sources"]) == 1
+    assert events[0]["data"]["sources"][0]["chunk_id"] == str(first.chunk_id)
+    assert len(events[-1]["data"]["sources"]) == 1
+    assert logs[-1]["sources"]["items"] == events[-1]["data"]["sources"]
+    assert conflict_chunk_ids == [first.chunk_id, second.chunk_id]
+
+
+@pytest.mark.asyncio
 async def test_chat_stream_treats_cache_read_failure_as_miss():
     logs = []
     retrieval_result = make_retrieval_result()
@@ -429,6 +480,50 @@ async def test_chat_cache_hit_emits_metadata_and_done_without_tokens():
     assert events[-1]["data"]["answer"] == "캐시 답변입니다."
     assert logs[-1]["query"] == "휴학 신청은?"
     assert logs[-1]["sources"]["_meta"]["cache_hit"] is True
+
+
+@pytest.mark.asyncio
+async def test_chat_cache_hit_deduplicates_sources_by_url():
+    source = {
+        "title": "졸업학점 2025",
+        "url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+        "crawled_at": "2026-05-07T12:20:43+00:00",
+        "freshness": "recent",
+        "chunk_id": str(uuid4()),
+    }
+    duplicate_source = {**source, "chunk_id": str(uuid4())}
+    cached = ChatResponse(
+        answer="캐시 답변입니다.",
+        sources=[source, duplicate_source],
+        procedure_steps=[],
+        conflict_warning=ConflictWarning(exists=False),
+        freshness="recent",
+    ).model_dump(mode="json")
+
+    def override_dependencies():
+        return {
+            "retriever": FakeRetriever([make_retrieval_result()]),
+            "llm_provider_factory": lambda: FakeProvider(["호출되면 안 됩니다."]),
+            "cache": FakeCache(cached),
+            "query_log_writer": None,
+            "conflict_warning_loader": lambda session, chunk_ids: ConflictWarning(exists=False),
+            "session_factory": FakeSessionFactory(),
+        }
+
+    app.dependency_overrides[get_chat_dependencies] = override_dependencies
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chat",
+            json={"question": "졸업학점"},
+            headers={"Accept": "text/event-stream"},
+        )
+
+    events = parse_events(response.text)
+
+    assert len(events[0]["data"]["sources"]) == 1
+    assert len(events[-1]["data"]["sources"]) == 1
+    assert events[-1]["data"]["sources"][0]["chunk_id"] == source["chunk_id"]
 
 
 @pytest.mark.asyncio

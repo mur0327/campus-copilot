@@ -29,9 +29,10 @@ from app.services.llm import GeminiProvider, LlamaCppProvider, LLMProvider
 from app.services.query_log import build_sources_log_payload, normalize_query, write_query_log
 from app.services.rag import (
     NO_GROUNDED_CONTEXT_ANSWER,
-    _source_from_result,
     build_prompt_messages,
+    dedupe_sources_by_url,
     extract_procedure_steps,
+    sources_from_results,
 )
 from app.services.retriever import HybridRetriever, RetrievalResult
 
@@ -265,7 +266,7 @@ def _chunk_ids(retrieval_results: list[RetrievalResult]) -> list[UUID]:
 
 
 def _sources_from_results(retrieval_results: list[RetrievalResult]):
-    return [_source_from_result(result, settings.freshness_stale_days) for result in retrieval_results]
+    return sources_from_results(retrieval_results, settings.freshness_stale_days)
 
 
 def _open_session(dependencies: dict[str, Any]):
@@ -295,12 +296,19 @@ def _coerce_chat_response(value: Any) -> ChatResponse | None:
     if value is None:
         return None
     if isinstance(value, ChatResponse):
-        return value
+        return _dedupe_chat_response_sources(value)
     if isinstance(value, dict):
-        return ChatResponse.model_validate(value)
+        return _dedupe_chat_response_sources(ChatResponse.model_validate(value))
     if isinstance(value, str):
-        return ChatResponse.model_validate(json.loads(value))
+        return _dedupe_chat_response_sources(ChatResponse.model_validate(json.loads(value)))
     return None
+
+
+def _dedupe_chat_response_sources(response: ChatResponse) -> ChatResponse:
+    deduped_sources = dedupe_sources_by_url(response.sources)
+    if len(deduped_sources) == len(response.sources):
+        return response
+    return response.model_copy(update={"sources": deduped_sources})
 
 
 def _cache_key(normalized_question: str, category: str | None) -> str:

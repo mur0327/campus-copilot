@@ -82,7 +82,7 @@ async def generate_answer(
         )
 
     answer = await provider.generate(build_prompt_messages(question, retrieval_results, conflict_warning))
-    sources = [_source_from_result(result, stale_days) for result in retrieval_results]
+    sources = sources_from_results(retrieval_results, stale_days)
     freshness = calculate_top_level_freshness([source.freshness or "stale" for source in sources])
 
     return ChatResponse(
@@ -103,6 +103,21 @@ def _source_from_result(result: RetrievalResult, stale_days: int) -> Source:
         freshness=freshness,
         chunk_id=str(result.chunk_id),
     )
+
+
+def sources_from_results(retrieval_results: list[RetrievalResult], stale_days: int) -> list[Source]:
+    return dedupe_sources_by_url([_source_from_result(result, stale_days) for result in retrieval_results])
+
+
+def dedupe_sources_by_url(source_items: list[Source]) -> list[Source]:
+    sources: list[Source] = []
+    seen_urls: set[str] = set()
+    for source in source_items:
+        if source.url in seen_urls:
+            continue
+        seen_urls.add(source.url)
+        sources.append(source)
+    return sources
 
 
 def _crawled_at_iso(crawled_at: datetime | None) -> str:

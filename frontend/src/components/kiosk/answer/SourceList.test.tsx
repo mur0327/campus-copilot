@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { Source } from "../../../types/kiosk";
 import { SourceList } from "./SourceList";
@@ -16,6 +16,34 @@ describe("SourceList", () => {
     expect(screen.getByText("학사안내")).toBeInTheDocument();
     expect(screen.getByText(/최신/)).toBeInTheDocument();
     expect(screen.getByText(/오래됨/)).toBeInTheDocument();
+  });
+
+  it("does not warn when the same URL appears for different chunks", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    render(
+      <SourceList
+        sources={[
+          {
+            title: "졸업학점 2025",
+            url: "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+            crawled_at: "2026-05-07",
+            freshness: "recent",
+            chunk_id: "chunk-1",
+          },
+          {
+            title: "졸업학점 2025",
+            url: "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+            crawled_at: "2026-05-07",
+            freshness: "recent",
+            chunk_id: "chunk-2",
+          },
+        ]}
+      />,
+    );
+
+    expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining("Encountered two children with the same key"));
+    consoleError.mockRestore();
   });
 
   it("renders markdown syntax in source titles instead of raw markdown markers", () => {
