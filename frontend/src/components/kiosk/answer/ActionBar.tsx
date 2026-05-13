@@ -50,30 +50,37 @@ export function ActionBar({ question, answer, sources }: ActionBarProps) {
   };
 
   return (
-    <section className="rounded-lg bg-white p-5 shadow-sm">
-      <div className="grid grid-cols-3 gap-3">
+    <section className="h-full min-h-[6.5rem] shrink-0 rounded-lg bg-white p-4 shadow-sm">
+      <div className="grid h-full grid-cols-3 gap-3">
         <button
-          className="min-h-16 rounded-md bg-slate-100 font-semibold disabled:text-slate-400"
+          className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold disabled:text-slate-400"
           disabled={printStatus === "pending"}
           onClick={printAnswer}
           type="button"
         >
-          <Printer aria-hidden="true" className="mx-auto mb-1 h-5 w-5" />
+          <Printer aria-hidden="true" className="h-6 w-6" />
           인쇄
         </button>
-        <button className="min-h-16 rounded-md bg-slate-100 font-semibold" onClick={() => setQrOpen(true)} type="button">
-          <QrCode aria-hidden="true" className="mx-auto mb-1 h-5 w-5" />
+        <button
+          className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold"
+          onClick={() => setQrOpen(true)}
+          type="button"
+        >
+          <QrCode aria-hidden="true" className="h-6 w-6" />
           QR
         </button>
-        <button className="min-h-16 rounded-md bg-slate-100 font-semibold" onClick={showTtsPlaceholder} type="button">
-          <Volume2 aria-hidden="true" className="mx-auto mb-1 h-5 w-5" />
+        <button
+          className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold"
+          onClick={showTtsPlaceholder}
+          type="button"
+        >
+          <Volume2 aria-hidden="true" className="h-6 w-6" />
           읽기 예정
         </button>
       </div>
-      {printStatus === "pending" ? <p className="mt-3 text-sm text-slate-500">인쇄 요청 중</p> : null}
-      {printStatus === "failed" ? <p className="mt-3 text-sm text-rose-700">인쇄 서비스에 연결하지 못했습니다.</p> : null}
-      {printStatus === "sent" ? <p className="mt-3 text-sm text-emerald-700">인쇄 요청을 보냈습니다.</p> : null}
-      <p className="mt-3 text-sm text-slate-500">TTS는 추후 운영 환경에서 사용할 예정입니다.</p>
+      {printStatus === "pending" ? <p className="mt-2 text-sm text-slate-500">인쇄 요청 중</p> : null}
+      {printStatus === "failed" ? <p className="mt-2 text-sm text-rose-700">인쇄 서비스에 연결하지 못했습니다.</p> : null}
+      {printStatus === "sent" ? <p className="mt-2 text-sm text-emerald-700">인쇄 요청을 보냈습니다.</p> : null}
       {qrOpen ? <QRModal onClose={() => setQrOpen(false)} value={qrValue} /> : null}
     </section>
   );

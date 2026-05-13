@@ -8,12 +8,13 @@ interface SidePanelProps {
   answer: string;
   sources: Source[];
   conflictWarning: ConflictWarningType | null;
+  isStreaming?: boolean;
 }
 
-export function SidePanel({ question, answer, sources, conflictWarning }: SidePanelProps) {
+export function SidePanel({ question, answer, sources, conflictWarning, isStreaming = false }: SidePanelProps) {
   return (
-    <aside className="flex min-h-0 flex-col gap-4 overflow-auto">
-      <SourceList sources={sources} />
+    <aside className="flex min-h-0 flex-col gap-4">
+      <SourceList isLoading={isStreaming && sources.length === 0} sources={sources} />
       <ConflictWarning warning={conflictWarning} />
       <ActionBar answer={answer} question={question} sources={sources} />
     </aside>

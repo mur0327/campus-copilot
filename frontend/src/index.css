@@ -44,3 +44,82 @@ button {
 button:disabled {
   cursor: not-allowed;
 }
+
+.answer-loading-shimmer {
+  width: fit-content;
+  max-width: 100%;
+  color: transparent;
+  background-image: linear-gradient(100deg, #8a94a3 0%, #c7ced8 28%, #8a94a3 56%);
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: loading-shimmer 1.6s ease-in-out infinite;
+}
+
+.source-skeleton-line {
+  display: block;
+  height: 0.55rem;
+  border-radius: 999px;
+  background-image: linear-gradient(100deg, #e7ecf1 0%, #f6f8fb 28%, #e7ecf1 56%);
+  background-size: 220% 100%;
+  animation: loading-shimmer 1.6s ease-in-out infinite;
+}
+
+.answer-preview-mask {
+  mask-image: linear-gradient(to bottom, #000 74%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent 100%);
+}
+
+.answer-side-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-rows: minmax(17rem, 1fr) minmax(10.5rem, 0.65fr) minmax(6.5rem, auto);
+}
+
+.kiosk-keyboard .hg-theme-default {
+  border-radius: 0.75rem;
+  padding: 0.55rem;
+}
+
+.kiosk-keyboard .hg-row {
+  gap: 0.45rem;
+}
+
+.kiosk-keyboard .hg-row:not(:last-child) {
+  margin-bottom: 0.45rem;
+}
+
+.kiosk-keyboard .hg-button {
+  height: 4rem;
+  border-radius: 0.45rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.kiosk-keyboard .hg-button-space,
+.kiosk-keyboard .hg-button-enter {
+  height: 4.3rem;
+}
+
+.kiosk-keyboard-shift-on .hg-button-shift {
+  background: #075985;
+  color: #ffffff;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer-loading-shimmer,
+  .source-skeleton-line {
+    animation: none;
+    background-position: 50% 0;
+  }
+}

@@ -10,6 +10,5 @@ describe("ActionBar", () => {
     expect(screen.getByRole("button", { name: /인쇄/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /QR/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /읽기 예정/ })).toBeInTheDocument();
-    expect(screen.getByText("TTS는 추후 운영 환경에서 사용할 예정입니다.")).toBeInTheDocument();
   });
 });
