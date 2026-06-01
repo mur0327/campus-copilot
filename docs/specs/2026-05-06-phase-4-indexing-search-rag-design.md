@@ -258,6 +258,9 @@ class RetrievalResult(BaseModel):
 
 ## 8. RAG Answer Design
 
+> 답변 품질, 절차 생성, 출처 표시, 프롬프트 외부화, SSE 이벤트 계약은
+> `docs/specs/2026-06-01-rag-answer-quality-design.md`의 지침을 따른다.
+
 ### 8.1 Grounding Rule
 
 답변은 검색된 공식 문서 청크만 근거로 작성한다. 근거가 부족하면 추측하지 않고 부족하다고 답한다.
