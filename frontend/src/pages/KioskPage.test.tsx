@@ -47,9 +47,13 @@ describe("KioskPage", () => {
       mode: "answer",
       currentQuery: "휴학 신청 방법",
       answerData: {
+        answerability: "answerable",
         answer: "휴학은 포털에서 신청합니다.",
+        summary: "휴학은 포털에서 신청합니다.",
         sources: [],
         procedureSteps: [],
+        notes: [],
+        limitations: [],
         conflictWarning: null,
         isStreaming: false,
       },

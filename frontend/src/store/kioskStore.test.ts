@@ -10,6 +10,21 @@ const initialState = {
   answerData: null,
 };
 
+function makeAnswerData(overrides: Partial<AnswerData> = {}): AnswerData {
+  return {
+    answerability: "answerable",
+    answer: "포털에서 신청합니다.",
+    summary: "포털에서 신청합니다.",
+    sources: [],
+    procedureSteps: [],
+    notes: [],
+    limitations: [],
+    conflictWarning: null,
+    isStreaming: false,
+    ...overrides,
+  };
+}
+
 beforeEach(() => {
   useKioskStore.setState(initialState);
 });
@@ -20,13 +35,7 @@ describe("kioskStore", () => {
   });
 
   it("updates mode, category, current query, and answer data", () => {
-    const answerData: AnswerData = {
-      answer: "포털에서 신청합니다.",
-      sources: [],
-      procedureSteps: [],
-      conflictWarning: null,
-      isStreaming: false,
-    };
+    const answerData: AnswerData = makeAnswerData();
 
     useKioskStore.getState().setMode("input");
     useKioskStore.getState().setCategory("academic");
@@ -49,13 +58,7 @@ describe("kioskStore", () => {
   });
 
   it("supports functional answer data updates", () => {
-    useKioskStore.getState().setAnswerData({
-      answer: "휴학",
-      sources: [],
-      procedureSteps: [],
-      conflictWarning: null,
-      isStreaming: true,
-    });
+    useKioskStore.getState().setAnswerData(makeAnswerData({ answer: "휴학", summary: "휴학", isStreaming: true }));
 
     useKioskStore.getState().setAnswerData((prev) =>
       prev ? { ...prev, answer: `${prev.answer} 신청` } : prev,
@@ -68,13 +71,7 @@ describe("kioskStore", () => {
     useKioskStore.getState().setMode("answer");
     useKioskStore.getState().setCategory("academic");
     useKioskStore.getState().setCurrentQuery("휴학 신청");
-    useKioskStore.getState().setAnswerData({
-      answer: "포털에서 신청합니다.",
-      sources: [],
-      procedureSteps: [],
-      conflictWarning: null,
-      isStreaming: false,
-    });
+    useKioskStore.getState().setAnswerData(makeAnswerData());
 
     useKioskStore.getState().resetToMain();
 

@@ -242,6 +242,7 @@ LLM 출력은 JSON만 허용한다. JSON/schema 검증 실패는 재시도 1회 
 - [ ] Avoid raw HTML, raw JSON payloads, and full table chunks in previews.
 - [ ] Redact obvious phone numbers, email addresses, and resident-registration-number-like patterns from query mirrors and previews.
 - [ ] Add `_meta.answerability`, `_meta.used_source_numbers`, and `_meta.prompt_version`.
+- [ ] Store `_meta.used_source_numbers` as validated LLM evidence candidate numbers, not display-card indexes.
 - [ ] Add `_meta.retrieval_status` with the same retrieval/answerability diagnostics returned in `done`.
 
 **Acceptance**
@@ -272,7 +273,8 @@ LLM 출력은 JSON만 허용한다. JSON/schema 검증 실패는 재시도 1회 
   - `validating`: `답변 검증 중`
 - [ ] Store final structured answer from `done`.
 - [ ] Ensure stale request guard still prevents old done/error events from replacing current state.
-- [ ] Show safe error text on backend `error`.
+- [ ] Show safe error text from backend `error.message`.
+- [ ] Use the generic fallback only for request, transport, and unexpected runtime failures where no safe backend message was received.
 
 **Acceptance**
 
@@ -303,7 +305,6 @@ LLM 출력은 JSON만 허용한다. JSON/schema 검증 실패는 재시도 1회 
 - [ ] Empty source state: `답변에 사용된 공식 문서가 없습니다`.
 - [ ] Empty procedure state: `확인된 절차가 없습니다`.
 - [ ] Remove `별도 절차가 필요하지 않습니다`.
-- [ ] Ensure user-facing copy does not use `단서`.
 
 **Acceptance**
 

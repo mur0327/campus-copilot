@@ -24,9 +24,7 @@ describe("streamChat", () => {
       streamChat(
         { question: "휴학 신청" },
         {
-          onMetadata: vi.fn(),
-          onToken: vi.fn(),
-          onProcedureSteps: vi.fn(),
+          onStatus: vi.fn(),
           onDone: vi.fn(),
           onError: vi.fn(),
         },
@@ -54,8 +52,12 @@ describe("streamChat", () => {
         event: "done",
         data: JSON.stringify({
           answer: "답변",
+          answerability: "answerable",
+          summary: "답변",
           sources: [],
           procedure_steps: [],
+          notes: [],
+          limitations: [],
           conflict_warning: { exists: false },
           freshness: "recent",
         }),
@@ -67,9 +69,7 @@ describe("streamChat", () => {
       streamChat(
         { question: "휴학 신청" },
         {
-          onMetadata: vi.fn(),
-          onToken: vi.fn(),
-          onProcedureSteps: vi.fn(),
+          onStatus: vi.fn(),
           onDone,
           onError: vi.fn(),
         },

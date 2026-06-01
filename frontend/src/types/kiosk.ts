@@ -19,6 +19,8 @@ export interface PopularItem {
 }
 
 export type SourceFreshness = "recent" | "stale";
+export type Answerability = "answerable" | "partial" | "insufficient";
+export type ChatStatusStep = "retrieving" | "checking_evidence" | "generating" | "validating";
 
 export interface Source {
   title: string;
@@ -34,11 +36,16 @@ export interface ConflictWarning {
 }
 
 export interface AnswerData {
+  answerability: Answerability;
   answer: string;
+  summary: string;
   sources: Source[];
   procedureSteps: string[];
+  notes: string[];
+  limitations: string[];
   conflictWarning: ConflictWarning | null;
   isStreaming: boolean;
+  statusMessage?: string;
 }
 
 export interface ChatRequestPayload {
@@ -47,9 +54,13 @@ export interface ChatRequestPayload {
 }
 
 export interface ChatResponsePayload {
+  answerability: Answerability;
   answer: string;
+  summary: string;
   sources: ChatSourcePayload[];
   procedure_steps: string[];
+  notes: string[];
+  limitations: string[];
   conflict_warning: ConflictWarning;
   freshness: string;
   retrieval_status?: RetrievalStatusPayload;
@@ -78,14 +89,13 @@ export interface RetrievalStatusPayload {
   bm25_available: boolean;
   semantic_error?: string | null;
   bm25_error?: string | null;
+  evidence_candidate_count?: number;
+  display_source_count?: number;
+  answerability?: Answerability;
 }
 
-export interface ChatTokenPayload {
-  text: string;
-}
-
-export interface ChatProcedureStepsPayload {
-  procedure_steps: string[];
+export interface ChatStatusPayload {
+  step: ChatStatusStep;
 }
 
 export interface ChatErrorPayload {
@@ -94,14 +104,7 @@ export interface ChatErrorPayload {
 }
 
 export type ChatSSEEvent =
-  | {
-      type: "metadata";
-      sources: Source[];
-      freshness: SourceFreshness;
-      conflict_warning: ConflictWarning;
-    }
-  | { type: "token"; text: string }
-  | { type: "procedure_steps"; procedure_steps: string[] }
+  | { type: "status"; step: ChatStatusStep }
   | { type: "done"; payload: ChatResponsePayload }
   | { type: "error"; message: string; retryable: boolean };
 
@@ -120,7 +123,9 @@ export const mapChatResponseToAnswerData: ChatResponseToAnswerDataMapper = (payl
   const freshness = normalizeSourceFreshness(payload.freshness);
 
   return {
+    answerability: payload.answerability,
     answer: payload.answer,
+    summary: payload.summary,
     sources: payload.sources.map(({ title, url, crawled_at, freshness: sourceFreshness, chunk_id }) => ({
       title,
       url,
@@ -129,6 +134,8 @@ export const mapChatResponseToAnswerData: ChatResponseToAnswerDataMapper = (payl
       chunk_id,
     })),
     procedureSteps: payload.procedure_steps,
+    notes: payload.notes,
+    limitations: payload.limitations,
     conflictWarning: payload.conflict_warning,
     isStreaming: false,
   };

@@ -3,6 +3,7 @@ import re
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -15,6 +16,60 @@ from app.models.document import Document, DocumentChunk
 TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
 DETAIL_QUERY_KEYWORDS = ("학점", "요건", "구성표", "기간", "금액", "시간", "기준")
 DETAIL_TABLE_MIN_CHARS = 80
+EVIDENCE_MAX_CANDIDATES = 4
+EVIDENCE_MIN_SCORE = 0.35
+EVIDENCE_MIN_DIRECT_OVERLAP = 1
+EVIDENCE_PREVIEW_CHARS = 160
+ACADEMIC_KEYWORDS = frozenset(
+    {
+        "휴학",
+        "복학",
+        "자퇴",
+        "졸업",
+        "장학",
+        "등록금",
+        "수강신청",
+        "성적",
+        "증명서",
+        "신청",
+        "기간",
+        "방법",
+        "서류",
+        "기준",
+        "조건",
+        "문의",
+        "담당",
+    }
+)
+QUESTION_INTENT_KEYWORDS = {
+    "procedure": ("어떻게", "신청", "절차", "방법"),
+    "deadline": ("언제", "기간", "마감", "일정"),
+    "requirement": ("조건", "기준", "요건", "서류"),
+    "contact": ("문의", "담당", "전화", "연락"),
+}
+KOREAN_TOKEN_SUFFIXES = (
+    "으로부터",
+    "에게서",
+    "에서는",
+    "에서",
+    "으로",
+    "로",
+    "은",
+    "는",
+    "이",
+    "가",
+    "을",
+    "를",
+    "과",
+    "와",
+    "도",
+    "만",
+    "의",
+    "에",
+    "요",
+    "죠",
+    "까",
+)
 
 
 class RetrievalResult(BaseModel):
@@ -46,8 +101,109 @@ class RetrievalResponse(BaseModel):
     status: RetrievalStatus
 
 
+class EvidenceCandidate(BaseModel):
+    display_result: RetrievalResult
+    context_results: list[RetrievalResult]
+    source_number: int
+    overlap: int
+
+
 def tokenize_korean_light(text: str) -> list[str]:
     return [token.lower() for token in TOKEN_RE.findall(text)]
+
+
+def normalize_query_keywords(text: str) -> set[str]:
+    keywords: set[str] = set()
+    for token in tokenize_korean_light(text):
+        normalized = _strip_korean_suffix(token)
+        if normalized in ACADEMIC_KEYWORDS:
+            keywords.add(normalized)
+    return keywords
+
+
+def classify_question_intent(question: str) -> str:
+    for intent, keywords in QUESTION_INTENT_KEYWORDS.items():
+        if any(keyword in question for keyword in keywords):
+            return intent
+    if any(keyword in question for keyword in ("무엇", "얼마", "몇", "누구")):
+        return "factual"
+    return "unknown"
+
+
+def filter_evidence_candidates(
+    question: str,
+    results: list[RetrievalResult],
+    *,
+    max_candidates: int = EVIDENCE_MAX_CANDIDATES,
+) -> list[EvidenceCandidate]:
+    query_keywords = normalize_query_keywords(question)
+    grouped: dict[str, list[tuple[RetrievalResult, int]]] = {}
+    for result in results:
+        overlap = _direct_keyword_overlap(result, query_keywords)
+        if not _is_accepted_evidence_result(result, overlap):
+            continue
+        grouped.setdefault(_evidence_group_key(result), []).append((result, overlap))
+
+    candidates: list[EvidenceCandidate] = []
+    for group_results in grouped.values():
+        sorted_group = sorted(group_results, key=lambda item: item[0].score, reverse=True)
+        display_result = sorted_group[0][0]
+        context_results = [item[0] for item in sorted_group]
+        candidates.append(
+            EvidenceCandidate(
+                display_result=display_result,
+                context_results=context_results,
+                source_number=0,
+                overlap=max(item[1] for item in sorted_group),
+            )
+        )
+
+    candidates = sorted(
+        candidates,
+        key=lambda candidate: (
+            candidate.display_result.score,
+            candidate.overlap,
+            _rank_datetime(candidate.display_result.crawled_at),
+        ),
+        reverse=True,
+    )[:max_candidates]
+    return [
+        candidate.model_copy(update={"source_number": index + 1})
+        for index, candidate in enumerate(candidates)
+    ]
+
+
+def _strip_korean_suffix(token: str) -> str:
+    current = token.lower()
+    for suffix in KOREAN_TOKEN_SUFFIXES:
+        if len(current) > len(suffix) + 1 and current.endswith(suffix):
+            return current[: -len(suffix)]
+    return current
+
+
+def _direct_keyword_overlap(result: RetrievalResult, query_keywords: set[str]) -> int:
+    if not query_keywords:
+        return 0
+    text = " ".join(part for part in (result.title, result.menu_path, result.content) if part)
+    target_keywords = normalize_query_keywords(text)
+    return len(query_keywords & target_keywords)
+
+
+def _is_accepted_evidence_result(result: RetrievalResult, overlap: int) -> bool:
+    if not result.url.strip() or not result.content.strip():
+        return False
+    if result.score >= EVIDENCE_MIN_SCORE:
+        return True
+    return overlap >= EVIDENCE_MIN_DIRECT_OVERLAP
+
+
+def _evidence_group_key(result: RetrievalResult) -> str:
+    return str(result.document_id) if result.document_id else _canonical_url(result.url)
+
+
+def _canonical_url(url: str) -> str:
+    parsed = urlsplit(url.strip())
+    return urlunsplit((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"), "", ""))
 
 
 class BM25Index:

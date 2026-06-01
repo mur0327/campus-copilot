@@ -80,7 +80,6 @@ The empty procedure state is `확인된 절차가 없습니다`.
 
 The old empty procedure wording `별도 절차가 필요하지 않습니다` must not be used for unknown or insufficient cases.
 
-User-facing wording must not use `단서`.
 
 ## 3. Retrieval And Evidence Filtering
 
@@ -224,6 +223,8 @@ The unsafe raw model output must not be displayed.
 
 JSON/schema failure means no validated final answer exists. It must not be mapped to `insufficient`, because `insufficient` is reserved for official-document evidence that is missing or inadequate. Log the internal reason as `json_validation_failed`, but show only the safe user message.
 
+For JSON/schema failures, query-log `_meta.answerability` is `null` and `_meta.error_type` is `json_validation_failed`. This keeps runtime/schema failures separate from `insufficient` evidence judgments.
+
 ### 6.2 Used Source Validation
 
 `used_source_numbers` is validated in code:
@@ -235,6 +236,8 @@ JSON/schema failure means no validated final answer exists. It must not be mappe
 5. Build final `sources` only from validated used source numbers.
 
 The answer body does not display source numbers. Source usage is internal and reflected only through the source panel.
+
+Query-log `_meta.used_source_numbers` stores the validated LLM evidence candidate numbers before display-source remapping. It is intended for answer-quality review and may differ from the one-based order of displayed source cards.
 
 ## 7. Partial And Insufficient Answers
 
@@ -347,6 +350,19 @@ Keep the current cache key version unless the project explicitly decides to chan
 Instead, cached responses that lack the new required structured fields are treated as cache misses.
 
 This avoids mixing old natural-language-only cached responses into the structured answer UI.
+
+The required cache-hit field set is:
+
+- `answerability`
+- `answer`
+- `summary`
+- `procedure_steps`
+- `notes`
+- `limitations`
+- `sources`
+- `conflict_warning`
+- `freshness`
+- `retrieval_status`
 
 ## 10. Query Logs
 

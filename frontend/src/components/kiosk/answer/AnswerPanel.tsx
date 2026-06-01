@@ -5,13 +5,28 @@ import { AnswerText } from "./AnswerText";
 
 interface AnswerPanelProps {
   answer: string;
+  answerability?: "answerable" | "partial" | "insufficient";
   isStreaming: boolean;
+  limitations?: string[];
+  notes?: string[];
   question: string;
+  summary?: string;
+  statusMessage?: string;
 }
 
-export function AnswerPanel({ answer, isStreaming, question }: AnswerPanelProps) {
+export function AnswerPanel({
+  answer,
+  answerability = "answerable",
+  isStreaming,
+  limitations = [],
+  notes = [],
+  question,
+  summary = "",
+  statusMessage,
+}: AnswerPanelProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const canOpenFullAnswer = answer.trim().length > 0;
+  const previewText = buildStructuredPreview({ answer, summary, notes, limitations });
 
   return (
     <>
@@ -19,6 +34,11 @@ export function AnswerPanel({ answer, isStreaming, question }: AnswerPanelProps)
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">답변</h2>
+            {!isStreaming && answerability !== "answerable" ? (
+              <p className="mt-2 inline-flex rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">
+                {answerability === "partial" ? "일부 정보 확인됨" : "공식 문서 근거 부족"}
+              </p>
+            ) : null}
           </div>
           {canOpenFullAnswer ? (
             <button
@@ -33,7 +53,7 @@ export function AnswerPanel({ answer, isStreaming, question }: AnswerPanelProps)
         </div>
 
         <div aria-label="답변 내용" className="answer-preview-mask mt-5 min-h-0 flex-1 overflow-auto pr-2">
-          <AnswerText isStreaming={isStreaming} text={answer} />
+          <AnswerText isStreaming={isStreaming} statusMessage={statusMessage} text={previewText} />
         </div>
 
         {canOpenFullAnswer ? (
@@ -82,4 +102,26 @@ export function AnswerPanel({ answer, isStreaming, question }: AnswerPanelProps)
       ) : null}
     </>
   );
+}
+
+function buildStructuredPreview({
+  answer,
+  summary,
+  notes,
+  limitations,
+}: {
+  answer: string;
+  summary: string;
+  notes: string[];
+  limitations: string[];
+}) {
+  const sections = [summary.trim()];
+  if (notes.length > 0) {
+    sections.push(`준비/주의사항\n${notes.map((note) => `- ${note}`).join("\n")}`);
+  }
+  if (limitations.length > 0) {
+    sections.push(`확인이 필요한 점\n${limitations.map((item) => `- ${item}`).join("\n")}`);
+  }
+  const structured = sections.filter(Boolean).join("\n\n");
+  return structured || answer;
 }

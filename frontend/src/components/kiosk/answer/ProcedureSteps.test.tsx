@@ -14,6 +14,6 @@ describe("ProcedureSteps", () => {
   it("renders the no-procedure message after streaming completes", () => {
     render(<ProcedureSteps steps={[]} />);
 
-    expect(screen.getByText("별도 절차가 필요하지 않습니다.")).toBeInTheDocument();
+    expect(screen.getByText("확인된 절차가 없습니다.")).toBeInTheDocument();
   });
 });

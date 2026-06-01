@@ -17,25 +17,25 @@ from app.core.config import settings
 from app.core.db import AsyncSessionLocal
 from app.schemas import ChatRequest, ChatResponse, ConflictWarning
 from app.schemas.chat import (
-    ChatMetadataEvent,
-    ChatProcedureStepsEvent,
-    ChatTokenEvent,
+    CHAT_RESPONSE_CACHE_REQUIRED_FIELDS,
+    ChatStatusEvent,
     RetrievalStatusPayload,
 )
 from app.services.chroma_client import get_chroma_collection
 from app.services.conflict import load_conflict_warning
 from app.services.embedding_provider import VoyageEmbedder
-from app.services.freshness import calculate_top_level_freshness
 from app.services.llm import GeminiProvider, LlamaCppProvider, LLMProvider
 from app.services.query_log import build_sources_log_payload, normalize_query, write_query_log
 from app.services.rag import (
+    JSON_VALIDATION_ERROR_ANSWER,
     NO_GROUNDED_CONTEXT_ANSWER,
-    build_prompt_messages,
+    LLMOutputValidationError,
     dedupe_sources_by_url,
-    extract_procedure_steps,
-    sources_from_results,
+    generate_answer,
+    insufficient_response,
+    retrieval_candidate_log_items,
 )
-from app.services.retriever import HybridRetriever, RetrievalResult
+from app.services.retriever import HybridRetriever, RetrievalResult, filter_evidence_candidates
 
 router = APIRouter(tags=["chat"])
 DEFAULT_EMBEDDING_MODEL = "voyage-4-large"
@@ -99,7 +99,6 @@ async def _chat_events(
             await _safe_cache_get(dependencies.get("cache"), cache_key)
         )
         if cached_response is not None:
-            yield sse_event("metadata", _metadata_payload(cached_response))
             yield sse_event("done", cached_response.model_dump(mode="json"))
             await _safe_write_chat_log_with_session(
                 dependencies,
@@ -113,6 +112,7 @@ async def _chat_events(
             return
 
         async with _open_session(dependencies) as session:
+            yield sse_event("status", ChatStatusEvent(step="retrieving").model_dump(mode="json"))
             retrieval_results, retrieval_status = await _retrieve(
                 dependencies.get("retriever"),
                 session,
@@ -121,46 +121,56 @@ async def _chat_events(
             )
             conflict_warning = await _load_conflict_warning(dependencies, session, _chunk_ids(retrieval_results))
 
-        sources = _sources_from_results(retrieval_results)
-        freshness = calculate_top_level_freshness([source.freshness or "stale" for source in sources])
-        if not sources:
-            freshness = "stale"
-
-        metadata = ChatMetadataEvent(
-            sources=sources,
-            freshness=freshness,
-            conflict_warning=conflict_warning,
-            retrieval_status=retrieval_status,
-        )
-        yield sse_event("metadata", metadata.model_dump(mode="json"))
-
-        if retrieval_results:
-            answer = ""
+        yield sse_event("status", ChatStatusEvent(step="checking_evidence").model_dump(mode="json"))
+        evidence_candidates = filter_evidence_candidates(payload.question, retrieval_results)
+        if evidence_candidates:
             provider = await _make_llm_provider(dependencies)
             try:
-                messages = build_prompt_messages(payload.question, retrieval_results, conflict_warning)
-                async for token in provider.stream(messages):
-                    answer += token
-                    yield sse_event("token", ChatTokenEvent(text=token).model_dump(mode="json"))
+                yield sse_event("status", ChatStatusEvent(step="generating").model_dump(mode="json"))
+                response = await generate_answer(
+                    question=payload.question,
+                    category=payload.category,
+                    retrieval_results=retrieval_results,
+                    conflict_warning=conflict_warning,
+                    provider=provider,
+                    stale_days=settings.freshness_stale_days,
+                    retrieval_status=retrieval_status,
+                )
+                yield sse_event("status", ChatStatusEvent(step="validating").model_dump(mode="json"))
+            except LLMOutputValidationError as exc:
+                response = ChatResponse(
+                    answerability="insufficient",
+                    answer=JSON_VALIDATION_ERROR_ANSWER,
+                    summary=JSON_VALIDATION_ERROR_ANSWER,
+                    sources=[],
+                    procedure_steps=[],
+                    notes=[],
+                    limitations=[],
+                    conflict_warning=conflict_warning,
+                    freshness="stale",
+                    retrieval_status=retrieval_status,
+                )
+                await _safe_write_chat_log_with_session(
+                    dependencies,
+                    query=payload.question,
+                    response=response,
+                    status="failure",
+                    cache_hit=False,
+                    category=payload.category,
+                    response_ms=_elapsed_ms(started_at),
+                    error_type=str(exc) or "json_validation_failed",
+                    retrieval_results=retrieval_results,
+                )
+                yield sse_event("error", {"message": JSON_VALIDATION_ERROR_ANSWER, "retryable": True})
+                return
             finally:
                 await _close_provider(provider)
-            procedure_steps = extract_procedure_steps(answer)
         else:
-            answer = NO_GROUNDED_CONTEXT_ANSWER
-            procedure_steps = []
-
-        response = ChatResponse(
-            answer=answer,
-            sources=sources,
-            procedure_steps=procedure_steps,
-            conflict_warning=conflict_warning,
-            freshness=freshness,
-            retrieval_status=retrieval_status,
-        )
-        yield sse_event(
-            "procedure_steps",
-            ChatProcedureStepsEvent(procedure_steps=procedure_steps).model_dump(mode="json"),
-        )
+            response = insufficient_response(
+                conflict_warning=conflict_warning,
+                retrieval_status=retrieval_status,
+                summary=NO_GROUNDED_CONTEXT_ANSWER,
+            )
         await _safe_cache_set(dependencies.get("cache"), cache_key, response.model_dump(mode="json"))
         yield sse_event("done", response.model_dump(mode="json"))
 
@@ -172,6 +182,7 @@ async def _chat_events(
             cache_hit=False,
             category=payload.category,
             response_ms=_elapsed_ms(started_at),
+            retrieval_results=retrieval_results,
         )
     except Exception as exc:
         response = ChatResponse(
@@ -203,11 +214,12 @@ def _has_test_chat_hooks(request: Request) -> bool:
 
 
 async def _test_chat_events(request: Request, payload: ChatRequest) -> AsyncIterator[dict[str, str]]:
-    tokens = list(getattr(request.app.state, "test_tokens", []))
+    answer = "".join(getattr(request.app.state, "test_tokens", []))
     procedure_steps = list(getattr(request.app.state, "test_procedure_steps", []))
-    answer = "".join(tokens)
     response = ChatResponse(
+        answerability="answerable" if answer else "insufficient",
         answer=answer,
+        summary=answer,
         sources=[],
         procedure_steps=procedure_steps,
         conflict_warning=ConflictWarning(exists=False),
@@ -215,13 +227,6 @@ async def _test_chat_events(request: Request, payload: ChatRequest) -> AsyncIter
         retrieval_status=RetrievalStatusPayload(mode="hybrid"),
     )
 
-    yield sse_event("metadata", _metadata_payload(response))
-    for token in tokens:
-        yield sse_event("token", ChatTokenEvent(text=token).model_dump(mode="json"))
-    yield sse_event(
-        "procedure_steps",
-        ChatProcedureStepsEvent(procedure_steps=procedure_steps).model_dump(mode="json"),
-    )
     yield sse_event("done", response.model_dump(mode="json"))
 
     if hasattr(request.app.state, "test_query_logs"):
@@ -266,10 +271,6 @@ def _chunk_ids(retrieval_results: list[RetrievalResult]) -> list[UUID]:
     return [result.chunk_id for result in retrieval_results]
 
 
-def _sources_from_results(retrieval_results: list[RetrievalResult]):
-    return sources_from_results(retrieval_results, settings.freshness_stale_days)
-
-
 def _open_session(dependencies: dict[str, Any]):
     session_factory = dependencies.get("session_factory") or AsyncSessionLocal
     return session_factory()
@@ -284,25 +285,25 @@ async def _load_conflict_warning(
     return await _maybe_await(loader(session, chunk_ids))
 
 
-def _metadata_payload(response: ChatResponse) -> dict[str, Any]:
-    return ChatMetadataEvent(
-        sources=response.sources,
-        freshness=response.freshness,
-        conflict_warning=response.conflict_warning,
-        retrieval_status=response.retrieval_status,
-    ).model_dump(mode="json")
-
-
 def _coerce_chat_response(value: Any) -> ChatResponse | None:
     if value is None:
         return None
     if isinstance(value, ChatResponse):
         return _dedupe_chat_response_sources(value)
     if isinstance(value, dict):
+        if not _has_structured_chat_fields(value):
+            return None
         return _dedupe_chat_response_sources(ChatResponse.model_validate(value))
     if isinstance(value, str):
-        return _dedupe_chat_response_sources(ChatResponse.model_validate(json.loads(value)))
+        payload = json.loads(value)
+        if not isinstance(payload, dict) or not _has_structured_chat_fields(payload):
+            return None
+        return _dedupe_chat_response_sources(ChatResponse.model_validate(payload))
     return None
+
+
+def _has_structured_chat_fields(value: dict[str, Any]) -> bool:
+    return CHAT_RESPONSE_CACHE_REQUIRED_FIELDS.issubset(value)
 
 
 def _dedupe_chat_response_sources(response: ChatResponse) -> ChatResponse:
@@ -380,6 +381,7 @@ async def _write_chat_log(
     category: str | None,
     response_ms: int,
     error_type: str | None = None,
+    retrieval_results: list[RetrievalResult] | None = None,
 ) -> None:
     writer = dependencies.get("query_log_writer")
     if writer is None:
@@ -398,11 +400,40 @@ async def _write_chat_log(
                 query=query,
                 error_type=error_type,
                 retrieval_status=response.retrieval_status.model_dump(mode="json"),
+                retrieval_candidates=retrieval_candidate_log_items(retrieval_results or []),
+                answerability=_log_answerability(response, error_type),
+                used_source_numbers=_used_source_numbers_for_log(query, response, retrieval_results or []),
             ),
             has_conflict=response.conflict_warning.exists,
             response_ms=response_ms,
         )
     )
+
+
+def _log_answerability(response: ChatResponse, error_type: str | None) -> str | None:
+    if error_type == "json_validation_failed":
+        return None
+    return response.answerability
+
+
+def _used_source_numbers_for_log(
+    query: str,
+    response: ChatResponse,
+    retrieval_results: list[RetrievalResult],
+) -> list[int]:
+    if response.answerability == "insufficient" or not response.sources or not retrieval_results:
+        return []
+    candidates = filter_evidence_candidates(query, retrieval_results)
+    number_by_chunk_id = {
+        str(candidate.display_result.chunk_id): candidate.source_number
+        for candidate in candidates
+    }
+    used_numbers: list[int] = []
+    for source in response.sources:
+        number = number_by_chunk_id.get(source.chunk_id or "")
+        if number is not None and number not in used_numbers:
+            used_numbers.append(number)
+    return used_numbers
 
 
 async def _write_chat_log_with_session(
@@ -415,6 +446,7 @@ async def _write_chat_log_with_session(
     category: str | None,
     response_ms: int,
     error_type: str | None = None,
+    retrieval_results: list[RetrievalResult] | None = None,
 ) -> None:
     if dependencies.get("query_log_writer") is None:
         return
@@ -429,6 +461,7 @@ async def _write_chat_log_with_session(
             category=category,
             response_ms=response_ms,
             error_type=error_type,
+            retrieval_results=retrieval_results,
         )
 
 
@@ -442,6 +475,7 @@ async def _safe_write_chat_log_with_session(
     category: str | None,
     response_ms: int,
     error_type: str | None = None,
+    retrieval_results: list[RetrievalResult] | None = None,
 ) -> None:
     with suppress(Exception):
         await _write_chat_log_with_session(
@@ -453,6 +487,7 @@ async def _safe_write_chat_log_with_session(
             category=category,
             response_ms=response_ms,
             error_type=error_type,
+            retrieval_results=retrieval_results,
         )
 
 

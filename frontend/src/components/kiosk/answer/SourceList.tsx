@@ -21,7 +21,7 @@ function sourceKey(source: Source, index: number) {
 export function SourceList({ sources, isLoading = false }: SourceListProps) {
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg bg-white p-4 shadow-sm">
-      <h2 className="shrink-0 text-xl font-bold tracking-tight">출처</h2>
+      <h2 className="shrink-0 text-xl font-bold tracking-tight">답변에 사용된 공식 문서</h2>
       <div className="mt-3 grid min-h-0 gap-3 overflow-auto pr-1">
         {sources.length ? (
           sources.map((source, index) => (
@@ -56,7 +56,9 @@ export function SourceList({ sources, isLoading = false }: SourceListProps) {
             ))}
           </div>
         ) : (
-          <p className="min-h-20 rounded-md bg-slate-50 p-4 text-base text-slate-500">표시할 출처 없음</p>
+          <p className="min-h-20 rounded-md bg-slate-50 p-4 text-base text-slate-500">
+            답변에 사용된 공식 문서가 없습니다
+          </p>
         )}
       </div>
     </section>

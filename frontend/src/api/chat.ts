@@ -2,17 +2,13 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 import type {
   ChatErrorPayload,
-  ChatMetadataPayload,
-  ChatProcedureStepsPayload,
   ChatRequestPayload,
   ChatResponsePayload,
-  ChatTokenPayload,
+  ChatStatusPayload,
 } from "../types/kiosk";
 
 export interface ChatStreamHandlers {
-  onMetadata: (payload: ChatMetadataPayload) => void;
-  onToken: (text: string) => void;
-  onProcedureSteps: (steps: string[]) => void;
+  onStatus: (step: ChatStatusPayload["step"]) => void;
   onDone: (payload: ChatResponsePayload) => void;
   onError: (message: string) => void;
 }
@@ -55,17 +51,8 @@ export async function streamChat(
     onmessage(message) {
       try {
         switch (message.event) {
-          case "metadata":
-            handlers.onMetadata(parseEventData<ChatMetadataPayload>(message.data, "metadata"));
-            return;
-          case "token":
-            handlers.onToken(parseEventData<ChatTokenPayload>(message.data, "token").text);
-            return;
-          case "procedure_steps":
-            handlers.onProcedureSteps(
-              parseEventData<ChatProcedureStepsPayload>(message.data, "procedure_steps")
-                .procedure_steps,
-            );
+          case "status":
+            handlers.onStatus(parseEventData<ChatStatusPayload>(message.data, "status").step);
             return;
           case "done":
             receivedDone = true;

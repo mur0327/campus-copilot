@@ -11,6 +11,24 @@ describe("AnswerPanel", () => {
     expect(screen.queryByText("객관적 안내")).not.toBeInTheDocument();
   });
 
+  it("renders structured summary, notes, and limitations before the legacy answer", () => {
+    render(
+      <AnswerPanel
+        answer="legacy answer"
+        isStreaming={false}
+        limitations={["제출 서류는 확인되지 않았습니다."]}
+        notes={["학사지원팀이 관련 부서로 확인됩니다."]}
+        question="질문 내용"
+        summary="확인된 요약입니다."
+      />,
+    );
+
+    expect(screen.getByText("확인된 요약입니다.")).toBeInTheDocument();
+    expect(screen.getByText("준비/주의사항")).toBeInTheDocument();
+    expect(screen.getByText("확인이 필요한 점")).toBeInTheDocument();
+    expect(screen.queryByText("legacy answer")).not.toBeInTheDocument();
+  });
+
   it("makes the answer preview scrollable", () => {
     render(<AnswerPanel answer="답변 내용" isStreaming={false} question="질문 내용" />);
 

@@ -93,6 +93,9 @@ class FakeProvider:
         self.closed = False
         self.session_during_stream = None
 
+    async def generate(self, messages):
+        return "".join(self.tokens)
+
     async def stream(self, messages):
         for token in self.tokens:
             self.session_during_stream = active_test_session
@@ -106,8 +109,28 @@ class FailingProvider:
     def __init__(self):
         self.closed = False
 
+    async def generate(self, messages):
+        raise RuntimeError("provider failed")
+
     async def stream(self, messages):
         raise RuntimeError("provider failed")
+        yield ""
+
+    async def aclose(self):
+        self.closed = True
+
+
+class InvalidJsonProvider:
+    def __init__(self):
+        self.closed = False
+        self.calls = 0
+
+    async def generate(self, messages):
+        self.calls += 1
+        return "not json"
+
+    async def stream(self, messages):
+        raise AssertionError("stream should not be used")
         yield ""
 
     async def aclose(self):
@@ -135,6 +158,16 @@ class FailingGetCache:
 
 
 active_test_session = None
+ANSWER_JSON = """
+{
+  "answerability": "answerable",
+  "summary": "휴학 신청은 포털에서 진행합니다.",
+  "procedure_steps": [],
+  "notes": [],
+  "limitations": [],
+  "used_source_numbers": [1]
+}
+"""
 
 
 def make_retrieval_result(*, crawled_at=None):
@@ -216,10 +249,8 @@ async def test_chat_stream_returns_named_events():
 
     assert response.status_code == 200
     assert "text/event-stream" in response.headers["content-type"]
-    body = response.text
-    assert body.index("event: metadata") < body.index("event: token")
-    assert body.index("event: token") < body.index("event: procedure_steps")
-    assert body.index("event: procedure_steps") < body.index("event: done")
+    events = parse_events(response.text)
+    assert [event["event"] for event in events] == ["done"]
     assert app.state.test_query_logs[-1]["query"] == "휴학 신청은?"
 
 
@@ -231,7 +262,7 @@ async def test_chat_stream_uses_overridden_production_dependencies():
     session_factory = FakeSessionFactory()
     retrieval_result = make_retrieval_result()
     retriever = FakeRetriever([retrieval_result])
-    provider = FakeProvider(["휴학", " 신청은", " 포털에서 진행합니다."])
+    provider = FakeProvider([ANSWER_JSON])
     cache = FakeCache()
 
     async def conflict_warning_loader(session, chunk_ids):
@@ -262,7 +293,7 @@ async def test_chat_stream_uses_overridden_production_dependencies():
     events = parse_events(response.text)
 
     assert response.status_code == 200
-    assert [event["event"] for event in events] == ["metadata", "token", "token", "token", "procedure_steps", "done"]
+    assert [event["event"] for event in events] == ["status", "status", "status", "status", "done"]
     done = events[-1]["data"]
     assert done["answer"] == "휴학 신청은 포털에서 진행합니다."
     assert done["sources"][0]["title"] == "학사 > 휴학"
@@ -273,9 +304,9 @@ async def test_chat_stream_uses_overridden_production_dependencies():
     assert done["retrieval_status"]["mode"] == "hybrid"
     assert logs[-1]["query"] == "휴학 신청은?"
     assert logs[-1]["sources"]["_meta"]["cache_hit"] is False
+    assert logs[-1]["sources"]["_meta"]["used_source_numbers"] == [1]
     assert logs[-1]["sources"]["_meta"]["retrieval_status"]["mode"] == "hybrid"
     assert provider.closed is True
-    assert provider.session_during_stream is None
 
 
 @pytest.mark.asyncio
@@ -290,7 +321,7 @@ async def test_chat_stream_deduplicates_sources_by_url():
             "title": "중복 휴학 안내",
         }
     )
-    provider = FakeProvider(["휴학", " 답변"])
+    provider = FakeProvider([ANSWER_JSON])
     conflict_chunk_ids = []
 
     async def conflict_warning_loader(session, chunk_ids):
@@ -322,9 +353,8 @@ async def test_chat_stream_deduplicates_sources_by_url():
     events = parse_events(response.text)
 
     assert response.status_code == 200
-    assert len(events[0]["data"]["sources"]) == 1
-    assert events[0]["data"]["sources"][0]["chunk_id"] == str(first.chunk_id)
     assert len(events[-1]["data"]["sources"]) == 1
+    assert events[-1]["data"]["sources"][0]["chunk_id"] == str(first.chunk_id)
     assert logs[-1]["sources"]["items"] == events[-1]["data"]["sources"]
     assert conflict_chunk_ids == [first.chunk_id, second.chunk_id]
 
@@ -333,7 +363,7 @@ async def test_chat_stream_deduplicates_sources_by_url():
 async def test_chat_stream_treats_cache_read_failure_as_miss():
     logs = []
     retrieval_result = make_retrieval_result()
-    provider = FakeProvider(["휴학", " 신청은", " 포털에서 진행합니다."])
+    provider = FakeProvider([ANSWER_JSON])
 
     async def query_log_writer(session, **kwargs):
         logs.append(kwargs)
@@ -359,14 +389,14 @@ async def test_chat_stream_treats_cache_read_failure_as_miss():
 
     events = parse_events(response.text)
 
-    assert [event["event"] for event in events] == ["metadata", "token", "token", "token", "procedure_steps", "done"]
+    assert [event["event"] for event in events] == ["status", "status", "status", "status", "done"]
     assert logs[-1]["sources"]["_meta"]["cache_hit"] is False
 
 
 @pytest.mark.asyncio
 async def test_chat_metadata_reports_keyword_only_degraded_retrieval():
     retrieval_result = make_retrieval_result()
-    provider = FakeProvider(["BM25", " 답변"])
+    provider = FakeProvider([ANSWER_JSON])
     retrieval_status = {
         "mode": "keyword_only",
         "degraded": True,
@@ -397,10 +427,10 @@ async def test_chat_metadata_reports_keyword_only_degraded_retrieval():
 
     events = parse_events(response.text)
 
-    assert events[0]["event"] == "metadata"
-    assert events[0]["data"]["retrieval_status"] == retrieval_status
-    assert events[-1]["data"]["retrieval_status"] == retrieval_status
-    assert events[-1]["data"]["answer"] == "BM25 답변"
+    assert events[0]["event"] == "status"
+    assert events[-1]["data"]["retrieval_status"]["mode"] == retrieval_status["mode"]
+    assert events[-1]["data"]["retrieval_status"]["degraded"] is True
+    assert events[-1]["data"]["answer"] == "휴학 신청은 포털에서 진행합니다."
 
 
 @pytest.mark.asyncio
@@ -435,9 +465,46 @@ async def test_chat_empty_retrieval_status_does_not_call_llm_provider():
 
     events = parse_events(response.text)
 
-    assert [event["event"] for event in events] == ["metadata", "procedure_steps", "done"]
-    assert events[0]["data"]["retrieval_status"] == retrieval_status
-    assert events[-1]["data"]["answer"] == "검색된 공식 문서 근거가 부족해 답변할 수 없습니다."
+    assert [event["event"] for event in events] == ["status", "status", "done"]
+    assert events[-1]["data"]["retrieval_status"]["mode"] == retrieval_status["mode"]
+    assert events[-1]["data"]["answer"] == "검색된 공식 문서에서 답변 근거를 확인하지 못했습니다."
+
+
+@pytest.mark.asyncio
+async def test_chat_filtered_out_evidence_does_not_call_llm_provider():
+    unrelated = make_retrieval_result().model_copy(
+        update={
+            "content": "대학평의원회 회의록입니다.",
+            "score": 0.1,
+            "title": "대학평의원회",
+            "menu_path": "대학소개",
+        }
+    )
+
+    def override_dependencies():
+        return {
+            "retriever": FakeRetriever([unrelated]),
+            "llm_provider_factory": lambda: FailingProvider(),
+            "cache": FakeCache(),
+            "query_log_writer": None,
+            "conflict_warning_loader": lambda session, chunk_ids: ConflictWarning(exists=False),
+            "session_factory": FakeSessionFactory(),
+        }
+
+    app.dependency_overrides[get_chat_dependencies] = override_dependencies
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chat",
+            json={"question": "휴학 신청은?"},
+            headers={"Accept": "text/event-stream"},
+        )
+
+    events = parse_events(response.text)
+
+    assert [event["event"] for event in events] == ["status", "status", "done"]
+    assert events[-1]["data"]["answerability"] == "insufficient"
+    assert events[-1]["data"]["retrieval_status"]["evidence_candidate_count"] == 0
 
 
 @pytest.mark.asyncio
@@ -476,7 +543,7 @@ async def test_chat_cache_hit_emits_metadata_and_done_without_tokens():
 
     events = parse_events(response.text)
 
-    assert [event["event"] for event in events] == ["metadata", "done"]
+    assert [event["event"] for event in events] == ["done"]
     assert events[-1]["data"]["answer"] == "캐시 답변입니다."
     assert logs[-1]["query"] == "휴학 신청은?"
     assert logs[-1]["sources"]["_meta"]["cache_hit"] is True
@@ -522,8 +589,7 @@ async def test_chat_cache_hit_deduplicates_sources_by_url():
     events = parse_events(response.text)
 
     assert len(events[0]["data"]["sources"]) == 1
-    assert len(events[-1]["data"]["sources"]) == 1
-    assert events[-1]["data"]["sources"][0]["chunk_id"] == source["chunk_id"]
+    assert events[0]["data"]["sources"][0]["chunk_id"] == source["chunk_id"]
 
 
 @pytest.mark.asyncio
@@ -563,9 +629,49 @@ async def test_chat_stream_emits_error_event_and_closes_provider_on_failure():
 
     events = parse_events(response.text)
 
-    assert [event["event"] for event in events] == ["metadata", "error"]
+    assert [event["event"] for event in events] == ["status", "status", "status", "error"]
     assert events[-1]["data"] == {"message": "답변 생성 중 오류가 발생했습니다.", "retryable": True}
     assert logs[-1]["sources"]["_meta"]["status"] == "failure"
     assert logs[-1]["sources"]["_meta"]["error_type"] == "RuntimeError"
-    assert logs[-1]["sources"]["_meta"]["retrieval_status"] == retrieval_status
+    assert logs[-1]["sources"]["_meta"]["retrieval_status"]["mode"] == retrieval_status["mode"]
     assert provider.closed is True
+
+
+@pytest.mark.asyncio
+async def test_chat_json_validation_failure_logs_without_answerability_and_uses_safe_message():
+    logs = []
+    provider = InvalidJsonProvider()
+
+    async def query_log_writer(session, **kwargs):
+        logs.append(kwargs)
+
+    def override_dependencies():
+        return {
+            "retriever": FakeRetriever([make_retrieval_result()]),
+            "llm_provider_factory": lambda: provider,
+            "cache": FakeCache(),
+            "query_log_writer": query_log_writer,
+            "conflict_warning_loader": lambda session, chunk_ids: ConflictWarning(exists=False),
+            "session_factory": FakeSessionFactory(),
+        }
+
+    app.dependency_overrides[get_chat_dependencies] = override_dependencies
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chat",
+            json={"question": "휴학 신청은?"},
+            headers={"Accept": "text/event-stream"},
+        )
+
+    events = parse_events(response.text)
+
+    assert [event["event"] for event in events] == ["status", "status", "status", "error"]
+    assert events[-1]["data"] == {
+        "message": "답변을 확인하는 중 문제가 발생했습니다. 다시 질문해 주세요.",
+        "retryable": True,
+    }
+    assert provider.calls == 2
+    assert provider.closed is True
+    assert logs[-1]["sources"]["_meta"]["error_type"] == "json_validation_failed"
+    assert logs[-1]["sources"]["_meta"]["answerability"] is None

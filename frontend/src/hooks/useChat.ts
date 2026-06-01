@@ -4,8 +4,7 @@ import { streamChat } from "../api/chat";
 import { useKioskStore } from "../store/kioskStore";
 import {
   mapChatResponseToAnswerData,
-  normalizeSourceFreshness,
-  type ChatMetadataPayload,
+  type ChatStatusStep,
 } from "../types/kiosk";
 
 let latestChatRequestId = 0;
@@ -28,11 +27,16 @@ export function useChat() {
 
       submitQuery(question);
       setAnswerData({
+        answerability: "insufficient",
         answer: "",
+        summary: "",
         sources: [],
         procedureSteps: [],
+        notes: [],
+        limitations: [],
         conflictWarning: null,
         isStreaming: true,
+        statusMessage: statusMessageForStep("retrieving"),
       });
 
       const isCurrentRequest = () => {
@@ -45,11 +49,17 @@ export function useChat() {
         );
       };
 
-      const setFallbackAnswer = () => {
+      const setFallbackAnswer = (
+        message = "답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      ) => {
         setAnswerData({
-          answer: "답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+          answerability: "insufficient",
+          answer: message,
+          summary: message,
           sources: [],
           procedureSteps: [],
+          notes: [],
+          limitations: [],
           conflictWarning: null,
           isStreaming: false,
         });
@@ -59,37 +69,22 @@ export function useChat() {
         await streamChat(
           { question },
           {
-            onMetadata: (payload) => {
-              if (!isCurrentRequest()) {
-                return;
-              }
-
-              setAnswerData((current) => applyMetadata(current, payload));
-            },
-            onToken: (text) => {
+            onStatus: (step) => {
               if (!isCurrentRequest()) {
                 return;
               }
 
               setAnswerData((current) => ({
-                answer: `${current?.answer ?? ""}${text}`,
+                answerability: current?.answerability ?? "insufficient",
+                answer: "",
+                summary: "",
                 sources: current?.sources ?? [],
                 procedureSteps: current?.procedureSteps ?? [],
+                notes: current?.notes ?? [],
+                limitations: current?.limitations ?? [],
                 conflictWarning: current?.conflictWarning ?? null,
                 isStreaming: true,
-              }));
-            },
-            onProcedureSteps: (procedureSteps) => {
-              if (!isCurrentRequest()) {
-                return;
-              }
-
-              setAnswerData((current) => ({
-                answer: current?.answer ?? "",
-                sources: current?.sources ?? [],
-                procedureSteps,
-                conflictWarning: current?.conflictWarning ?? null,
-                isStreaming: true,
+                statusMessage: statusMessageForStep(step),
               }));
             },
             onDone: (payload) => {
@@ -105,13 +100,16 @@ export function useChat() {
               }
 
               console.warn("chat stream failed; using fallback answer.", message);
-              setFallbackAnswer();
+              setFallbackAnswer(message);
             },
           },
           abortController.signal,
         );
       } catch (error) {
         if (!isCurrentRequest()) {
+          return;
+        }
+        if (error instanceof Error && error.name === "HandledChatStreamError") {
           return;
         }
         console.warn("chat request failed; using fallback answer.", error);
@@ -128,30 +126,15 @@ export function useChat() {
   return { submit };
 }
 
-function applyMetadata(
-  current: ReturnType<typeof useKioskStore.getState>["answerData"],
-  payload: ChatMetadataPayload,
-) {
-  const topLevelFreshness = payload.freshness
-    ? normalizeSourceFreshness(payload.freshness)
-    : undefined;
-
-  return {
-    answer: current?.answer ?? "",
-    sources:
-      payload.sources?.map(({ title, url, crawled_at, freshness, chunk_id }) => ({
-        title,
-        url,
-        crawled_at,
-        freshness: freshness
-          ? normalizeSourceFreshness(freshness)
-          : (topLevelFreshness ?? "stale"),
-        chunk_id,
-      })) ??
-      current?.sources ??
-      [],
-    procedureSteps: payload.procedure_steps ?? current?.procedureSteps ?? [],
-    conflictWarning: payload.conflict_warning ?? current?.conflictWarning ?? null,
-    isStreaming: true,
-  };
+export function statusMessageForStep(step: ChatStatusStep): string {
+  switch (step) {
+    case "retrieving":
+      return "공식 문서 검색 중";
+    case "checking_evidence":
+      return "근거 확인 중";
+    case "generating":
+      return "답변 작성 중";
+    case "validating":
+      return "답변 검증 중";
+  }
 }

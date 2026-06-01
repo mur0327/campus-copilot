@@ -13,7 +13,10 @@ from app.services.retriever import (  # noqa: E402
     BM25Index,
     HybridRetriever,
     RetrievalResult,
+    classify_question_intent,
+    filter_evidence_candidates,
     merge_ranked_results,
+    normalize_query_keywords,
     tokenize_korean_light,
 )
 
@@ -123,6 +126,42 @@ def test_bm25_index_with_punctuation_only_content_returns_empty_results():
     index = BM25Index([make_result("!!!")])
 
     assert index.search("휴학 신청", top_n=1) == []
+
+
+def test_evidence_filter_matches_normalized_korean_particle_and_rejects_unrelated_low_score():
+    related = make_result("휴학 신청은 포털에서 진행합니다.").model_copy(update={"score": 0.1})
+    unrelated = make_result("대학평의원회 회의록입니다.").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.1,
+            "title": "대학평의원회",
+            "menu_path": "대학소개",
+        }
+    )
+
+    candidates = filter_evidence_candidates("휴학 신청은 어떻게 하나요?", [unrelated, related])
+
+    assert [candidate.display_result.chunk_id for candidate in candidates] == [related.chunk_id]
+    assert normalize_query_keywords("신청은 어떻게") == {"신청"}
+
+
+def test_evidence_filter_groups_duplicate_document_chunks_and_keeps_highest_score():
+    document_id = uuid4()
+    first = make_result("휴학 신청 안내", document_id=document_id).model_copy(update={"score": 0.4})
+    second = make_result("휴학 신청 서류", document_id=document_id).model_copy(
+        update={"chunk_id": uuid4(), "score": 0.8}
+    )
+
+    candidates = filter_evidence_candidates("휴학 신청", [first, second])
+
+    assert len(candidates) == 1
+    assert candidates[0].display_result.chunk_id == second.chunk_id
+    assert [result.chunk_id for result in candidates[0].context_results] == [second.chunk_id, first.chunk_id]
+
+
+def test_classify_question_intent_detects_procedure_questions():
+    assert classify_question_intent("휴학 신청은 어떻게 하나요?") == "procedure"
 
 
 def test_merge_ranked_results_deduplicates_and_combines_scores():

@@ -3,10 +3,11 @@ import { MarkdownText } from "./MarkdownText";
 interface AnswerTextProps {
   text: string;
   isStreaming: boolean;
+  statusMessage?: string;
 }
 
-export function AnswerText({ text, isStreaming }: AnswerTextProps) {
-  const displayText = text || "답변을 준비하고 있습니다.";
+export function AnswerText({ text, isStreaming, statusMessage }: AnswerTextProps) {
+  const displayText = text || statusMessage || "답변을 준비하고 있습니다.";
 
   if (!text && isStreaming) {
     return (

@@ -17,7 +17,16 @@ export function AnswerScreen() {
       <QuestionBar onHome={resetToMain} question={currentQuery} />
 
       <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_26rem] gap-5 overflow-hidden p-6">
-        <AnswerPanel answer={answerData?.answer ?? ""} isStreaming={isStreaming} question={currentQuery} />
+        <AnswerPanel
+          answer={answerData?.answer ?? ""}
+          answerability={answerData?.answerability}
+          isStreaming={isStreaming}
+          limitations={answerData?.limitations}
+          notes={answerData?.notes}
+          question={currentQuery}
+          summary={answerData?.summary}
+          statusMessage={answerData?.statusMessage}
+        />
         <div className="answer-side-grid min-h-0 overflow-hidden">
           <ProcedureSteps isStreaming={isStreaming} steps={answerData?.procedureSteps ?? []} />
           <div className="h-full min-h-0">

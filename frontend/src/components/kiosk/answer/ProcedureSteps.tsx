@@ -34,7 +34,7 @@ export function ProcedureSteps({ steps, isStreaming = false }: ProcedureStepsPro
       ) : (
         <div className="mt-5 flex items-center gap-3 rounded-md bg-slate-50 p-4 text-lg text-slate-600">
           <CheckCircle2 aria-hidden="true" className="shrink-0 text-slate-500" size={24} strokeWidth={1.8} />
-          <span>{isStreaming ? "절차를 확인하고 있습니다." : "별도 절차가 필요하지 않습니다."}</span>
+          <span>{isStreaming ? "절차를 확인하고 있습니다." : "확인된 절차가 없습니다."}</span>
         </div>
       )}
     </section>
