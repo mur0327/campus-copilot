@@ -24,6 +24,7 @@ from app.schemas.chat import (
 )
 from app.services.chroma_client import get_chroma_collection
 from app.services.conflict import load_conflict_warning
+from app.services.embedding_provider import VoyageEmbedder
 from app.services.freshness import calculate_top_level_freshness
 from app.services.llm import GeminiProvider, LlamaCppProvider, LLMProvider
 from app.services.query_log import build_sources_log_payload, normalize_query, write_query_log
@@ -37,7 +38,7 @@ from app.services.rag import (
 from app.services.retriever import HybridRetriever, RetrievalResult
 
 router = APIRouter(tags=["chat"])
-DEFAULT_EMBEDDING_MODEL = "jhgan/ko-sroberta-multitask"
+DEFAULT_EMBEDDING_MODEL = "voyage-4-large"
 _default_retriever: HybridRetriever | None = None
 _default_cache: Any | None = None
 
@@ -512,6 +513,9 @@ def _get_default_cache() -> Any:
 
 
 def create_embedder(model_name: str):
-    from sentence_transformers import SentenceTransformer
-
-    return SentenceTransformer(model_name)
+    return VoyageEmbedder(
+        model_name=model_name,
+        input_type="query",
+        api_key=getattr(settings, "voyage_api_key", ""),
+        require_api_key=False,
+    )

@@ -11,6 +11,8 @@ def test_phase_four_backend_defaults(monkeypatch):
     settings = Settings(_env_file=None)
 
     assert settings.chroma_collection == "campus_copilot_chunks"
+    assert settings.embedding_model == "voyage-4-large"
+    assert settings.voyage_api_key == ""
     assert settings.retriever_semantic_top_n == 20
     assert settings.retriever_bm25_top_n == 20
     assert settings.retriever_final_top_k == 6

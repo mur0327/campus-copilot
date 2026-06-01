@@ -117,9 +117,15 @@ async def count_pending_chunks(connection) -> int:
 
 
 def create_embedder(model_name: str):
-    from sentence_transformers import SentenceTransformer
+    from core.config import settings
+    from tasks.embedding_provider import VoyageEmbedder
 
-    return SentenceTransformer(model_name)
+    return VoyageEmbedder(
+        model_name=model_name,
+        input_type="document",
+        api_key=settings.voyage_api_key,
+        require_api_key=True,
+    )
 
 
 def create_chroma_collection(host: str, port: int, collection_name: str):

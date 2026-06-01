@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     chroma_host: str = "localhost"
     chroma_port: int = 8001
     chroma_collection: str = "campus_copilot_chunks"
+    embedding_model: str = "voyage-4-large"
+    voyage_api_key: str = ""
 
     redis_url: str = "redis://localhost:6379/0"
 

@@ -12,8 +12,8 @@ WORKDIR /app
 
 RUN pip install uv --no-cache-dir
 
-COPY pyproject.toml ./
-RUN uv sync --no-dev
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev
 RUN playwright install --with-deps chromium
 
 COPY . .
