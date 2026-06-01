@@ -64,7 +64,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - ./.data/bm25:/app/.data/bm25:ro
+      - ./.data/bm25:/.data/bm25:ro
     command: ["sh", "/app/scripts/entrypoint.sh", "--reload"]
     healthcheck:
       test:
@@ -92,7 +92,7 @@ services:
         condition: service_healthy
     volumes:
       - ./worker:/app
-      - ./.data/bm25:/app/.data/bm25
+      - ./.data/bm25:/.data/bm25
     ulimits:
       nofile:
         soft: 65536
