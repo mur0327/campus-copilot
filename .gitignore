@@ -9,6 +9,7 @@
 .codex
 *.swp
 alembic/versions/*.pyc
+TODO.md
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,python,node,react,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,python,node,react,visualstudiocode
