@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 
 import { triggerAdminCrawl } from "../../api/admin";
+import { Panel } from "../ui/Panel";
 
 export default function CrawlControl() {
   const queryClient = useQueryClient();
@@ -17,7 +18,7 @@ export default function CrawlControl() {
   const crawlStatus = crawlMutation.data?.status;
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm">
+    <Panel bordered padding="md">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">수동 작업</p>
@@ -53,6 +54,6 @@ export default function CrawlControl() {
           </p>
         ) : null}
       </div>
-    </section>
+    </Panel>
   );
 }

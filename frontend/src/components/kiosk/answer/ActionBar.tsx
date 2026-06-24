@@ -1,6 +1,8 @@
 import { Printer, QrCode, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { Panel } from "../../ui/Panel";
+import { TileButton } from "../../ui/TileButton";
 import { ko } from "../../../lang/ko";
 import type { Source } from "../../../types/kiosk";
 import { QRModal } from "./QRModal";
@@ -50,39 +52,38 @@ export function ActionBar({ question, answer, sources }: ActionBarProps) {
     // Future TTS integration starts here after kiosk browser support is verified.
   };
 
+  const actions = [
+    {
+      disabled: printStatus === "pending",
+      icon: <Printer aria-hidden="true" className="h-6 w-6" />,
+      label: ko.action.print,
+      onClick: printAnswer,
+    },
+    {
+      icon: <QrCode aria-hidden="true" className="h-6 w-6" />,
+      label: ko.action.qr,
+      onClick: () => setQrOpen(true),
+    },
+    {
+      icon: <Volume2 aria-hidden="true" className="h-6 w-6" />,
+      label: ko.action.ttsPending,
+      onClick: showTtsPlaceholder,
+    },
+  ];
+
   return (
-    <section className="h-full min-h-26 shrink-0 rounded-lg bg-white p-4 shadow-sm">
+    <Panel className="h-full min-h-26 shrink-0">
       <div className="grid h-full grid-cols-3 gap-3">
-        <button
-          className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold disabled:text-slate-400"
-          disabled={printStatus === "pending"}
-          onClick={printAnswer}
-          type="button"
-        >
-          <Printer aria-hidden="true" className="h-6 w-6" />
-          {ko.action.print}
-        </button>
-        <button
-          className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold"
-          onClick={() => setQrOpen(true)}
-          type="button"
-        >
-          <QrCode aria-hidden="true" className="h-6 w-6" />
-          {ko.action.qr}
-        </button>
-        <button
-          className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold"
-          onClick={showTtsPlaceholder}
-          type="button"
-        >
-          <Volume2 aria-hidden="true" className="h-6 w-6" />
-          {ko.action.ttsPending}
-        </button>
+        {actions.map((action) => (
+          <TileButton disabled={action.disabled} icon={action.icon} key={action.label} onClick={action.onClick}>
+            {action.label}
+          </TileButton>
+        ))}
       </div>
       {printStatus === "pending" ? <p className="mt-2 text-sm text-slate-500">{ko.action.printPending}</p> : null}
       {printStatus === "failed" ? <p className="mt-2 text-sm text-rose-700">{ko.action.printFailed}</p> : null}
       {printStatus === "sent" ? <p className="mt-2 text-sm text-emerald-700">{ko.action.printSent}</p> : null}
       {qrOpen ? <QRModal onClose={() => setQrOpen(false)} value={qrValue} /> : null}
-    </section>
+    </Panel>
   );
 }

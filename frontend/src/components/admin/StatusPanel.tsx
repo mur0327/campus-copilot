@@ -1,6 +1,7 @@
 import { Database, Loader2 } from "lucide-react";
 
 import type { AdminStatus } from "../../api/admin";
+import { Panel } from "../ui/Panel";
 
 interface StatusPanelProps {
   status?: AdminStatus;
@@ -93,7 +94,7 @@ export default function StatusPanel({
   const percent = progressPercent(processedPages, totalPages);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm">
+    <Panel bordered padding="md">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">문서 적재 현황</p>
@@ -162,6 +163,6 @@ export default function StatusPanel({
           {formatCrawlError(effectiveError)}
         </p>
       ) : null}
-    </section>
+    </Panel>
   );
 }

@@ -1,4 +1,5 @@
 import type { AdminLog } from "../../api/admin";
+import { Panel } from "../ui/Panel";
 
 interface LogTableProps {
   logs?: AdminLog[];
@@ -24,7 +25,7 @@ function valueOrDash(value: string | number | undefined) {
 
 export default function LogTable({ logs, isLoading, isError }: LogTableProps) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm">
+    <Panel bordered padding="md">
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">최근 질의</p>
@@ -85,6 +86,6 @@ export default function LogTable({ logs, isLoading, isError }: LogTableProps) {
           </table>
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }

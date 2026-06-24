@@ -1,4 +1,5 @@
 import type { AdminConflict } from "../../api/admin";
+import { Panel } from "../ui/Panel";
 
 interface ConflictTableProps {
   conflicts?: AdminConflict[];
@@ -18,7 +19,7 @@ export default function ConflictTable({
   isError,
 }: ConflictTableProps) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 text-slate-950 shadow-sm">
+    <Panel bordered padding="md">
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">검수 대상</p>
@@ -74,6 +75,6 @@ export default function ConflictTable({
           </table>
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }

@@ -1,3 +1,4 @@
+import { Panel } from "../../ui/Panel";
 import { ko } from "../../../lang/ko";
 import type { Source } from "../../../types/kiosk";
 import { MarkdownText } from "./MarkdownText";
@@ -21,7 +22,7 @@ function sourceKey(source: Source, index: number) {
 
 export function SourceList({ sources, isLoading = false }: SourceListProps) {
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg bg-white p-4 shadow-sm">
+    <Panel className="flex h-full min-h-0 flex-col overflow-hidden">
       <h2 className="shrink-0 text-xl font-bold tracking-tight">{ko.source.title}</h2>
       <div className="mt-3 grid min-h-0 gap-3 overflow-auto pr-1">
         {sources.length ? (
@@ -62,6 +63,6 @@ export function SourceList({ sources, isLoading = false }: SourceListProps) {
           </p>
         )}
       </div>
-    </section>
+    </Panel>
   );
 }

@@ -1,6 +1,7 @@
 import { Maximize2, X } from "lucide-react";
 import { useState } from "react";
 
+import { Panel } from "../../ui/Panel";
 import { ko } from "../../../lang/ko";
 import { AnswerText } from "./AnswerText";
 
@@ -33,7 +34,7 @@ export function AnswerPanel({
 
   return (
     <>
-      <section className="flex min-h-0 flex-col overflow-hidden rounded-lg bg-white p-7 shadow-sm">
+      <Panel className="flex min-h-0 flex-col overflow-hidden" padding="lg">
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{ko.answer.title}</h2>
@@ -69,7 +70,7 @@ export function AnswerPanel({
             {ko.answer.enlargeAnswer}
           </button>
         ) : null}
-      </section>
+      </Panel>
 
       {isModalOpen ? (
         <div

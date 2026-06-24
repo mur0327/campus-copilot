@@ -1,5 +1,6 @@
 import { CheckCircle2, ClipboardList } from "lucide-react";
 
+import { Panel } from "../../ui/Panel";
 import { ko } from "../../../lang/ko";
 
 interface ProcedureStepsProps {
@@ -11,7 +12,7 @@ export function ProcedureSteps({ steps, isStreaming = false }: ProcedureStepsPro
   const hasSteps = steps.length > 0;
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg bg-white p-4 shadow-sm">
+    <Panel className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="flex shrink-0 items-center justify-between gap-4">
         <div>
           <p className="text-base font-semibold text-sky-800">{ko.procedure.eyebrow}</p>
@@ -39,6 +40,6 @@ export function ProcedureSteps({ steps, isStreaming = false }: ProcedureStepsPro
           <span>{isStreaming ? ko.procedure.loading : ko.procedure.empty}</span>
         </div>
       )}
-    </section>
+    </Panel>
   );
 }
