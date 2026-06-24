@@ -55,7 +55,7 @@ export function AnswerPanel({
           ) : null}
         </div>
 
-        <div aria-label={ko.answer.contentLabel} className="answer-preview-mask mt-5 min-h-0 flex-1 overflow-auto pr-2">
+        <div aria-label={ko.answer.contentLabel} className="mt-5 min-h-0 flex-1 overflow-auto pr-2">
           <AnswerText isStreaming={isStreaming} statusMessage={statusMessage} text={previewText} />
         </div>
 
