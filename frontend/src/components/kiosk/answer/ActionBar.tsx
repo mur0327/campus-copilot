@@ -51,7 +51,7 @@ export function ActionBar({ question, answer, sources }: ActionBarProps) {
   };
 
   return (
-    <section className="h-full min-h-[6.5rem] shrink-0 rounded-lg bg-white p-4 shadow-sm">
+    <section className="h-full min-h-26 shrink-0 rounded-lg bg-white p-4 shadow-sm">
       <div className="grid h-full grid-cols-3 gap-3">
         <button
           className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold disabled:text-slate-400"
