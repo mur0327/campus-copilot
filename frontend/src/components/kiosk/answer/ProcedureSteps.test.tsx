@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { ko } from "../../../lang/ko";
 import { ProcedureSteps } from "./ProcedureSteps";
 
 describe("ProcedureSteps", () => {
@@ -14,6 +15,6 @@ describe("ProcedureSteps", () => {
   it("renders the no-procedure message after streaming completes", () => {
     render(<ProcedureSteps steps={[]} />);
 
-    expect(screen.getByText("확인된 절차가 없습니다.")).toBeInTheDocument();
+    expect(screen.getByText(ko.procedure.empty)).toBeInTheDocument();
   });
 });

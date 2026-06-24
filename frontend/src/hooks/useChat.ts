@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 
 import { streamChat } from "../api/chat";
+import { ko } from "../lang/ko";
 import { useKioskStore } from "../store/kioskStore";
 import {
   mapChatResponseToAnswerData,
@@ -50,7 +51,7 @@ export function useChat() {
       };
 
       const setFallbackAnswer = (
-        message = "답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        message: string = ko.chatError.fallback,
       ) => {
         setAnswerData({
           answerability: "insufficient",
@@ -129,12 +130,12 @@ export function useChat() {
 export function statusMessageForStep(step: ChatStatusStep): string {
   switch (step) {
     case "retrieving":
-      return "공식 문서 검색 중";
+      return ko.chatStatus.retrieving;
     case "checking_evidence":
-      return "근거 확인 중";
+      return ko.chatStatus.checkingEvidence;
     case "generating":
-      return "답변 작성 중";
+      return ko.chatStatus.generating;
     case "validating":
-      return "답변 검증 중";
+      return ko.chatStatus.validating;
   }
 }

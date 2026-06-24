@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ko } from "../lang/ko";
 import { useKioskStore } from "../store/kioskStore";
 import type { ChatStreamHandlers } from "../api/chat";
 import type { ChatResponsePayload } from "../types/kiosk";
@@ -103,7 +104,7 @@ describe("useChat", () => {
 
     expect(capturedHandlers).not.toBeNull();
     expect(useKioskStore.getState().answerData).toMatchObject({
-      statusMessage: "근거 확인 중",
+      statusMessage: ko.chatStatus.checkingEvidence,
       isStreaming: true,
     });
   });
@@ -145,7 +146,7 @@ describe("useChat", () => {
     });
 
     expect(useKioskStore.getState().answerData?.isStreaming).toBe(false);
-    expect(useKioskStore.getState().answerData?.answer).toContain("답변을 불러오지 못했습니다");
+    expect(useKioskStore.getState().answerData?.answer).toBe(ko.chatError.fallback);
   });
 
   it("keeps the backend safe error message for handled stream errors", async () => {

@@ -1,5 +1,7 @@
 import { CheckCircle2, ClipboardList } from "lucide-react";
 
+import { ko } from "../../../lang/ko";
+
 interface ProcedureStepsProps {
   steps: string[];
   isStreaming?: boolean;
@@ -12,8 +14,8 @@ export function ProcedureSteps({ steps, isStreaming = false }: ProcedureStepsPro
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg bg-white p-4 shadow-sm">
       <div className="flex shrink-0 items-center justify-between gap-4">
         <div>
-          <p className="text-base font-semibold text-sky-800">다음 행동</p>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight">진행 절차</h2>
+          <p className="text-base font-semibold text-sky-800">{ko.procedure.eyebrow}</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight">{ko.procedure.title}</h2>
         </div>
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-800">
           <ClipboardList aria-hidden="true" size={24} strokeWidth={1.8} />
@@ -34,7 +36,7 @@ export function ProcedureSteps({ steps, isStreaming = false }: ProcedureStepsPro
       ) : (
         <div className="mt-5 flex items-center gap-3 rounded-md bg-slate-50 p-4 text-lg text-slate-600">
           <CheckCircle2 aria-hidden="true" className="shrink-0 text-slate-500" size={24} strokeWidth={1.8} />
-          <span>{isStreaming ? "절차를 확인하고 있습니다." : "확인된 절차가 없습니다."}</span>
+          <span>{isStreaming ? ko.procedure.loading : ko.procedure.empty}</span>
         </div>
       )}
     </section>

@@ -1,3 +1,4 @@
+import { ko } from "../../../lang/ko";
 import { MarkdownText } from "./MarkdownText";
 
 interface AnswerTextProps {
@@ -7,7 +8,7 @@ interface AnswerTextProps {
 }
 
 export function AnswerText({ text, isStreaming, statusMessage }: AnswerTextProps) {
-  const displayText = text || statusMessage || "답변을 준비하고 있습니다.";
+  const displayText = text || statusMessage || ko.answer.preparing;
 
   if (!text && isStreaming) {
     return (

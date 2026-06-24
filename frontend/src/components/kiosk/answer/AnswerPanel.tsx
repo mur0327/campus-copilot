@@ -1,6 +1,7 @@
 import { Maximize2, X } from "lucide-react";
 import { useState } from "react";
 
+import { ko } from "../../../lang/ko";
 import { AnswerText } from "./AnswerText";
 
 interface AnswerPanelProps {
@@ -35,10 +36,10 @@ export function AnswerPanel({
       <section className="flex min-h-0 flex-col overflow-hidden rounded-lg bg-white p-7 shadow-sm">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">답변</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{ko.answer.title}</h2>
             {!isStreaming && answerability !== "answerable" ? (
               <p className="mt-2 inline-flex rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">
-                {answerability === "partial" ? "일부 정보 확인됨" : "공식 문서 근거 부족"}
+                {answerability === "partial" ? ko.answer.partialBadge : ko.answer.insufficientBadge}
               </p>
             ) : null}
           </div>
@@ -49,12 +50,12 @@ export function AnswerPanel({
               type="button"
             >
               <Maximize2 aria-hidden="true" size={20} strokeWidth={1.8} />
-              전체 답변 보기
+              {ko.answer.openFullAnswer}
             </button>
           ) : null}
         </div>
 
-        <div aria-label="답변 내용" className="answer-preview-mask mt-5 min-h-0 flex-1 overflow-auto pr-2">
+        <div aria-label={ko.answer.contentLabel} className="answer-preview-mask mt-5 min-h-0 flex-1 overflow-auto pr-2">
           <AnswerText isStreaming={isStreaming} statusMessage={statusMessage} text={previewText} />
         </div>
 
@@ -65,7 +66,7 @@ export function AnswerPanel({
             type="button"
           >
             <Maximize2 aria-hidden="true" size={24} strokeWidth={1.8} />
-            답변을 크게 보기
+            {ko.answer.enlargeAnswer}
           </button>
         ) : null}
       </section>
@@ -78,17 +79,17 @@ export function AnswerPanel({
           role="dialog"
         >
           <section
-            aria-label="전체 답변"
+            aria-label={ko.answer.fullAnswerTitle}
             className="flex max-h-[86vh] w-full max-w-5xl flex-col rounded-xl bg-white p-8 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex shrink-0 items-start justify-between gap-6 border-b border-slate-200 pb-5">
               <div>
-                <p className="text-lg font-semibold text-sky-800">전체 답변</p>
+                <p className="text-lg font-semibold text-sky-800">{ko.answer.fullAnswerTitle}</p>
                 <h2 className="mt-1 text-3xl font-bold tracking-tight">{question}</h2>
               </div>
               <button
-                aria-label="전체 답변 닫기"
+                aria-label={ko.answer.closeFullAnswer}
                 className="flex h-14 w-14 items-center justify-center rounded-md bg-slate-100 text-slate-700 transition hover:bg-slate-200 active:scale-[0.98]"
                 onClick={() => setIsModalOpen(false)}
                 type="button"
@@ -122,14 +123,14 @@ function buildStructuredPreview({
   const sections = [summary.trim()];
   if (procedureSteps.length > 0) {
     sections.push(
-      `확인된 절차\n${procedureSteps.map((step, index) => `${index + 1}. ${step}`).join("\n")}`,
+      `**${ko.answer.section.procedure}**\n${procedureSteps.map((step, index) => `${index + 1}. ${step}`).join("\n")}`,
     );
   }
   if (notes.length > 0) {
-    sections.push(`준비/주의사항\n${notes.map((note) => `- ${note}`).join("\n")}`);
+    sections.push(`**${ko.answer.section.notes}**\n${notes.map((note) => `- ${note}`).join("\n")}`);
   }
   if (limitations.length > 0) {
-    sections.push(`확인이 필요한 점\n${limitations.map((item) => `- ${item}`).join("\n")}`);
+    sections.push(`**${ko.answer.section.limitations}**\n${limitations.map((item) => `- ${item}`).join("\n")}`);
   }
   const structured = sections.filter(Boolean).join("\n\n");
   return structured || answer;

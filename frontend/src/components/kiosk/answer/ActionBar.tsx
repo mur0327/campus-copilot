@@ -1,6 +1,7 @@
 import { Printer, QrCode, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { ko } from "../../../lang/ko";
 import type { Source } from "../../../types/kiosk";
 import { QRModal } from "./QRModal";
 
@@ -59,7 +60,7 @@ export function ActionBar({ question, answer, sources }: ActionBarProps) {
           type="button"
         >
           <Printer aria-hidden="true" className="h-6 w-6" />
-          인쇄
+          {ko.action.print}
         </button>
         <button
           className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold"
@@ -67,7 +68,7 @@ export function ActionBar({ question, answer, sources }: ActionBarProps) {
           type="button"
         >
           <QrCode aria-hidden="true" className="h-6 w-6" />
-          QR
+          {ko.action.qr}
         </button>
         <button
           className="flex flex-col items-center justify-center gap-1.5 rounded-md bg-slate-100 py-3 font-semibold"
@@ -75,12 +76,12 @@ export function ActionBar({ question, answer, sources }: ActionBarProps) {
           type="button"
         >
           <Volume2 aria-hidden="true" className="h-6 w-6" />
-          읽기 예정
+          {ko.action.ttsPending}
         </button>
       </div>
-      {printStatus === "pending" ? <p className="mt-2 text-sm text-slate-500">인쇄 요청 중</p> : null}
-      {printStatus === "failed" ? <p className="mt-2 text-sm text-rose-700">인쇄 서비스에 연결하지 못했습니다.</p> : null}
-      {printStatus === "sent" ? <p className="mt-2 text-sm text-emerald-700">인쇄 요청을 보냈습니다.</p> : null}
+      {printStatus === "pending" ? <p className="mt-2 text-sm text-slate-500">{ko.action.printPending}</p> : null}
+      {printStatus === "failed" ? <p className="mt-2 text-sm text-rose-700">{ko.action.printFailed}</p> : null}
+      {printStatus === "sent" ? <p className="mt-2 text-sm text-emerald-700">{ko.action.printSent}</p> : null}
       {qrOpen ? <QRModal onClose={() => setQrOpen(false)} value={qrValue} /> : null}
     </section>
   );

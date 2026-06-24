@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { ko } from "../../../lang/ko";
 import { AnswerPanel } from "./AnswerPanel";
 
 describe("AnswerPanel", () => {
@@ -25,24 +26,24 @@ describe("AnswerPanel", () => {
     );
 
     expect(screen.getByText("확인된 요약입니다.")).toBeInTheDocument();
-    expect(screen.getByText("확인된 절차")).toBeInTheDocument();
+    expect(screen.getByText(ko.answer.section.procedure).closest("strong")).toBeInTheDocument();
     expect(screen.getByText("단과대학 교학과를 방문합니다.")).toBeInTheDocument();
     expect(screen.getByText("휴학원을 제출합니다.")).toBeInTheDocument();
-    expect(screen.getByText("준비/주의사항")).toBeInTheDocument();
-    expect(screen.getByText("확인이 필요한 점")).toBeInTheDocument();
+    expect(screen.getByText(ko.answer.section.notes).closest("strong")).toBeInTheDocument();
+    expect(screen.getByText(ko.answer.section.limitations).closest("strong")).toBeInTheDocument();
     expect(screen.queryByText("legacy answer")).not.toBeInTheDocument();
   });
 
   it("makes the answer preview scrollable", () => {
     render(<AnswerPanel answer="답변 내용" isStreaming={false} question="질문 내용" />);
 
-    expect(screen.getByLabelText("답변 내용")).toHaveClass("overflow-auto");
+    expect(screen.getByLabelText(ko.answer.contentLabel)).toHaveClass("overflow-auto");
   });
 
   it("opens a full answer dialog", () => {
     render(<AnswerPanel answer="긴 답변 내용" isStreaming={false} question="교양학점은 몇 학점을 이수해야 하나요" />);
 
-    fireEvent.click(screen.getByRole("button", { name: "답변을 크게 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: ko.answer.enlargeAnswer }));
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("교양학점은 몇 학점을 이수해야 하나요")).toBeInTheDocument();

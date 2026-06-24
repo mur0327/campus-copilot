@@ -1,5 +1,7 @@
 import { Home } from "lucide-react";
 
+import { ko } from "../../../lang/ko";
+
 interface QuestionBarProps {
   question: string;
   onHome: () => void;
@@ -9,7 +11,7 @@ export function QuestionBar({ question, onHome }: QuestionBarProps) {
   return (
     <header className="flex h-20 shrink-0 items-center gap-5 border-b border-slate-200 bg-white px-8">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-slate-500">질문</p>
+        <p className="text-sm font-medium text-slate-500">{ko.question.label}</p>
         <h1 className="truncate text-2xl font-bold">{question}</h1>
       </div>
       <button
@@ -18,7 +20,7 @@ export function QuestionBar({ question, onHome }: QuestionBarProps) {
         type="button"
       >
         <Home aria-hidden="true" className="h-5 w-5" />
-        처음으로
+        {ko.question.home}
       </button>
     </header>
   );

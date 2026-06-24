@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { ko } from "../../../lang/ko";
 import { AnswerText } from "./AnswerText";
 
 describe("AnswerText", () => {
@@ -14,7 +15,7 @@ describe("AnswerText", () => {
   it("renders shimmer loading text while waiting for the first answer chunk", () => {
     render(<AnswerText isStreaming={true} text="" />);
 
-    expect(screen.getByTestId("answer-loading-text")).toHaveTextContent("답변을 준비하고 있습니다.");
+    expect(screen.getByTestId("answer-loading-text")).toHaveTextContent(ko.answer.preparing);
     expect(screen.queryByText("|")).not.toBeInTheDocument();
   });
 

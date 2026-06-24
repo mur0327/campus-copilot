@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { ko } from "../../../lang/ko";
 import type { Source } from "../../../types/kiosk";
 import { SourceList } from "./SourceList";
 
@@ -14,8 +15,8 @@ describe("SourceList", () => {
     render(<SourceList sources={sources} />);
 
     expect(screen.getByText("학사안내")).toBeInTheDocument();
-    expect(screen.getByText(/최신/)).toBeInTheDocument();
-    expect(screen.getByText(/오래됨/)).toBeInTheDocument();
+    expect(screen.getByText(ko.source.recent)).toBeInTheDocument();
+    expect(screen.getByText(ko.source.stale)).toBeInTheDocument();
   });
 
   it("does not warn when the same URL appears for different chunks", () => {
@@ -64,14 +65,14 @@ describe("SourceList", () => {
     expect(emphasized.tagName).toBe("STRONG");
     expect(screen.getByRole("list")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "학사 안내" })).toHaveAttribute("href", "https://example.edu/guide");
-    expect(screen.getByRole("link", { name: "원문 열기" })).toHaveAttribute("href", "https://example.edu");
+    expect(screen.getByRole("link", { name: ko.source.openOriginal })).toHaveAttribute("href", "https://example.edu");
     expect(screen.queryByText(/\*\*중요\*\*/)).not.toBeInTheDocument();
   });
 
   it("renders loading skeleton while sources are pending", () => {
     render(<SourceList isLoading={true} sources={[]} />);
 
-    expect(screen.getByLabelText("출처를 불러오는 중")).toBeInTheDocument();
+    expect(screen.getByLabelText(ko.source.loadingLabel)).toBeInTheDocument();
     expect(screen.queryByText("표시할 출처 없음")).not.toBeInTheDocument();
   });
 });
