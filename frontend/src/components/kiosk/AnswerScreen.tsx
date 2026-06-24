@@ -1,10 +1,7 @@
 import { useKioskStore } from "../../store/kioskStore";
-import { ActionBar } from "./answer/ActionBar";
 import { AnswerPanel } from "./answer/AnswerPanel";
-import { ConflictWarning } from "./answer/ConflictWarning";
-import { ProcedureSteps } from "./answer/ProcedureSteps";
+import { AnswerSidebar } from "./answer/AnswerSidebar";
 import { QuestionBar } from "./answer/QuestionBar";
-import { SourceList } from "./answer/SourceList";
 
 export function AnswerScreen() {
   const currentQuery = useKioskStore((state) => state.currentQuery);
@@ -28,21 +25,14 @@ export function AnswerScreen() {
           summary={answerData?.summary}
           statusMessage={answerData?.statusMessage}
         />
-        <div className="answer-side-grid min-h-0 overflow-hidden">
-          <ProcedureSteps isStreaming={isStreaming} steps={answerData?.procedureSteps ?? []} />
-          <div className="h-full min-h-0">
-            <SourceList
-              isLoading={isStreaming && (answerData?.sources ?? []).length === 0}
-              sources={answerData?.sources ?? []}
-            />
-            <ConflictWarning warning={answerData?.conflictWarning ?? null} />
-          </div>
-          <ActionBar
-            answer={answerData?.answer ?? ""}
-            question={currentQuery}
-            sources={answerData?.sources ?? []}
-          />
-        </div>
+        <AnswerSidebar
+          answer={answerData?.answer ?? ""}
+          conflictWarning={answerData?.conflictWarning ?? null}
+          isStreaming={isStreaming}
+          procedureSteps={answerData?.procedureSteps ?? []}
+          question={currentQuery}
+          sources={answerData?.sources ?? []}
+        />
       </main>
     </div>
   );

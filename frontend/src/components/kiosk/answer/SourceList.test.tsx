@@ -47,7 +47,7 @@ describe("SourceList", () => {
     consoleError.mockRestore();
   });
 
-  it("renders markdown syntax in source titles instead of raw markdown markers", () => {
+  it("renders source titles as plain text with line clamp", () => {
     render(
       <SourceList
         sources={[
@@ -61,12 +61,12 @@ describe("SourceList", () => {
       />,
     );
 
-    const emphasized = screen.getByText("중요");
-    expect(emphasized.tagName).toBe("STRONG");
-    expect(screen.getByRole("list")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "학사 안내" })).toHaveAttribute("href", "https://example.edu/guide");
-    expect(screen.getByRole("link", { name: ko.source.openOriginal })).toHaveAttribute("href", "https://example.edu");
+    const titleElement = screen.getByText("중요 공지 학사 안내");
+    expect(titleElement).toHaveClass("line-clamp-1");
+    expect(titleElement).toHaveAttribute("title", "**중요** 공지\n\n- [학사 안내](https://example.edu/guide)");
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
     expect(screen.queryByText(/\*\*중요\*\*/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: ko.source.openOriginal })).toHaveAttribute("href", "https://example.edu");
   });
 
   it("renders loading skeleton while sources are pending", () => {

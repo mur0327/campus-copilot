@@ -1,7 +1,6 @@
 import { Panel } from "../../ui/Panel";
 import { ko } from "../../../lang/ko";
 import type { Source } from "../../../types/kiosk";
-import { MarkdownText } from "./MarkdownText";
 
 interface SourceListProps {
   sources: Source[];
@@ -20,6 +19,17 @@ function sourceKey(source: Source, index: number) {
   return source.chunk_id ?? `${source.url}-${index}`;
 }
 
+function formatSourceTitle(title: string) {
+  return title
+    .replace(/!\[([^\]]*)]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)]\([^)]+\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/[*_`~]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function SourceList({ sources, isLoading = false }: SourceListProps) {
   return (
     <Panel className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -32,8 +42,8 @@ export function SourceList({ sources, isLoading = false }: SourceListProps) {
               key={sourceKey(source, index)}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1 text-base font-bold text-slate-950">
-                  <MarkdownText variant="compact">{source.title}</MarkdownText>
+                <div className="min-w-0 flex-1 text-base font-bold text-slate-950 line-clamp-1" title={source.title}>
+                  {formatSourceTitle(source.title)}
                 </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${freshnessClass(source)}`}>
                   {freshnessLabel(source)}
