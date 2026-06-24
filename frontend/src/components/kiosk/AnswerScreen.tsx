@@ -23,6 +23,7 @@ export function AnswerScreen() {
           isStreaming={isStreaming}
           limitations={answerData?.limitations}
           notes={answerData?.notes}
+          procedureSteps={answerData?.procedureSteps}
           question={currentQuery}
           summary={answerData?.summary}
           statusMessage={answerData?.statusMessage}

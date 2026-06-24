@@ -9,6 +9,7 @@ interface AnswerPanelProps {
   isStreaming: boolean;
   limitations?: string[];
   notes?: string[];
+  procedureSteps?: string[];
   question: string;
   summary?: string;
   statusMessage?: string;
@@ -20,13 +21,14 @@ export function AnswerPanel({
   isStreaming,
   limitations = [],
   notes = [],
+  procedureSteps = [],
   question,
   summary = "",
   statusMessage,
 }: AnswerPanelProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const canOpenFullAnswer = answer.trim().length > 0;
-  const previewText = buildStructuredPreview({ answer, summary, notes, limitations });
+  const previewText = buildStructuredPreview({ answer, summary, procedureSteps, notes, limitations });
 
   return (
     <>
@@ -107,15 +109,22 @@ export function AnswerPanel({
 function buildStructuredPreview({
   answer,
   summary,
+  procedureSteps,
   notes,
   limitations,
 }: {
   answer: string;
   summary: string;
+  procedureSteps: string[];
   notes: string[];
   limitations: string[];
 }) {
   const sections = [summary.trim()];
+  if (procedureSteps.length > 0) {
+    sections.push(
+      `확인된 절차\n${procedureSteps.map((step, index) => `${index + 1}. ${step}`).join("\n")}`,
+    );
+  }
   if (notes.length > 0) {
     sections.push(`준비/주의사항\n${notes.map((note) => `- ${note}`).join("\n")}`);
   }
