@@ -11,6 +11,13 @@
 alembic/versions/*.pyc
 TODO.md
 
+# Third-party journal submission guides/templates kept for local reference only.
+docs/guide/01-논문투고안내.md
+docs/guide/02-논문투고규정및연구윤리규정.md
+docs/guide/03-논문심사규정.md
+docs/guide/*.hwp
+docs/guide/*.pdf
+
 # Created by https://www.toptal.com/developers/gitignore/api/linux,python,node,react,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,python,node,react,visualstudiocode
 
