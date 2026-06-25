@@ -66,7 +66,7 @@
 ---
 
 > *나는 무엇을 어떻게 만들었나?*
-> 
+>
 
 | 구성 요소 | 설명 |
 | --- | --- |
@@ -118,10 +118,10 @@ flowchart TD
 
 ---
 
-[성능 평가](%EC%84%B1%EB%8A%A5%20%ED%8F%89%EA%B0%80%20387939f7e919804380dee9702db310a5.md)
+[성능 평가](03-evaluation-plan.md)
 
-[관련 연구](%EA%B4%80%EB%A0%A8%20%EC%97%B0%EA%B5%AC%20387939f7e919809394b1d6257c38929e.md)
+[관련 연구](02-related-work.md)
 
-[단어 사전](%EB%8B%A8%EC%96%B4%20%EC%82%AC%EC%A0%84%20387939f7e9198009ae3cd74802800de5.md)
+[단어 사전](04-glossary.md)
 
-[미팅](%EB%AF%B8%ED%8C%85%20389939f7e91980eeaefbf16f46d3b222.md)
+[미팅](99-meeting-notes.md)
