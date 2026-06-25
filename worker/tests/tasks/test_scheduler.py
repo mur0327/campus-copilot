@@ -149,6 +149,57 @@ async def test_run_crawl_returns_counts(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_run_crawl_applies_limit_and_forwards_discovery_failures(monkeypatch):
+    html_targets = [
+        CrawlTarget(url="https://example.com/html-1", menu_path="HTML 1", source_type="html"),
+        CrawlTarget(url="https://example.com/html-2", menu_path="HTML 2", source_type="html"),
+    ]
+    pdf_targets = [
+        CrawlTarget(url="https://example.com/pdf-1", menu_path="PDF 1", source_type="pdf"),
+        CrawlTarget(url="https://example.com/pdf-2", menu_path="PDF 2", source_type="pdf"),
+    ]
+    progress_events: list[tuple[str, int, int]] = []
+    recorded: dict[str, object] = {}
+
+    async def progress_callback(stage: str, *, processed_pages: int, total_pages: int):
+        progress_events.append((stage, processed_pages, total_pages))
+
+    async def fake_discover_html_targets_with_failures(progress_callback=None):
+        assert progress_callback is not None
+        return CrawlDiscoveryResult(
+            targets=html_targets,
+            failures=["https://example.com/failed: simulated timeout"],
+        )
+
+    async def fake_discover_pdf_targets(progress_callback=None):
+        assert progress_callback is not None
+        return pdf_targets
+
+    async def fake_execute_ingestion(html_targets, pdf_targets, initial_failures=None):
+        recorded["html_targets"] = html_targets
+        recorded["pdf_targets"] = pdf_targets
+        recorded["initial_failures"] = initial_failures
+        return CrawlStats(pages_crawled=3, pages_changed=1, failures=list(initial_failures or []))
+
+    monkeypatch.setattr("tasks.crawl.settings.crawl_target_limit", 3)
+    monkeypatch.setattr(
+        "tasks.crawl.discover_html_targets_with_failures",
+        fake_discover_html_targets_with_failures,
+    )
+    monkeypatch.setattr("tasks.crawl.discover_pdf_targets", fake_discover_pdf_targets)
+    monkeypatch.setattr("tasks.crawl.execute_ingestion", fake_execute_ingestion)
+
+    stats = await run_crawl(progress_callback=progress_callback)
+
+    assert progress_events[0] == ("대상 검색 시작", 0, 0)
+    assert recorded["html_targets"] == html_targets
+    assert recorded["pdf_targets"] == [pdf_targets[0]]
+    assert recorded["initial_failures"] == ["https://example.com/failed: simulated timeout"]
+    assert stats.pages_crawled == 3
+    assert stats.failures == ["https://example.com/failed: simulated timeout"]
+
+
+@pytest.mark.asyncio
 async def test_execute_ingestion_records_partial_failure_without_failing_job(monkeypatch):
     targets = [
         CrawlTarget(

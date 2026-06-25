@@ -277,6 +277,50 @@ async def test_hybrid_retriever_loads_worker_bm25_file_cache(tmp_path: Path):
 
 
 @pytest.mark.asyncio
+async def test_hybrid_retriever_loads_worker_bm25_cache_with_native_record_values(tmp_path: Path):
+    watermark = datetime(2026, 5, 1, tzinfo=UTC)
+    result = make_result("휴학 신청은 포털에서 진행합니다.").model_copy(
+        update={"meta": {"source": "worker-cache"}}
+    )
+    cache_path = tmp_path / "bm25-b8a98203ec9d769d.pkl"
+    worker_bm25 = BM25Index([result])
+    with cache_path.open("wb") as cache_file:
+        pickle.dump(
+            {
+                "version": 1,
+                "watermark": watermark,
+                "category": "academic",
+                "records": [result.model_dump()],
+                "corpus": worker_bm25.corpus,
+                "index": worker_bm25.index,
+            },
+            cache_file,
+        )
+
+    class LoadingSession:
+        async def scalar(self, statement):
+            return watermark
+
+        async def execute(self, statement):
+            raise AssertionError("BM25 should load from worker file cache")
+
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    loaded_index = await retriever.ensure_bm25_index(LoadingSession(), "academic")
+    loaded_result = loaded_index.search("휴학 신청", top_n=1)[0]
+
+    assert loaded_result.chunk_id == result.chunk_id
+    assert loaded_result.meta == {"source": "worker-cache"}
+
+
+@pytest.mark.asyncio
 async def test_retrieve_uses_bm25_index_snapshot_from_requested_category(tmp_path: Path):
     watermark = datetime(2026, 5, 1, tzinfo=UTC)
     academic = make_result("휴학 신청은 포털에서 진행합니다.", category="academic")
