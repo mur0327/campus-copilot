@@ -140,6 +140,18 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
                     "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
                     "meta": None,
                 },
+                {
+                    "chunk_id": "00000000-0000-0000-0000-000000000003",
+                    "document_id": "00000000-0000-0000-0000-000000000103",
+                    "content": "카테고리가 없는 문서입니다.",
+                    "chunk_type": "text",
+                    "title": "미분류",
+                    "url": "https://www.honam.ac.kr/c",
+                    "menu_path": "미분류",
+                    "category": None,
+                    "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
+                    "meta": None,
+                },
             ]
 
     summary = await write_bm25_indexes(FakeConnection(), tmp_path)
@@ -153,3 +165,11 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
         payload = pickle.load(cache_file)
 
     assert payload["records"][0]["meta"] == {"source": "test"}
+
+    with build_bm25_cache_path(tmp_path, None).open("rb") as cache_file:
+        all_payload = pickle.load(cache_file)
+
+    assert len(all_payload["records"]) == summary.chunks_seen
+    assert len(all_payload["corpus"]) == summary.chunks_seen
+    all_chunk_ids = [record["chunk_id"] for record in all_payload["records"]]
+    assert len(all_chunk_ids) == len(set(all_chunk_ids))

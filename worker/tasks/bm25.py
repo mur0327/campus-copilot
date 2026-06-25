@@ -56,7 +56,9 @@ async def write_bm25_indexes(connection, cache_dir: str | Path) -> BM25BuildSumm
     grouped_rows: dict[str | None, list[object]] = defaultdict(list)
     grouped_rows[None].extend(rows)
     for row in rows:
-        grouped_rows[row["category"]].append(row)
+        category = row["category"]
+        if category is not None:
+            grouped_rows[category].append(row)
 
     Path(cache_dir).mkdir(parents=True, exist_ok=True)
     for category, category_rows in grouped_rows.items():
