@@ -1,3 +1,4 @@
+import json
 import pickle
 import re
 from collections import defaultdict
@@ -101,7 +102,7 @@ def _row_to_record(row) -> dict:
         "menu_path": row["menu_path"],
         "category": row["category"],
         "crawled_at": row["crawled_at"],
-        "meta": row["meta"],
+        "meta": _normalize_jsonb_meta(row["meta"]),
     }
 
 
@@ -110,3 +111,15 @@ def _row_value(row, key: str, default):
         return row[key]
     except KeyError:
         return default
+
+
+def _normalize_jsonb_meta(value):
+    if value is None or isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            decoded = json.loads(value)
+        except json.JSONDecodeError:
+            return None
+        return decoded if isinstance(decoded, dict) else None
+    return None

@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -125,7 +126,7 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
                     "menu_path": "학사 > 휴학",
                     "category": "academic",
                     "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
-                    "meta": {"source": "test"},
+                    "meta": '{"source": "test"}',
                 },
                 {
                     "chunk_id": "00000000-0000-0000-0000-000000000002",
@@ -147,3 +148,8 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
     assert build_bm25_cache_path(tmp_path, None).exists()
     assert build_bm25_cache_path(tmp_path, "academic").exists()
     assert build_bm25_cache_path(tmp_path, "scholarship").exists()
+
+    with build_bm25_cache_path(tmp_path, "academic").open("rb") as cache_file:
+        payload = pickle.load(cache_file)
+
+    assert payload["records"][0]["meta"] == {"source": "test"}
