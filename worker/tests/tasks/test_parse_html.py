@@ -399,6 +399,18 @@ def test_extract_html_table_chunks_expands_roadmap_spans_for_llm_readability():
     ]
 
 
+def test_extract_article_html_drops_skip_navigation_link():
+    # 숨긴 "본문 시작" 스킵 링크는 제거하고 실제 본문은 유지해야 한다.
+    html = (
+        '<article class="articleBox"><a class="hide">본문 시작</a><p>휴학 안내 내용</p></article>'
+    )
+
+    article = parse_module.extract_article_html(html)
+
+    assert "본문 시작" not in article
+    assert "휴학 안내 내용" in article
+
+
 def test_extract_html_table_chunks_skips_calendar_grid_but_keeps_data_table():
     # 달력 표(요일 헤더 + 날짜 숫자)는 노이즈라 스킵하고, 실제 데이터 표만 남겨야 한다.
     article_html = """

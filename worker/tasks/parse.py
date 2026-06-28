@@ -31,7 +31,7 @@ from tasks.parsers.markdown import (
 from tasks.parsers.roadmap import build_semester_roadmap_chunks
 
 MarkdownRenderer = Callable[[str], Awaitable[str]]
-PARSER_VERSION = "phase2-parser-v2"
+PARSER_VERSION = "phase2-parser-v3"
 logger = logging.getLogger(__name__)
 
 
@@ -77,6 +77,9 @@ def extract_article_html(html: str) -> str:
     article = soup.select_one(worker_settings.crawl_content_selector)
     if article is None:
         raise ValueError(f"{worker_settings.crawl_content_selector} not found")
+    # 시각적으로 숨긴 "본문 시작" 같은 스킵 내비 링크는 검색에 무의미한 노이즈라 제거한다.
+    for skip_link in article.select("a.hide"):
+        skip_link.decompose()
     return str(article)
 
 
