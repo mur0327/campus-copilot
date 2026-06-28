@@ -169,6 +169,45 @@ def test_evidence_filter_groups_duplicate_document_chunks_and_keeps_highest_scor
     assert [result.chunk_id for result in candidates[0].context_results] == [second.chunk_id, first.chunk_id]
 
 
+def test_normalize_query_keywords_extracts_compound_and_inflected_forms():
+    # 복합어 "재학증명서"와 활용형 "문의하면"에서도 핵심어를 추출해야 한다.
+    assert "증명서" in normalize_query_keywords("재학증명서는 어디서 발급하나요?")
+    assert {"입학", "상담", "문의"} <= normalize_query_keywords("입학 상담은 어디로 문의하면 되나요?")
+
+
+def test_evidence_filter_keeps_borderline_score_when_compound_keyword_overlaps():
+    # Q013: 점수가 0.35 문턱 바로 아래여도 "재학증명서" 본문이 "증명서"와 겹치면 살아남아야 한다.
+    result = make_result("| 재학증명서 | 인터넷증명발급 가능 |").model_copy(
+        update={"score": 0.3494, "title": None, "menu_path": "증명발급안내"}
+    )
+
+    candidates = filter_evidence_candidates("재학증명서는 어디서 발급하나요?", [result])
+
+    assert [candidate.display_result.chunk_id for candidate in candidates] == [result.chunk_id]
+
+
+def test_evidence_filter_keeps_contact_page_for_inflected_question():
+    # Q016: "문의하면" 활용형이 본문 "문의"와 겹쳐 연락처 문서가 evidence로 남아야 한다.
+    result = make_result("■편입학 문의: 호남대학교 입학관리과(TEL 062-940-5555)").model_copy(
+        update={"score": 0.3335, "title": None, "menu_path": "입학공지"}
+    )
+
+    candidates = filter_evidence_candidates("입학 상담은 어디로 문의하면 되나요?", [result])
+
+    assert [candidate.display_result.chunk_id for candidate in candidates] == [result.chunk_id]
+
+
+def test_evidence_filter_rejects_low_score_without_keyword_overlap():
+    # Q017: "개강일"은 핵심어가 아니므로 엉뚱한 교과과정 문서는 evidence에서 제외돼야 한다.
+    result = make_result("DepartmentCurriculum 개설년도 격1 홀수년도 개설").model_copy(
+        update={"score": 0.30, "title": None, "menu_path": "교과과정"}
+    )
+
+    candidates = filter_evidence_candidates("이번 학기 개강일은 어디서 확인하나요?", [result])
+
+    assert candidates == []
+
+
 def test_classify_question_intent_detects_procedure_questions():
     assert classify_question_intent("휴학 신청은 어떻게 하나요?") == "procedure"
 
@@ -288,9 +327,7 @@ async def test_hybrid_retriever_loads_worker_bm25_file_cache(tmp_path: Path):
 @pytest.mark.asyncio
 async def test_hybrid_retriever_loads_worker_bm25_cache_with_native_record_values(tmp_path: Path):
     watermark = datetime(2026, 5, 1, tzinfo=UTC)
-    result = make_result("휴학 신청은 포털에서 진행합니다.").model_copy(
-        update={"meta": {"source": "worker-cache"}}
-    )
+    result = make_result("휴학 신청은 포털에서 진행합니다.").model_copy(update={"meta": {"source": "worker-cache"}})
     cache_path = tmp_path / "bm25-b8a98203ec9d769d.pkl"
     worker_bm25 = BM25Index([result])
     with cache_path.open("wb") as cache_file:

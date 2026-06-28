@@ -40,6 +40,8 @@ ACADEMIC_KEYWORDS = frozenset(
         "조건",
         "문의",
         "담당",
+        "입학",
+        "상담",
     }
 )
 QUESTION_INTENT_KEYWORDS = {
@@ -116,11 +118,12 @@ def tokenize_korean_light(text: str) -> list[str]:
 
 
 def normalize_query_keywords(text: str) -> set[str]:
+    # 복합어와 활용형도 핵심어로 잡기 위해 부분 문자열 포함으로 매칭한다.
+    # 예: "재학증명서"에서 "증명서", "문의하면"에서 "문의", "편입학"에서 "입학"을 추출한다.
     keywords: set[str] = set()
     for token in tokenize_korean_light(text):
         normalized = _strip_korean_suffix(token)
-        if normalized in ACADEMIC_KEYWORDS:
-            keywords.add(normalized)
+        keywords.update(keyword for keyword in ACADEMIC_KEYWORDS if keyword in normalized)
     return keywords
 
 
@@ -170,10 +173,7 @@ def filter_evidence_candidates(
         ),
         reverse=True,
     )[:max_candidates]
-    return [
-        candidate.model_copy(update={"source_number": index + 1})
-        for index, candidate in enumerate(candidates)
-    ]
+    return [candidate.model_copy(update={"source_number": index + 1}) for index, candidate in enumerate(candidates)]
 
 
 def _strip_korean_suffix(token: str) -> str:
@@ -645,9 +645,7 @@ def _is_heading_like_result(result: RetrievalResult) -> bool:
 
 def _has_detail_table_for_document(results: list[RetrievalResult], document_id: UUID) -> bool:
     return any(
-        result.document_id == document_id
-        and result.chunk_type == "table"
-        and not _is_heading_like_result(result)
+        result.document_id == document_id and result.chunk_type == "table" and not _is_heading_like_result(result)
         for result in results
     )
 
