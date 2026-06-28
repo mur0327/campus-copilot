@@ -83,6 +83,26 @@ def extract_article_html(html: str) -> str:
     return str(article)
 
 
+TITLE_SELECTORS = ("header", "h1", "h2", "h3")
+
+
+def extract_document_title(article_html: str) -> str | None:
+    """문서 제목을 DOM에서 추출한다.
+
+    페이지별 제목은 <header>나 상위 헤딩(h1~h3)에 들어 있다.
+    공통 <title>("호남대학교 학사안내")은 페이지 구분이 안 되므로 쓰지 않는다.
+    """
+    soup = BeautifulSoup(article_html, "html.parser")
+    for selector in TITLE_SELECTORS:
+        element = soup.find(selector)
+        if element is None:
+            continue
+        text = " ".join(element.get_text(" ", strip=True).split())
+        if text:
+            return text
+    return None
+
+
 def get_crawl4ai_components() -> tuple[type, object, type]:
     worker_settings = get_settings()
     os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", worker_settings.crawl4ai_base_directory)
@@ -200,7 +220,7 @@ async def parse_html(
 
     return ParsedDocument(
         url=target.url,
-        title=target.title_hint,
+        title=extract_document_title(article_html) or target.title_hint,
         menu_path=target.menu_path,
         category=None,
         source_scope=target.source_scope,

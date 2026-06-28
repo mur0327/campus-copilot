@@ -399,6 +399,15 @@ def test_extract_html_table_chunks_expands_roadmap_spans_for_llm_readability():
     ]
 
 
+def test_extract_document_title_prefers_header_then_headings():
+    # 페이지 제목은 <header>를 우선 쓰고, 없으면 상위 헤딩으로 폴백한다.
+    assert (
+        parse_module.extract_document_title("<header>일반휴학</header><h2>본문</h2>") == "일반휴학"
+    )
+    assert parse_module.extract_document_title("<div><h2>수강신청</h2></div>") == "수강신청"
+    assert parse_module.extract_document_title("<p>제목 없음</p>") is None
+
+
 def test_extract_article_html_drops_skip_navigation_link():
     # 숨긴 "본문 시작" 스킵 링크는 제거하고 실제 본문은 유지해야 한다.
     html = (
