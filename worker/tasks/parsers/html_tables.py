@@ -49,6 +49,56 @@ def _expand_html_table(table) -> list[list[str]]:
     return [row + [""] * (width - len(row)) for row in grid]
 
 
+_WEEKDAY_LABELS = frozenset(
+    {
+        "일",
+        "월",
+        "화",
+        "수",
+        "목",
+        "금",
+        "토",
+        "sun",
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+        "s",
+        "m",
+        "t",
+        "w",
+        "f",
+    }
+)
+
+
+def _is_calendar_table(headers: list[str], body: list[list[str]]) -> bool:
+    """달력 표 여부를 판정한다.
+
+    달력은 헤더가 요일이고 본문이 날짜 숫자라 검색에 쓸 의미 정보가 없다.
+    헤더가 대부분 요일이고 본문이 대부분 1~2자리 숫자면 달력으로 본다.
+    """
+    header_cells = [cell.strip().lower() for cell in headers if cell.strip()]
+    if len(header_cells) < 5:
+        return False
+    weekday_hits = sum(1 for cell in header_cells if cell in _WEEKDAY_LABELS)
+    if weekday_hits < len(header_cells) * 0.7:
+        return False
+
+    numeric = total = 0
+    for row in body:
+        for cell in row:
+            value = cell.strip()
+            if not value:
+                continue
+            total += 1
+            if value.isdigit() and len(value) <= 2:
+                numeric += 1
+    return total == 0 or numeric >= total * 0.6
+
+
 def _header_depth(table) -> int:
     depth = 0
     for row in table.select("tr"):
@@ -83,6 +133,9 @@ def extract_html_table_chunks(article_html: str, start_index: int) -> list[Parse
         header_depth = _header_depth(table)
         headers = _column_headers(rows[:header_depth], width=len(rows[0]))
         body = rows[header_depth:]
+        if _is_calendar_table(headers, body):
+            # 달력 그리드는 노이즈라 chunk로 만들지 않는다. 실제 학사일정은 본문 목록에서 온다.
+            continue
         records = table_records(headers=headers, body=body)
         content = format_records_content(records)
         if not content:

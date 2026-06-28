@@ -138,12 +138,7 @@ def test_markdown_to_text_chunks_preserves_header_metadata():
 
 def test_split_markdown_ordered_blocks_keeps_table_between_text_blocks():
     blocks = split_markdown_ordered_blocks(
-        "첫 문단\n\n"
-        "|구분|값|\n"
-        "|---|---|\n"
-        "|중간표|1|\n\n"
-        "## 다음 안내\n"
-        "마지막 문단"
+        "첫 문단\n\n|구분|값|\n|---|---|\n|중간표|1|\n\n## 다음 안내\n마지막 문단"
     )
 
     assert blocks == [
@@ -404,6 +399,28 @@ def test_extract_html_table_chunks_expands_roadmap_spans_for_llm_readability():
     ]
 
 
+def test_extract_html_table_chunks_skips_calendar_grid_but_keeps_data_table():
+    # 달력 표(요일 헤더 + 날짜 숫자)는 노이즈라 스킵하고, 실제 데이터 표만 남겨야 한다.
+    article_html = """
+    <article class="articleBox">
+      <table>
+        <tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>
+        <tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr>
+        <tr><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td></tr>
+      </table>
+      <table>
+        <tr><th>구분</th><th>신청학점</th></tr>
+        <tr><td>1학년</td><td>15학점</td></tr>
+      </table>
+    </article>
+    """
+
+    chunks = extract_html_table_chunks(article_html, start_index=0)
+
+    assert len(chunks) == 1
+    assert "구분: 1학년" in chunks[0].content
+
+
 def test_build_semester_roadmap_chunks_groups_records_by_grade_and_semester():
     table_chunk = parse_module.ParsedChunk(
         chunk_index=0,
@@ -446,10 +463,7 @@ def test_build_semester_roadmap_chunks_groups_records_by_grade_and_semester():
             "전공선택: 대학생활과전공이해(1) 컴퓨터개론(3) 생성형AI활용(2)\n"
             "소양교양: 파이썬 프로그래밍(융합 3) 사회봉사(봉사 1)"
         ),
-        (
-            "컴퓨터공학과 교과목로드맵 2026년 1학년 2학기\n"
-            "전공선택: 인성함양과진로탐색(1)"
-        ),
+        ("컴퓨터공학과 교과목로드맵 2026년 1학년 2학기\n전공선택: 인성함양과진로탐색(1)"),
     ]
     assert chunks[0].meta == {
         "derived_from": "table",
@@ -532,21 +546,14 @@ async def test_parse_html_adds_semester_roadmap_chunks():
     ]
     assert len(derived_chunks) == 1
     assert derived_chunks[0].content == (
-        "컴퓨터공학과 교과목로드맵 2026년 1학년 1학기\n"
-        "전공선택: 컴퓨터개론(3)"
+        "컴퓨터공학과 교과목로드맵 2026년 1학년 1학기\n전공선택: 컴퓨터개론(3)"
     )
 
 
 @pytest.mark.asyncio
 async def test_parse_html_keeps_text_and_table_chunks_in_source_order():
     async def fake_markdown_renderer(article_html: str) -> str:
-        return (
-            "첫 문단입니다.\n\n"
-            "|구분|값|\n"
-            "|---|---|\n"
-            "|중간표|1|\n\n"
-            "마지막 문단입니다."
-        )
+        return "첫 문단입니다.\n\n|구분|값|\n|---|---|\n|중간표|1|\n\n마지막 문단입니다."
 
     html = """
     <html>
