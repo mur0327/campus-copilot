@@ -7,6 +7,7 @@
 - `questions.csv`: 평가 질문 데이터셋이다.
 - `gold_sources.csv`: 질문별 사람이 확인한 공식 정답 문서 목록이다.
 - `run_questions.py`: 현재 로컬 `.data`에 적재된 문서를 기준으로 질문별 retrieval 결과를 수집하는 스크립트다.
+- `analyze_retrieval_chunks.py`: retrieval JSONL을 chunk 단위 CSV로 펼쳐 파싱 품질과 evidence 후보를 점검하는 스크립트다.
 - `results/`: 스크립트 실행 결과가 저장되는 디렉터리다. 결과 파일은 재생성 가능한 산출물이므로 Git에 커밋하지 않는다.
 
 ## questions.csv
@@ -152,12 +153,35 @@ uv run --project backend python eval/run_questions.py --category "휴학/복학"
 uv run --project backend python eval/run_questions.py --out-dir /tmp/campus-copilot-eval
 ```
 
+최신 retrieval JSONL을 chunk 단위 CSV로 펼친다.
+
+```bash
+python3 eval/analyze_retrieval_chunks.py
+```
+
+특정 질문만 확인한다.
+
+```bash
+python3 eval/analyze_retrieval_chunks.py --question-id Q016 --question-id Q017
+```
+
+입력 파일과 출력 파일을 직접 지정한다.
+
+```bash
+python3 eval/analyze_retrieval_chunks.py \
+  --input eval/results/retrieval-20260628-055432.jsonl \
+  --output eval/results/retrieval-chunks-debug.csv
+```
+
+기본 출력은 chunk 내용의 preview만 포함한다. 입력 JSONL에 full content가 있는 경우 `--include-content`를 지정하면 `content` 컬럼도 함께 출력한다.
+
 ## 출력 파일
 
 실행 결과는 기본적으로 `eval/results/`에 저장된다.
 
 - `retrieval-YYYYMMDD-HHMMSS.jsonl`: 질문별 상세 retrieval 결과다.
 - `retrieval-YYYYMMDD-HHMMSS.csv`: 빠르게 검토하기 위한 요약 결과다.
+- `retrieval-chunks-YYYYMMDD-HHMMSS.csv`: retrieval/evidence 후보를 chunk 단위로 펼친 분석 결과다.
 
 JSONL에는 다음 정보가 포함된다.
 
@@ -217,3 +241,27 @@ CSV는 URL과 제목 중심의 요약 검토용이다. 논문용 Recall@k, MRR, 
 - `empty`: 사용 가능한 검색 결과가 없었다.
 
 `degraded`, `semantic_available`, `bm25_available`은 문자열 `True` 또는 `False`로 저장된다.
+
+### Chunk 분석 CSV 값
+
+`retrieval-chunks-YYYYMMDD-HHMMSS.csv`는 다음 주요 필드를 사용한다.
+
+- `question_id`: 평가 질문 ID다.
+- `question`: 질문 본문이다.
+- `row_type`: `retrieved` 또는 `evidence`다.
+- `rank`: retrieved 후보의 순위다.
+- `source_number`: evidence 후보의 출처 번호다.
+- `overlap`: evidence 후보의 질문 키워드 겹침 수다.
+- `score`: retrieval 점수다.
+- `url`: 후보 chunk의 문서 URL이다.
+- `source_scope`: 후보 문서의 출처 범위다.
+- `page_kind`: 후보 문서의 기능 분류다.
+- `chunk_id`: chunk ID다.
+- `document_id`: 문서 ID다.
+- `chunk_index`: 문서 내부 chunk 순서다.
+- `chunk_type`: `text` 또는 `table`이다.
+- `content_length`: JSONL에 들어 있는 content 또는 preview의 길이다.
+- `content_preview`: chunk 내용을 검토하기 위한 preview다.
+- `content_available`: 입력 JSONL에 full `content` 필드가 있었는지 여부다.
+
+실행 후 콘솔에는 입력/출력 파일, 질문 수, retrieved/evidence 행 수, evidence 후보가 0개인 질문 ID가 출력된다.

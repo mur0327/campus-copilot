@@ -248,10 +248,16 @@ def evidence_item(candidate: Any) -> dict[str, Any]:
         "score": display.score,
         "title": display.title,
         "url": display.url,
+        "menu_path": display.menu_path,
+        "category": display.category,
         "document_id": str(display.document_id),
         "chunk_id": str(display.chunk_id),
         "source_scope": display.source_scope,
         "page_kind": display.page_kind,
+        "chunk_type": display.chunk_type,
+        "chunk_index": display.chunk_index,
+        "crawled_at": display.crawled_at.isoformat() if display.crawled_at else None,
+        "content_preview": " ".join(display.content.split())[:240],
     }
 
 
