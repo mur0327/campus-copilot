@@ -1,0 +1,4 @@
+question_id,gold_url,gold_title,relevance,source_scope,page_kind,notes
+Q001,https://www.honam.ac.kr/General_Rest,일반휴학,primary,general_academic,academic,재학생 일반 휴학 신청 절차의 핵심 정답 문서
+Q001,https://www.honam.ac.kr/military_Rest,군휴학,secondary,general_academic,academic,군휴학에 해당하는 경우 함께 허용할 정답 문서
+Q001,https://www.honam.ac.kr/ComeBack,복학,related,general_academic,academic,복학 안내가 필요한 후속 질문과 연결되는 관련 문서
