@@ -212,6 +212,19 @@ def test_classify_question_intent_detects_procedure_questions():
     assert classify_question_intent("휴학 신청은 어떻게 하나요?") == "procedure"
 
 
+def test_classify_question_intent_prioritizes_focus_over_application():
+    # "신청"이 섞여 있어도 질문의 초점(시점/조건)이 절차보다 우선해야 한다.
+    assert classify_question_intent("복학 신청 기간은 언제인가요?") == "deadline"
+    assert classify_question_intent("수강신청 기간은 언제인가요?") == "deadline"
+    assert classify_question_intent("조기졸업 신청 조건은 무엇인가요?") == "requirement"
+
+
+def test_classify_question_intent_detects_factual_and_contact():
+    assert classify_question_intent("교내 장학금 종류는 어디서 확인하나요?") == "factual"
+    assert classify_question_intent("졸업증명서 온라인 발급이 가능한가요?") == "factual"
+    assert classify_question_intent("휴학 관련 문의는 어느 부서에 해야 하나요?") == "contact"
+
+
 def test_merge_ranked_results_deduplicates_and_combines_scores():
     chunk_id = uuid4()
     base = make_result("휴학 신청").model_copy(update={"chunk_id": chunk_id, "score": 0.2})

@@ -45,12 +45,15 @@ ACADEMIC_KEYWORDS = frozenset(
         "상담",
     }
 )
+# 의도 분류 우선순위(위에서부터 먼저 매칭). "조기졸업 신청 조건"처럼 신청이 섞여도
+# 질문의 초점(조건/시점/연락처)이 절차보다 앞서야 하므로 procedure를 가장 뒤에 둔다.
 QUESTION_INTENT_KEYWORDS = {
-    "procedure": ("어떻게", "신청", "절차", "방법"),
+    "requirement": ("조건", "기준", "요건", "자격"),
     "deadline": ("언제", "기간", "마감", "일정"),
-    "requirement": ("조건", "기준", "요건", "서류"),
-    "contact": ("문의", "담당", "전화", "연락"),
+    "contact": ("문의", "담당", "전화", "연락", "부서"),
+    "procedure": ("어떻게", "방법", "절차", "신청"),
 }
+FACTUAL_KEYWORDS = ("무엇", "얼마", "몇", "누구", "어디", "확인", "가능", "종류")
 KOREAN_TOKEN_SUFFIXES = (
     "으로부터",
     "에게서",
@@ -132,7 +135,8 @@ def classify_question_intent(question: str) -> str:
     for intent, keywords in QUESTION_INTENT_KEYWORDS.items():
         if any(keyword in question for keyword in keywords):
             return intent
-    if any(keyword in question for keyword in ("무엇", "얼마", "몇", "누구")):
+    # 위치·사실 질의("어디서 확인", "종류", "가능한가")는 절차가 아니라 사실 조회다.
+    if any(keyword in question for keyword in FACTUAL_KEYWORDS):
         return "factual"
     return "unknown"
 
