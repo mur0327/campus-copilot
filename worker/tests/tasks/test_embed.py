@@ -47,6 +47,8 @@ async def test_embed_pending_chunks_updates_chroma_ids():
                     "title": "휴학",
                     "menu_path": "학사 > 휴학",
                     "category": "academic",
+                    "source_scope": "general_academic",
+                    "page_kind": "academic",
                     "source_type": "html",
                     "crawled_at": None,
                 }
@@ -81,6 +83,8 @@ async def test_embed_pending_chunks_updates_chroma_ids():
     assert summary.chunks_indexed == 1
     assert collection.upserts[0][0] == ["chunk:chunk-1"]
     assert all(type(value) is float for value in collection.upserts[0][1][0])
+    assert collection.upserts[0][3][0]["source_scope"] == "general_academic"
+    assert collection.upserts[0][3][0]["page_kind"] == "academic"
     assert connection.updated == [("chunk:chunk-1", "chunk-1")]
 
 
@@ -125,6 +129,8 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
                     "url": "https://www.honam.ac.kr/a",
                     "menu_path": "학사 > 휴학",
                     "category": "academic",
+                    "source_scope": "general_academic",
+                    "page_kind": "academic",
                     "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
                     "meta": '{"source": "test"}',
                 },
@@ -137,6 +143,8 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
                     "url": "https://www.honam.ac.kr/b",
                     "menu_path": "장학 > 신청",
                     "category": "scholarship",
+                    "source_scope": "general_academic",
+                    "page_kind": "academic",
                     "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
                     "meta": None,
                 },
@@ -149,6 +157,8 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
                     "url": "https://www.honam.ac.kr/c",
                     "menu_path": "미분류",
                     "category": None,
+                    "source_scope": "unknown",
+                    "page_kind": "unknown",
                     "crawled_at": datetime(2026, 5, 1, tzinfo=UTC),
                     "meta": None,
                 },
@@ -165,6 +175,8 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
         payload = pickle.load(cache_file)
 
     assert payload["records"][0]["meta"] == {"source": "test"}
+    assert payload["records"][0]["source_scope"] == "general_academic"
+    assert payload["records"][0]["page_kind"] == "academic"
 
     with build_bm25_cache_path(tmp_path, None).open("rb") as cache_file:
         all_payload = pickle.load(cache_file)

@@ -159,6 +159,27 @@ def test_build_content_hash_changes_when_parser_version_changes():
     )
 
 
+def test_build_content_hash_ignores_search_metadata():
+    first_target = CrawlTarget(
+        url="https://www.honam.ac.kr/Same",
+        menu_path="공지",
+        source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
+    )
+    second_target = CrawlTarget(
+        url="https://www.honam.ac.kr/Same",
+        menu_path="공지",
+        source_type="html",
+        source_scope="department",
+        page_kind="contact",
+    )
+
+    assert parse_module.build_content_hash("same article", target=first_target) == (
+        parse_module.build_content_hash("same article", target=second_target)
+    )
+
+
 @pytest.mark.asyncio
 async def test_parse_html_creates_text_chunks(fixture_text):
     async def fake_markdown_renderer(article_html: str) -> str:
@@ -168,6 +189,8 @@ async def test_parse_html_creates_text_chunks(fixture_text):
         url="https://www.honam.ac.kr/Scholarship/list",
         menu_path="장학",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
 
     document = await parse_module.parse_html(
@@ -178,6 +201,7 @@ async def test_parse_html_creates_text_chunks(fixture_text):
     )
 
     assert document.source_type == "html"
+    assert document.source_scope == "general_academic"
     assert document.content_hash
     assert [chunk.chunk_type for chunk in document.chunks] == ["text"]
     assert document.chunks[0].meta["header_1"] == "장학 안내"
@@ -193,6 +217,8 @@ async def test_parse_html_creates_table_chunks(fixture_text):
         url="https://www.honam.ac.kr/Scholarship/table",
         menu_path="장학",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
 
     document = await parse_module.parse_html(
@@ -289,6 +315,8 @@ async def test_parse_html_uses_structured_html_table_when_markdown_table_loses_s
         url="https://com.honam.ac.kr/SubjectRoadmap2026",
         menu_path="컴퓨터공학과 > 교과목로드맵 2026",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         site_name="컴퓨터공학과",
     )
 
@@ -401,6 +429,8 @@ def test_build_semester_roadmap_chunks_groups_records_by_grade_and_semester():
         url="https://com.honam.ac.kr/SubjectRoadmap2026",
         menu_path="컴퓨터공학과 > 교과목로드맵 2026",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         site_name="컴퓨터공학과",
     )
 
@@ -485,6 +515,8 @@ async def test_parse_html_adds_semester_roadmap_chunks():
         url="https://com.honam.ac.kr/SubjectRoadmap2026",
         menu_path="컴퓨터공학과 > 교과목로드맵 2026",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         site_name="컴퓨터공학과",
     )
 
@@ -534,6 +566,8 @@ async def test_parse_html_keeps_text_and_table_chunks_in_source_order():
         url="https://www.honam.ac.kr/Ordered",
         menu_path="순서",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
 
     document = await parse_module.parse_html(

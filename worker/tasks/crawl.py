@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
@@ -15,6 +15,7 @@ from curl_cffi import requests
 from core.config import settings
 from core.db import create_pool
 from tasks.bm25 import write_bm25_indexes
+from tasks.classify import infer_page_kind, infer_source_scope
 from tasks.contracts import (
     CrawlDiscoveryResult,
     CrawlStats,
@@ -22,6 +23,7 @@ from tasks.contracts import (
     DepartmentSite,
     DocumentProcessingStatus,
     ParsedDocument,
+    SourceScope,
 )
 from tasks.embed import (
     EmbedSummary,
@@ -125,13 +127,6 @@ def limit_crawl_targets(targets: list[CrawlTarget]) -> list[CrawlTarget]:
     return targets[: settings.crawl_target_limit]
 
 
-def root_site_name(root_url: str) -> str:
-    hostname = urlparse(root_url).hostname or root_url
-    if hostname == "www.honam.ac.kr":
-        return "호남대학교"
-    return hostname
-
-
 def fetch_html(url: str, timeout: int | None = None) -> str:
     response = requests.get(
         url=url,
@@ -158,6 +153,8 @@ def extract_menu_targets(
     base_url: str,
     site_name: str | None = None,
     site_url: str | None = None,
+    source_scope: SourceScope | None = None,
+    source_scope_by_host: Mapping[str, SourceScope] | None = None,
 ) -> list[CrawlTarget]:
     soup = BeautifulSoup(html, "html.parser")
     menu_root = soup.select_one(settings.crawl_menu_selector)
@@ -175,11 +172,24 @@ def extract_menu_targets(
         if not is_honam_url(absolute_url):
             continue
 
+        url_host = urlparse(absolute_url).hostname or ""
+        target_source_scope = (
+            source_scope_by_host.get(url_host)
+            if source_scope_by_host is not None and url_host in source_scope_by_host
+            else source_scope
+        )
+
         targets.append(
             CrawlTarget(
                 url=absolute_url,
                 menu_path=anchor.get_text(strip=True),
                 source_type="html",
+                source_scope=target_source_scope
+                or infer_source_scope(url=absolute_url, site_url=normalized_site_url),
+                page_kind=infer_page_kind(
+                    url=absolute_url,
+                    menu_path=anchor.get_text(strip=True),
+                ),
                 site_name=site_name,
                 site_url=normalized_site_url,
             )
@@ -242,6 +252,8 @@ def extract_article_box_targets(parent: CrawlTarget, html: str) -> list[CrawlTar
                 url=absolute_url,
                 menu_path=menu_path,
                 source_type="html",
+                source_scope=parent.source_scope,
+                page_kind=infer_page_kind(url=absolute_url, menu_path=menu_path),
                 title_hint=parent.title_hint,
                 site_name=parent.site_name,
                 site_url=parent.site_url,
@@ -295,6 +307,14 @@ def build_graduation_pdf_targets(
             url=f"{normalized_base_url}/{prefix}/pdfdownload/{year}",
             menu_path=f"졸업학점 {year}",
             source_type="pdf",
+            source_scope=infer_source_scope(
+                url=f"{normalized_base_url}/{prefix}/pdfdownload/{year}",
+                site_url=normalized_base_url,
+            ),
+            page_kind=infer_page_kind(
+                url=f"{normalized_base_url}/{prefix}/pdfdownload/{year}",
+                menu_path=f"졸업학점 {year}",
+            ),
             title_hint=f"졸업학점 {year}",
             year=year,
         )
@@ -449,17 +469,22 @@ async def discover_html_targets_with_failures(
 ) -> CrawlDiscoveryResult:
     targets: list[CrawlTarget] = []
     failures: list[str] = []
+    seed_source_scopes_by_host = {
+        urlparse(seed.url).hostname or "": seed.source_scope
+        for seed in settings.crawl_seed_sites
+    }
+    seen_department_urls: set[str] = set()
 
     if progress_callback is not None:
         await progress_callback(
             "홈페이지 메뉴 수집 중",
             processed_pages=0,
-            total_pages=len(settings.crawl_target_urls),
+            total_pages=len(settings.crawl_seed_sites),
         )
 
-    for root_index, root_url in enumerate(settings.crawl_target_urls, start=1):
-        normalized_root_url = root_url.rstrip("/")
-        main_url = urljoin(normalized_root_url, settings.crawl_main_path)
+    for seed_index, seed in enumerate(settings.crawl_seed_sites, start=1):
+        normalized_seed_url = seed.url.rstrip("/")
+        main_url = urljoin(normalized_seed_url, settings.crawl_main_path)
         try:
             html = await _fetch_html_in_thread(fetcher, main_url)
         except Exception as exc:
@@ -476,19 +501,29 @@ async def discover_html_targets_with_failures(
         targets.extend(
             extract_menu_targets(
                 html=html,
-                base_url=normalized_root_url,
-                site_name=root_site_name(normalized_root_url),
-                site_url=normalized_root_url,
+                base_url=normalized_seed_url,
+                site_name=seed.name,
+                site_url=normalized_seed_url,
+                source_scope=seed.source_scope,
+                source_scope_by_host=seed_source_scopes_by_host,
             )
         )
         targets = limit_crawl_targets(dedupe_targets(targets))
         if progress_callback is not None:
             await progress_callback(
                 "홈페이지 메뉴 수집 중",
-                processed_pages=root_index,
-                total_pages=len(settings.crawl_target_urls),
+                processed_pages=seed_index,
+                total_pages=len(settings.crawl_seed_sites),
             )
-        department_sites = extract_department_sites(html, base_url=normalized_root_url)
+        if not seed.discover_department_sites:
+            continue
+
+        department_sites = [
+            site
+            for site in extract_department_sites(html, base_url=normalized_seed_url)
+            if site.url not in seen_department_urls
+        ]
+        seen_department_urls.update(site.url for site in department_sites)
         if progress_callback is not None:
             await progress_callback(
                 "학과 사이트 메뉴 수집 중",
@@ -524,6 +559,7 @@ async def discover_html_targets_with_failures(
                     base_url=department_site.url,
                     site_name=department_site.name,
                     site_url=department_site.url,
+                    source_scope="department",
                 )
             )
             targets = limit_crawl_targets(dedupe_targets(targets))
@@ -625,11 +661,18 @@ async def discover_pdf_targets(
 ) -> list[CrawlTarget]:
     base_url = next(
         (
-            root_url.rstrip("/")
-            for root_url in settings.crawl_target_urls
-            if urlparse(root_url).hostname == "www.honam.ac.kr"
+            seed.url.rstrip("/")
+            for seed in settings.crawl_seed_sites
+            if urlparse(seed.url).hostname == "www.honam.ac.kr"
         ),
-        settings.crawl_target_urls[0].rstrip("/"),
+        next(
+            (
+                seed.url.rstrip("/")
+                for seed in settings.crawl_seed_sites
+                if seed.source_scope == "general_academic"
+            ),
+            settings.crawl_seed_sites[0].url.rstrip("/"),
+        ),
     )
     if progress_callback is not None:
         await progress_callback("PDF 대상 확인 중", processed_pages=0, total_pages=1)

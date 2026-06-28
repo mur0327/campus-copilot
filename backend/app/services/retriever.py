@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.document import Document, DocumentChunk
+from app.types import PageKind, SourceScope
 
 TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
 DETAIL_QUERY_KEYWORDS = ("학점", "요건", "구성표", "기간", "금액", "시간", "기준")
@@ -83,6 +84,8 @@ class RetrievalResult(BaseModel):
     url: str
     menu_path: str | None
     category: str | None
+    source_scope: SourceScope
+    page_kind: PageKind
     crawled_at: datetime | None
     meta: dict | None
 
@@ -307,6 +310,8 @@ def row_to_retrieval_result(row) -> RetrievalResult:
         url=document.url,
         menu_path=document.menu_path,
         category=document.category,
+        source_scope=document.source_scope,
+        page_kind=document.page_kind,
         crawled_at=document.crawled_at,
         meta=chunk.meta,
     )

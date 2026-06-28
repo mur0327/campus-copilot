@@ -69,12 +69,16 @@ def test_target_metadata_changes_document_hash():
         url="https://www.honam.ac.kr/Same",
         menu_path="공지",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         site_name="호남대학교",
     )
     second_target = CrawlTarget(
         url="https://www.honam.ac.kr/Same",
         menu_path="공지 > 세부",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         site_name="호남대학교",
     )
 
@@ -151,12 +155,36 @@ async def test_run_crawl_returns_counts(monkeypatch):
 @pytest.mark.asyncio
 async def test_run_crawl_applies_limit_and_forwards_discovery_failures(monkeypatch):
     html_targets = [
-        CrawlTarget(url="https://example.com/html-1", menu_path="HTML 1", source_type="html"),
-        CrawlTarget(url="https://example.com/html-2", menu_path="HTML 2", source_type="html"),
+        CrawlTarget(
+            url="https://example.com/html-1",
+            menu_path="HTML 1",
+            source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
+        ),
+        CrawlTarget(
+            url="https://example.com/html-2",
+            menu_path="HTML 2",
+            source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
+        ),
     ]
     pdf_targets = [
-        CrawlTarget(url="https://example.com/pdf-1", menu_path="PDF 1", source_type="pdf"),
-        CrawlTarget(url="https://example.com/pdf-2", menu_path="PDF 2", source_type="pdf"),
+        CrawlTarget(
+            url="https://example.com/pdf-1",
+            menu_path="PDF 1",
+            source_type="pdf",
+        source_scope="general_academic",
+        page_kind="academic",
+        ),
+        CrawlTarget(
+            url="https://example.com/pdf-2",
+            menu_path="PDF 2",
+            source_type="pdf",
+        source_scope="general_academic",
+        page_kind="academic",
+        ),
     ]
     progress_events: list[tuple[str, int, int]] = []
     recorded: dict[str, object] = {}
@@ -206,11 +234,15 @@ async def test_execute_ingestion_records_partial_failure_without_failing_job(mon
             url="https://example.com/ok",
             menu_path="OK",
             source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         ),
         CrawlTarget(
             url="https://example.com/bad",
             menu_path="BAD",
             source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         ),
     ]
     recorded: dict[str, object] = {}
@@ -272,6 +304,8 @@ async def test_execute_ingestion_records_partial_failure_without_failing_job(mon
             title="Example",
             menu_path=target.menu_path,
             category=None,
+        source_scope="unknown",
+        page_kind="unknown",
             source_type=target.source_type,
             content_hash="hash-1",
             crawled_at=datetime(2026, 4, 19, tzinfo=UTC),
@@ -319,6 +353,8 @@ async def test_execute_ingestion_repairs_existing_document_with_missing_chunks(m
         url="https://example.com/pdf",
         menu_path="졸업학점 2025",
         source_type="pdf",
+        source_scope="general_academic",
+        page_kind="academic",
     )
     recorded: dict[str, object] = {}
 
@@ -386,6 +422,8 @@ async def test_execute_ingestion_repairs_existing_document_with_missing_chunks(m
             title="졸업학점 2025",
             menu_path=target.menu_path,
             category=None,
+        source_scope="unknown",
+        page_kind="unknown",
             source_type=target.source_type,
             content_hash="same-hash",
             crawled_at=datetime(2026, 4, 19, tzinfo=UTC),
@@ -417,6 +455,8 @@ async def test_execute_ingestion_skips_unchanged_html_before_parse(monkeypatch):
         url="https://example.com/unchanged",
         menu_path="공지",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
     article_html = '<article class="articleBox"><p>same content</p></article>'
     recorded: dict[str, object] = {}
@@ -513,6 +553,8 @@ async def test_execute_ingestion_processes_changed_html_with_limited_parallelism
             url=f"https://example.com/page-{index}",
             menu_path=f"Page {index}",
             source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         )
         for index in range(3)
     ]
@@ -557,6 +599,8 @@ async def test_execute_ingestion_processes_changed_html_with_limited_parallelism
             title="Example",
             menu_path=target.menu_path,
             category=None,
+        source_scope="unknown",
+        page_kind="unknown",
             source_type=target.source_type,
             content_hash=f"hash-{target.url}",
             crawled_at=datetime(2026, 4, 19, tzinfo=UTC),

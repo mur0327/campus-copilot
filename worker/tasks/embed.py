@@ -26,6 +26,8 @@ SELECT
     d.title,
     d.menu_path,
     d.category,
+    d.source_scope,
+    d.page_kind,
     d.source_type,
     d.crawled_at
 FROM document_chunks c
@@ -86,6 +88,8 @@ async def embed_pending_chunks(connection, collection, embedder, batch_size: int
             "title": _metadata_text(row["title"]),
             "menu_path": _metadata_text(row["menu_path"]),
             "category": _metadata_text(row["category"]),
+            "source_scope": _metadata_text(row["source_scope"]),
+            "page_kind": _metadata_text(row["page_kind"]),
             "source_type": _metadata_text(row["source_type"]),
             "chunk_type": _metadata_text(row["chunk_type"]),
             "chunk_index": row["chunk_index"],

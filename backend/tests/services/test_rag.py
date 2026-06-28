@@ -29,6 +29,8 @@ def make_result(*, title: str | None = "휴학 안내", crawled_at: datetime | N
         url="https://example.test/leave",
         menu_path="학사 > 휴학",
         category="academic",
+        source_scope="general_academic",
+        page_kind="academic",
         crawled_at=crawled_at or datetime.now(UTC),
         meta=None,
     )

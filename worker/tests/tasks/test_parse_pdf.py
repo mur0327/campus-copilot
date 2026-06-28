@@ -25,6 +25,8 @@ async def test_parse_pdf_preserves_chunk_order_within_page():
         url="https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024",
         menu_path="졸업학점 2024",
         source_type="pdf",
+        source_scope="general_academic",
+        page_kind="academic",
         year=2024,
     )
 
@@ -36,6 +38,7 @@ async def test_parse_pdf_preserves_chunk_order_within_page():
     )
 
     assert document.source_type == "pdf"
+    assert document.source_scope == "general_academic"
     assert document.content_hash
     assert [chunk.chunk_type for chunk in document.chunks] == ["text", "table", "text"]
     assert document.chunks[0].content == "서론 문장입니다."
@@ -71,6 +74,8 @@ async def test_parse_pdf_preserves_page_metadata_across_pages():
         url="https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024",
         menu_path="졸업학점 2024",
         source_type="pdf",
+        source_scope="general_academic",
+        page_kind="academic",
         year=2024,
     )
 
@@ -107,6 +112,8 @@ async def test_parse_pdf_normalizes_markdown_table_metadata_and_content():
         url="https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
         menu_path="졸업학점 2025",
         source_type="pdf",
+        source_scope="general_academic",
+        page_kind="academic",
         year=2025,
     )
 
@@ -161,6 +168,8 @@ async def test_parse_graduation_credit_pdf_expands_multi_level_headers_and_merge
         url="https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
         menu_path="졸업학점 2025",
         source_type="pdf",
+        source_scope="general_academic",
+        page_kind="academic",
         year=2025,
     )
 

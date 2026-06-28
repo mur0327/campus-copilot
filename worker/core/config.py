@@ -1,7 +1,23 @@
-from typing import Annotated
+from urllib.parse import urlparse
 
-from pydantic import field_validator
-from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from pydantic import BaseModel, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from core.types import SourceScope
+
+
+class CrawlSeedSite(BaseModel):
+    name: str
+    url: str
+    source_scope: SourceScope
+    discover_department_sites: bool = False
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def normalize_url(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().rstrip("/")
+        return value
 
 
 class WorkerSettings(BaseSettings):
@@ -13,7 +29,19 @@ class WorkerSettings(BaseSettings):
     )
 
     database_url: str
-    crawl_target_urls: Annotated[list[str], NoDecode] = ["https://www.honam.ac.kr"]
+    crawl_seed_sites: list[CrawlSeedSite] = [
+        CrawlSeedSite(
+            name="호남대학교",
+            url="https://www.honam.ac.kr",
+            source_scope="general_academic",
+            discover_department_sites=True,
+        ),
+        CrawlSeedSite(
+            name="입학안내",
+            url="https://enter.honam.ac.kr",
+            source_scope="admission",
+        ),
+    ]
     crawl_main_path: str = "/main"
     crawl_content_selector: str = "article.articleBox"
     crawl_article_link_selector: str = "article.articleBox a[href]"
@@ -50,17 +78,22 @@ class WorkerSettings(BaseSettings):
     trigger_host: str = "0.0.0.0"
     trigger_port: int = 8088
 
-    @field_validator("crawl_target_urls", mode="before")
-    @classmethod
-    def parse_crawl_target_urls(cls, value: object) -> object:
-        if isinstance(value, str):
-            return [url.strip().rstrip("/") for url in value.split(",") if url.strip()]
-        if isinstance(value, list):
-            return [
-                url.strip().rstrip("/") if isinstance(url, str) else url
-                for url in value
-            ]
-        return value
+    @model_validator(mode="after")
+    def validate_unique_seed_urls(self) -> "WorkerSettings":
+        if not self.crawl_seed_sites:
+            raise ValueError("crawl_seed_sites must contain at least one seed")
+
+        seen_urls: set[str] = set()
+        for seed in self.crawl_seed_sites:
+            if seed.url in seen_urls:
+                raise ValueError(f"duplicate crawl seed url: {seed.url}")
+            seen_urls.add(seed.url)
+
+            parsed = urlparse(seed.url)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError(f"invalid crawl seed url: {seed.url}")
+
+        return self
 
 
 settings = WorkerSettings()  # pyright: ignore[reportCallIssue]

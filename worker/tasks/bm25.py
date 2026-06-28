@@ -24,6 +24,8 @@ SELECT
     d.title,
     d.menu_path,
     d.category,
+    d.source_scope,
+    d.page_kind,
     d.crawled_at
 FROM document_chunks c
 JOIN documents d ON d.id = c.document_id
@@ -103,6 +105,8 @@ def _row_to_record(row) -> dict:
         "url": row["url"],
         "menu_path": row["menu_path"],
         "category": row["category"],
+        "source_scope": _row_value(row, "source_scope", "unknown"),
+        "page_kind": _row_value(row, "page_kind", "unknown"),
         "crawled_at": row["crawled_at"],
         "meta": _normalize_jsonb_meta(row["meta"]),
     }

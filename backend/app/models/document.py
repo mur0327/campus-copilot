@@ -24,6 +24,8 @@ class Document(Base):
     title: Mapped[str | None] = mapped_column(Text)
     menu_path: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str | None] = mapped_column(Text)
+    source_scope: Mapped[str] = mapped_column(Text, nullable=False)
+    page_kind: Mapped[str] = mapped_column(Text, nullable=False)
     source_type: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str | None] = mapped_column(Text)
     crawled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

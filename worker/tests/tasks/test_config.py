@@ -1,19 +1,32 @@
 import os
 
+import pytest
+from pydantic import ValidationError
+
 os.environ.setdefault(
     "DATABASE_URL",
     "postgresql+asyncpg://campus:campus@localhost:5432/campus_copilot",
 )
 
-from core.config import WorkerSettings
+from core.config import CrawlSeedSite, WorkerSettings
 
 
 def test_worker_settings_phase_two_defaults(monkeypatch):
-    monkeypatch.setenv("CRAWL_TARGET_URLS", "https://www.honam.ac.kr")
-
     settings = WorkerSettings(_env_file=None)
 
-    assert settings.crawl_target_urls == ["https://www.honam.ac.kr"]
+    assert settings.crawl_seed_sites == [
+        CrawlSeedSite(
+            name="호남대학교",
+            url="https://www.honam.ac.kr",
+            source_scope="general_academic",
+            discover_department_sites=True,
+        ),
+        CrawlSeedSite(
+            name="입학안내",
+            url="https://enter.honam.ac.kr",
+            source_scope="admission",
+        ),
+    ]
     assert settings.crawl_main_path == "/main"
     assert settings.crawl_graduation_path == "/GraduateGrades"
     assert settings.crawl_article_link_selector == "article.articleBox a[href]"
@@ -49,15 +62,35 @@ def test_worker_settings_ignores_empty_pdf_hybrid_backend(monkeypatch):
     assert settings.pdf_hybrid_backend is None
 
 
-def test_worker_settings_parses_comma_separated_target_urls(monkeypatch):
-    monkeypatch.setenv(
-        "CRAWL_TARGET_URLS",
-        "https://www.honam.ac.kr, https://enter.honam.ac.kr/",
+def test_crawl_seed_site_normalizes_url():
+    seed = CrawlSeedSite(
+        name="호남대학교",
+        url=" https://www.honam.ac.kr/ ",
+        source_scope="general_academic",
     )
 
-    settings = WorkerSettings(_env_file=None)
+    assert seed.url == "https://www.honam.ac.kr"
 
-    assert settings.crawl_target_urls == [
-        "https://www.honam.ac.kr",
-        "https://enter.honam.ac.kr",
-    ]
+
+def test_worker_settings_rejects_duplicate_seed_urls():
+    with pytest.raises(ValidationError, match="duplicate crawl seed url"):
+        WorkerSettings(
+            _env_file=None,
+            crawl_seed_sites=[
+                CrawlSeedSite(
+                    name="호남대학교",
+                    url="https://www.honam.ac.kr",
+                    source_scope="general_academic",
+                ),
+                CrawlSeedSite(
+                    name="중복",
+                    url="https://www.honam.ac.kr/",
+                    source_scope="admission",
+                ),
+            ],
+        )
+
+
+def test_worker_settings_rejects_empty_seed_sites():
+    with pytest.raises(ValidationError, match="crawl_seed_sites must contain at least one seed"):
+        WorkerSettings(_env_file=None, crawl_seed_sites=[])

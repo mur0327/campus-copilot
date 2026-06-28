@@ -104,13 +104,16 @@ async def upsert_document(connection: asyncpg.Connection, document: ParsedDocume
     return await connection.fetchval(
         """
         INSERT INTO documents (
-            id, url, title, menu_path, category, source_type, content_hash, crawled_at, is_active
+            id, url, title, menu_path, category, source_scope, page_kind, source_type,
+            content_hash, crawled_at, is_active
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE)
         ON CONFLICT (url) DO UPDATE SET
             title = EXCLUDED.title,
             menu_path = EXCLUDED.menu_path,
             category = EXCLUDED.category,
+            source_scope = EXCLUDED.source_scope,
+            page_kind = EXCLUDED.page_kind,
             source_type = EXCLUDED.source_type,
             content_hash = EXCLUDED.content_hash,
             crawled_at = EXCLUDED.crawled_at,
@@ -122,6 +125,8 @@ async def upsert_document(connection: asyncpg.Connection, document: ParsedDocume
         document.title,
         document.menu_path,
         document.category,
+        document.source_scope,
+        document.page_kind,
         document.source_type,
         document.content_hash,
         document.crawled_at,

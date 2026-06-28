@@ -11,6 +11,8 @@ os.environ.setdefault(
     "postgresql+asyncpg://campus:campus@localhost:5432/campus_copilot",
 )
 
+from core.config import CrawlSeedSite
+from core.types import SourceScope
 from tasks.contracts import CrawlTarget, DocumentProcessingStatus, ParsedChunk, ParsedDocument
 from tasks.crawl import (
     DocumentProcessingResult,
@@ -33,12 +35,29 @@ from tasks.crawl import (
 from tasks.embed import EmbedSummary
 
 
+def crawl_seed(
+    *,
+    name: str = "호남대학교",
+    url: str = "https://www.honam.ac.kr",
+    source_scope: SourceScope = "general_academic",
+    discover_department_sites: bool = True,
+) -> CrawlSeedSite:
+    return CrawlSeedSite(
+        name=name,
+        url=url,
+        source_scope=source_scope,
+        discover_department_sites=discover_department_sites,
+    )
+
+
 def test_apply_crawl_target_limit_keeps_discovery_order(monkeypatch):
     html_targets = [
         CrawlTarget(
             url=f"https://www.honam.ac.kr/html-{index}",
             menu_path="메뉴",
             source_type="html",
+            source_scope="general_academic",
+            page_kind="academic",
         )
         for index in range(3)
     ]
@@ -47,6 +66,8 @@ def test_apply_crawl_target_limit_keeps_discovery_order(monkeypatch):
             url=f"https://www.honam.ac.kr/pdf-{index}",
             menu_path="PDF",
             source_type="pdf",
+            source_scope="general_academic",
+            page_kind="academic",
         )
         for index in range(2)
     ]
@@ -75,8 +96,56 @@ def test_extract_menu_targets_skips_data_link_and_dedupes(fixture_text):
         ("장학", "https://www.honam.ac.kr/Scholarship/list", "html"),
         ("입학", "https://www.honam.ac.kr/Admissions/notice", "html"),
     ]
+    assert [target.source_scope for target in targets] == [
+        "general_academic",
+        "general_academic",
+    ]
+    assert [target.page_kind for target in targets] == [
+        "academic",
+        "admission",
+    ]
     assert all(target.site_name == "호남대학교" for target in targets)
     assert all(target.site_url == "https://www.honam.ac.kr" for target in targets)
+
+
+def test_extract_menu_targets_uses_explicit_source_scope_before_url_inference():
+    html = """
+    <html><body><ul id="mainMenu">
+      <li><a href="https://www.honam.ac.kr/AdmissionRedirect">입학 바로가기</a></li>
+    </ul></body></html>
+    """
+
+    targets = extract_menu_targets(
+        html=html,
+        base_url="https://enter.honam.ac.kr",
+        site_name="입학안내",
+        site_url="https://enter.honam.ac.kr",
+        source_scope="admission",
+    )
+
+    assert targets[0].source_scope == "admission"
+
+
+def test_extract_menu_targets_prefers_matching_seed_host_source_scope():
+    html = """
+    <html><body><ul id="mainMenu">
+      <li><a href="https://enter.honam.ac.kr/AdmissionGuide">입학안내</a></li>
+    </ul></body></html>
+    """
+
+    targets = extract_menu_targets(
+        html=html,
+        base_url="https://www.honam.ac.kr",
+        site_name="호남대학교",
+        site_url="https://www.honam.ac.kr",
+        source_scope="general_academic",
+        source_scope_by_host={
+            "www.honam.ac.kr": "general_academic",
+            "enter.honam.ac.kr": "admission",
+        },
+    )
+
+    assert targets[0].source_scope == "admission"
 
 
 def test_extract_menu_targets_keeps_last_label_for_duplicate_url():
@@ -149,7 +218,13 @@ def test_extract_menu_targets_keeps_last_metadata_for_duplicate_url():
 @pytest.mark.asyncio
 async def test_fetch_and_maybe_parse_documents_serializes_result_callbacks(monkeypatch):
     targets = [
-        CrawlTarget(url=f"https://www.honam.ac.kr/{index}", menu_path="메뉴", source_type="html")
+        CrawlTarget(
+            url=f"https://www.honam.ac.kr/{index}",
+            menu_path="메뉴",
+            source_type="html",
+            source_scope="general_academic",
+            page_kind="academic",
+        )
         for index in range(3)
     ]
     all_started = asyncio.Event()
@@ -179,8 +254,7 @@ async def test_fetch_and_maybe_parse_documents_serializes_result_callbacks(monke
     )
 
     results = [
-        result
-        async for result in fetch_and_maybe_parse_documents(targets, {}, on_result=on_result)
+        result async for result in fetch_and_maybe_parse_documents(targets, {}, on_result=on_result)
     ]
 
     assert {result.target.url for result in results} == {target.url for target in targets}
@@ -192,6 +266,8 @@ async def test_fetch_and_maybe_parse_documents_records_document_timeout(monkeypa
         url="https://www.honam.ac.kr/Slow",
         menu_path="느린 페이지",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
 
     async def fake_fetch_and_maybe_parse_document(
@@ -315,6 +391,8 @@ def test_extract_article_box_targets_uses_article_links_as_child_targets():
         url="https://www.honam.ac.kr/AcademicCalendar",
         menu_path="학사일정",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
         site_name="호남대학교",
         site_url="https://www.honam.ac.kr",
     )
@@ -322,18 +400,27 @@ def test_extract_article_box_targets_uses_article_links_as_child_targets():
     targets = extract_article_box_targets(parent=parent, html=html)
 
     target_summaries = [
-        (target.menu_path, target.url, target.site_name, target.site_url) for target in targets
+        (
+            target.menu_path,
+            target.url,
+            target.source_scope,
+            target.site_name,
+            target.site_url,
+        )
+        for target in targets
     ]
     assert target_summaries == [
         (
             "학사일정 > 2026년",
             "https://www.honam.ac.kr/AcademicCalendar/main/2026",
+            "general_academic",
             "호남대학교",
             "https://www.honam.ac.kr",
         ),
         (
             "학사일정 > 2025년",
             "https://www.honam.ac.kr/AcademicCalendar/main/2025",
+            "general_academic",
             "호남대학교",
             "https://www.honam.ac.kr",
         ),
@@ -358,6 +445,8 @@ def test_extract_article_box_targets_skips_download_links():
         url="https://www.honam.ac.kr/GraduateGrades",
         menu_path="졸업학점",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
 
     targets = extract_article_box_targets(parent=parent, html=html)
@@ -383,6 +472,8 @@ def test_extract_article_box_targets_skips_external_links():
         url="https://www.honam.ac.kr/AcademicCalendar",
         menu_path="학사일정",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
 
     targets = extract_article_box_targets(parent=parent, html=html)
@@ -435,14 +526,23 @@ async def test_discover_html_targets_includes_department_site_menus(monkeypatch,
     ]
     assert targets[1].site_name == "컴퓨터공학과"
     assert targets[1].site_url == "https://com.honam.ac.kr"
+    assert targets[1].source_scope == "department"
 
 
 @pytest.mark.asyncio
 async def test_discover_html_targets_crawls_each_configured_root_main(monkeypatch, fixture_text):
     monkeypatch.setattr("tasks.crawl.is_redirect_page", lambda html: False)
     monkeypatch.setattr(
-        "tasks.crawl.settings.crawl_target_urls",
-        ["https://www.honam.ac.kr", "https://enter.honam.ac.kr"],
+        "tasks.crawl.settings.crawl_seed_sites",
+        [
+            crawl_seed(),
+            crawl_seed(
+                name="입학안내",
+                url="https://enter.honam.ac.kr",
+                source_scope="admission",
+                discover_department_sites=False,
+            ),
+        ],
     )
     fallback_html = fixture_text("article_page.html")
 
@@ -471,9 +571,17 @@ async def test_discover_html_targets_crawls_each_configured_root_main(monkeypatc
 
     targets = await discover_html_targets(fetcher=fetcher)
 
-    assert [(target.url, target.site_url) for target in targets] == [
-        ("https://www.honam.ac.kr/RootNotice", "https://www.honam.ac.kr"),
-        ("https://enter.honam.ac.kr/AdmissionGuide", "https://enter.honam.ac.kr"),
+    assert [(target.url, target.site_url, target.source_scope) for target in targets] == [
+        (
+            "https://www.honam.ac.kr/RootNotice",
+            "https://www.honam.ac.kr",
+            "general_academic",
+        ),
+        (
+            "https://enter.honam.ac.kr/AdmissionGuide",
+            "https://enter.honam.ac.kr",
+            "admission",
+        ),
     ]
 
 
@@ -509,6 +617,7 @@ async def test_discover_html_targets_filters_page_moved_target_pages(fixture_tex
 @pytest.mark.asyncio
 async def test_discover_html_targets_applies_limit_before_article_expansion(monkeypatch):
     monkeypatch.setattr("tasks.crawl.settings.crawl_target_limit", 2)
+    monkeypatch.setattr("tasks.crawl.settings.crawl_seed_sites", [crawl_seed()])
     main_html = """
     <html>
       <body>
@@ -638,6 +747,7 @@ async def test_discover_html_targets_validates_article_child_targets(monkeypatch
 @pytest.mark.asyncio
 async def test_discover_html_targets_skips_pages_without_article_content(monkeypatch):
     monkeypatch.setattr("tasks.crawl.is_redirect_page", lambda html: False)
+    monkeypatch.setattr("tasks.crawl.settings.crawl_seed_sites", [crawl_seed()])
     main_html = """
     <html>
       <body>
@@ -813,7 +923,8 @@ def test_extract_pdf_years_sorts_values_descending():
 
 
 @pytest.mark.asyncio
-async def test_discover_html_targets_uses_fetcher_and_skips_redirect_pages():
+async def test_discover_html_targets_uses_fetcher_and_skips_redirect_pages(monkeypatch):
+    monkeypatch.setattr("tasks.crawl.settings.crawl_seed_sites", [crawl_seed()])
     called_urls: list[str] = []
 
     def fetcher(url: str) -> str:
@@ -847,8 +958,16 @@ async def test_discover_pdf_targets_uses_fetcher_and_skips_redirect_pages():
 @pytest.mark.asyncio
 async def test_discover_pdf_targets_uses_www_root_even_when_config_order_changes(monkeypatch):
     monkeypatch.setattr(
-        "tasks.crawl.settings.crawl_target_urls",
-        ["https://enter.honam.ac.kr", "https://www.honam.ac.kr"],
+        "tasks.crawl.settings.crawl_seed_sites",
+        [
+            crawl_seed(
+                name="입학안내",
+                url="https://enter.honam.ac.kr",
+                source_scope="admission",
+                discover_department_sites=False,
+            ),
+            crawl_seed(),
+        ],
     )
     called_urls: list[str] = []
 
@@ -877,6 +996,7 @@ def test_is_redirect_page_detects_page_moved_title(fixture_text):
 @pytest.mark.asyncio
 async def test_index_crawl_documents_repeats_batches_and_accumulates_summary(monkeypatch):
     calls: list[str] = []
+    monkeypatch.setattr("tasks.crawl.settings.bm25_cache_dir", ".data/bm25")
 
     class FakeCollection:
         pass
@@ -935,6 +1055,8 @@ async def test_execute_ingestion_runs_indexing_after_persistence_before_finish(m
         url="https://example.com/changed",
         menu_path="공지",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
     events: list[str] = []
 
@@ -970,6 +1092,8 @@ async def test_execute_ingestion_runs_indexing_after_persistence_before_finish(m
             title="Example",
             menu_path=target.menu_path,
             category=None,
+            source_scope="unknown",
+            page_kind="unknown",
             source_type=target.source_type,
             content_hash="hash-1",
             crawled_at=datetime(2026, 5, 6, tzinfo=UTC),
@@ -1011,6 +1135,8 @@ async def test_execute_ingestion_persists_each_document_before_next_result(monke
             url=f"https://example.com/changed-{index}",
             menu_path="공지",
             source_type="html",
+            source_scope="general_academic",
+            page_kind="academic",
         )
         for index in range(2)
     ]
@@ -1054,6 +1180,8 @@ async def test_execute_ingestion_persists_each_document_before_next_result(monke
                     title="Example",
                     menu_path=target.menu_path,
                     category=None,
+                    source_scope="unknown",
+                    page_kind="unknown",
                     source_type=target.source_type,
                     content_hash="hash-1",
                     crawled_at=datetime(2026, 5, 6, tzinfo=UTC),
@@ -1107,6 +1235,8 @@ async def test_execute_ingestion_runs_indexing_when_all_documents_are_skipped(mo
         url="https://example.com/unchanged",
         menu_path="공지",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
     article_html = '<article class="articleBox"><p>same content</p></article>'
     events: list[str] = []
@@ -1184,6 +1314,8 @@ async def test_execute_ingestion_marks_job_failed_when_indexing_fails(monkeypatc
         url="https://example.com/changed",
         menu_path="공지",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
     )
     recorded: dict[str, object] = {}
 
@@ -1219,6 +1351,8 @@ async def test_execute_ingestion_marks_job_failed_when_indexing_fails(monkeypatc
             title="Example",
             menu_path=target.menu_path,
             category=None,
+            source_scope="unknown",
+            page_kind="unknown",
             source_type=target.source_type,
             content_hash="hash-1",
             crawled_at=datetime(2026, 5, 6, tzinfo=UTC),
@@ -1275,7 +1409,6 @@ async def test_execute_ingestion_marks_job_failed_when_indexing_fails(monkeypatc
         "pages_crawled": 1,
         "pages_changed": 1,
         "error": (
-            "https://timeout.honam.ac.kr/main: simulated timeout\n"
-            "indexing: chroma unavailable"
+            "https://timeout.honam.ac.kr/main: simulated timeout\nindexing: chroma unavailable"
         ),
     }

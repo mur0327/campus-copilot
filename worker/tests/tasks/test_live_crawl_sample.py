@@ -47,7 +47,9 @@ def _print_page_sample(url: str, indent: str = "    ") -> None:
 
 
 def test_live_sample_main_menu_and_department_pages() -> None:
-    base_url = settings.crawl_target_urls[0]
+    base_url = next(
+        seed.url for seed in settings.crawl_seed_sites if seed.discover_department_sites
+    )
     main_url = urljoin(base_url, settings.crawl_main_path)
     main_html = fetch_html(main_url)
     main_soup = BeautifulSoup(main_html, "html.parser")

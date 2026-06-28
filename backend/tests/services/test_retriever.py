@@ -19,12 +19,15 @@ from app.services.retriever import (  # noqa: E402
     normalize_query_keywords,
     tokenize_korean_light,
 )
+from app.types import PageKind, SourceScope  # noqa: E402
 
 
 def make_result(
     content: str,
     *,
     category: str | None = "academic",
+    source_scope: SourceScope = "general_academic",
+    page_kind: PageKind = "academic",
     chunk_index: int = 0,
     chunk_type: str = "text",
     document_id=None,
@@ -40,6 +43,8 @@ def make_result(
         url="https://example.test/a",
         menu_path="학사 > 휴학",
         category=category,
+        source_scope=source_scope,
+        page_kind=page_kind,
         crawled_at=datetime.now(UTC),
         meta=None,
     )
@@ -50,6 +55,8 @@ def make_row(
     *,
     content: str = "휴학 신청은 포털에서 진행합니다.",
     category: str | None = "academic",
+    source_scope: SourceScope = "general_academic",
+    page_kind: PageKind = "academic",
     chunk_index: int = 0,
     chunk_type: str = "text",
     document_id=None,
@@ -71,6 +78,8 @@ def make_row(
         url=url,
         menu_path="학사 > 휴학",
         category=category,
+        source_scope=source_scope,
+        page_kind=page_kind,
         crawled_at=datetime(2026, 5, 1, tzinfo=UTC),
     )
     return chunk, document
@@ -616,6 +625,8 @@ async def test_search_chroma_reloads_chunk_metadata_and_filters_category_from_db
 
     assert [result.chunk_id for result in results] == [academic_id]
     assert results[0].category == "academic"
+    assert results[0].source_scope == "general_academic"
+    assert results[0].page_kind == "academic"
     assert results[0].meta == {"source": "fake-db"}
     assert results[0].score == 0.8
     assert collection.queries[0]["query_embeddings"] == [[0.1, 0.2, 0.3]]

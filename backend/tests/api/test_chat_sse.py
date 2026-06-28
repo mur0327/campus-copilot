@@ -181,6 +181,8 @@ def make_retrieval_result(*, crawled_at=None):
         url="https://example.test/leave",
         menu_path="학사 > 휴학",
         category="academic",
+        source_scope="general_academic",
+        page_kind="academic",
         crawled_at=crawled_at or datetime(2026, 5, 1, 12, 0, 0),
         meta=None,
     )

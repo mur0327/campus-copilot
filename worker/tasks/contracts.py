@@ -1,10 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Literal
+from typing import Any
 
-SourceType = Literal["html", "pdf"]
-ChunkType = Literal["text", "table"]
+from core.types import ChunkType, PageKind, SourceScope, SourceType
 
 
 class DocumentProcessingStatus(StrEnum):
@@ -24,6 +23,8 @@ class CrawlTarget:
     url: str
     menu_path: str
     source_type: SourceType
+    source_scope: SourceScope
+    page_kind: PageKind
     title_hint: str | None = None
     year: int | None = None
     site_name: str | None = None
@@ -44,6 +45,8 @@ class ParsedDocument:
     title: str | None
     menu_path: str | None
     category: str | None
+    source_scope: SourceScope
+    page_kind: PageKind
     source_type: SourceType
     content_hash: str
     crawled_at: datetime
