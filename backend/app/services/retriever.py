@@ -21,6 +21,7 @@ EVIDENCE_MAX_CANDIDATES = 4
 EVIDENCE_MIN_SCORE = 0.35
 EVIDENCE_MIN_DIRECT_OVERLAP = 1
 EVIDENCE_PREVIEW_CHARS = 160
+DEDUP_MIN_CONTENT_CHARS = 40
 ACADEMIC_KEYWORDS = frozenset(
     {
         "휴학",
@@ -278,15 +279,40 @@ def merge_ranked_results(
         else:
             merged[result.chunk_id] = result.model_copy(update={"score": round(score, 6)})
 
-    return sorted(
+    ranked = sorted(
         merged.values(),
         key=lambda result: (
             result.score,
+            # 같은 본문이 여러 학과 사이트에 복제된 경우 대표 사이트 문서를 대표로 남긴다.
+            result.source_scope == "general_academic",
             _rank_datetime(result.crawled_at),
             result.chunk_type == "table",
         ),
         reverse=True,
-    )[:final_top_k]
+    )
+    return _dedup_ranked_results(ranked)[:final_top_k]
+
+
+def _dedup_ranked_results(results: list[RetrievalResult]) -> list[RetrievalResult]:
+    # 학과 사이트마다 같은 페이지가 복제되어 top-k가 동일 문서로 채워지는 것을 막는다.
+    # 입력이 점수 내림차순이므로 시그니처별 첫 항목이 대표(최고 점수)로 남는다.
+    seen: set[str] = set()
+    deduped: list[RetrievalResult] = []
+    for result in results:
+        signature = _dedup_signature(result)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        deduped.append(result)
+    return deduped
+
+
+def _dedup_signature(result: RetrievalResult) -> str:
+    # 본문이 충분히 길면 정규화한 본문 해시로 중복을 묶고, 너무 짧으면 정규화 URL로 대체한다.
+    normalized = " ".join(result.content.split()).lower()
+    if len(normalized) >= DEDUP_MIN_CONTENT_CHARS:
+        return "content:" + sha256(normalized.encode("utf-8")).hexdigest()
+    return "url:" + _canonical_url(result.url)
 
 
 def _rank_datetime(value: datetime | None) -> datetime:
@@ -450,6 +476,8 @@ class HybridRetriever:
             self.final_top_k,
         )
         results = await self.expand_detail_context(session, results, question=question, category=category)
+        # 상세 컨텍스트 확장이 문서별로 같은 표를 다시 붙일 수 있어 최종 단계에서 한 번 더 중복을 제거한다.
+        results = _dedup_ranked_results(results)
         return RetrievalResponse(
             results=results,
             status=RetrievalStatus(

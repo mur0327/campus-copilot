@@ -222,6 +222,70 @@ def test_merge_ranked_results_deduplicates_and_combines_scores():
     assert merged[0].score == 0.44
 
 
+def test_merge_ranked_results_dedupes_mirrored_content_across_departments():
+    # 같은 학사일정 본문이 학과별 사이트에 복제된 경우 top-k에는 하나만 남아야 한다.
+    body = "* 12-07 ~ 01-08 전과/재입학/복수/부전공 신청 * 12-21 ~ 01-08 동계계절학기(3주) * 01-01 신정"
+    first = make_result(body, source_scope="department").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.5,
+            "url": "https://ot.honam.ac.kr/UniversitySchedule",
+        }
+    )
+    second = make_result(body, source_scope="department").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.5,
+            "url": "https://pt.honam.ac.kr/UniversitySchedule/main",
+        }
+    )
+
+    merged = merge_ranked_results([first, second], [], 1.0, 0.0, 6)
+
+    assert len(merged) == 1
+
+
+def test_merge_ranked_results_prefers_general_academic_representative():
+    # 동일 본문이 대표 사이트와 학과 사이트에 동시에 있으면 대표 사이트 문서를 남긴다.
+    body = "방학 기간은 학사일정에서 확인합니다. 동계 방학은 12월 말부터 시작합니다."
+    department = make_result(body, source_scope="department").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.5,
+            "url": "https://sw.honam.ac.kr/UniversitySchedule",
+        }
+    )
+    general = make_result(body, source_scope="general_academic").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.5,
+            "url": "https://www.honam.ac.kr/UniversitySchedule",
+        }
+    )
+
+    merged = merge_ranked_results([department, general], [], 1.0, 0.0, 6)
+
+    assert [result.url for result in merged] == ["https://www.honam.ac.kr/UniversitySchedule"]
+
+
+def test_merge_ranked_results_keeps_distinct_content():
+    # 본문이 다르면 중복으로 묶지 않는다.
+    first = make_result("휴학 신청은 포털에서 진행하며 자세한 절차는 학사안내를 참고합니다.").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.5}
+    )
+    second = make_result(
+        "국가장학금은 한국장학재단 홈페이지에서 신청하며 교내 장학금은 장학팀이 안내합니다."
+    ).model_copy(update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.4, "url": "https://example.test/b"})
+
+    merged = merge_ranked_results([first, second], [], 1.0, 0.0, 6)
+
+    assert len(merged) == 2
+
+
 @pytest.mark.asyncio
 async def test_hybrid_retriever_rebuilds_bm25_on_watermark_change():
     class FakeSession:
