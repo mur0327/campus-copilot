@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import csv
+import hashlib
 import json
 import os
 import sys
@@ -126,7 +127,9 @@ def configure_runtime_env(*, local_services: bool) -> None:
     # 따라서 app.* 모듈을 import하기 전에 로컬 docker compose 기준 값을 먼저 주입한다.
     if local_services:
         os.environ["ENVIRONMENT"] = "production"
-        os.environ["DATABASE_URL"] = "postgresql+asyncpg://campus:campus@localhost:5432/campus_copilot"
+        os.environ["DATABASE_URL"] = (
+            "postgresql+asyncpg://campus:campus@localhost:5432/campus_copilot"
+        )
         os.environ["CHROMA_HOST"] = "localhost"
         os.environ["CHROMA_PORT"] = "8001"
         os.environ["RETRIEVER_BM25_CACHE_DIR"] = str(REPO_ROOT / ".data" / "bm25")
@@ -135,7 +138,9 @@ def configure_runtime_env(*, local_services: bool) -> None:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 
-def load_questions(path: Path, *, category: str | None, limit: int | None) -> list[EvalQuestion]:
+def load_questions(
+    path: Path, *, category: str | None, limit: int | None
+) -> list[EvalQuestion]:
     # CSV 스키마가 어긋나면 평가 결과가 조용히 틀어지므로 필수 필드는 먼저 검증한다.
     with path.open(newline="", encoding="utf-8") as question_file:
         reader = csv.DictReader(question_file)
@@ -180,7 +185,9 @@ def load_gold_sources(path: Path) -> dict[str, list[GoldSource]]:
 
         grouped: dict[str, list[GoldSource]] = {}
         for row in reader:
-            gold_source = GoldSource(**{field: row.get(field, "") for field in expected_fields})
+            gold_source = GoldSource(
+                **{field: row.get(field, "") for field in expected_fields}
+            )
             grouped.setdefault(gold_source.question_id, []).append(gold_source)
         return grouped
 
@@ -192,24 +199,110 @@ def normalize_url(url: str | None) -> str:
         return ""
     parts = urlsplit(url.strip())
     path = parts.path.rstrip("/") or parts.path
-    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, parts.query, ""))
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), path, parts.query, "")
+    )
 
 
-def first_gold_rank(items: list[dict[str, Any]], gold_sources: list[GoldSource]) -> int | None:
-    # primary/secondary 정답 문서가 검색 후보에 처음 등장한 순위를 계산한다.
-    # related는 분석용 라벨이므로 hit 계산에서는 제외한다.
-    gold_urls = {
-        normalize_url(gold.gold_url)
-        for gold in gold_sources
-        if gold.relevance in {"primary", "secondary"}
-    }
-    if not gold_urls:
+def content_signature(text: str | None) -> str:
+    # 학과 미러 문서는 호스트만 다르고 본문이 같으므로, 정답 매칭을 본문 기준으로 한다.
+    # 공백을 정규화한 본문 해시를 시그니처로 쓴다.
+    if not text:
+        return ""
+    return hashlib.sha256(" ".join(text.split()).lower().encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class GoldMatch:
+    # 질문별 정답 매칭 기준이다.
+    # urls: 정규화한 gold URL 집합(완전 일치 fallback).
+    # signatures: gold 문서 chunk들의 본문 시그니처 집합(미러 무관 매칭).
+    urls: frozenset[str]
+    signatures: frozenset[str]
+
+
+def first_gold_rank(items: list[dict[str, Any]], match: GoldMatch | None) -> int | None:
+    # 정답 문서가 검색 후보에 처음 등장한 순위를 계산한다.
+    # 본문 시그니처 일치를 우선하고, URL 완전 일치를 fallback으로 둔다.
+    if match is None or (not match.urls and not match.signatures):
         return None
 
     for item in items:
-        if normalize_url(item["url"]) in gold_urls:
+        if item.get("content_sig") and item["content_sig"] in match.signatures:
+            return int(item["rank"])
+        if normalize_url(item["url"]) in match.urls:
             return int(item["rank"])
     return None
+
+
+async def build_gold_matches(
+    session: Any, gold_sources_by_question: dict[str, list[GoldSource]]
+) -> dict[str, GoldMatch]:
+    # gold 문서들의 chunk 본문 시그니처를 DB에서 모아 질문별 매칭 기준을 만든다.
+    from sqlalchemy import select
+
+    from app.models.document import Document, DocumentChunk
+
+    def hit_urls(sources: list[GoldSource]) -> set[str]:
+        return {
+            g.gold_url
+            for g in sources
+            if g.relevance in {"primary", "secondary"} and g.gold_url
+        }
+
+    raw_urls = {
+        url
+        for sources in gold_sources_by_question.values()
+        for url in hit_urls(sources)
+    }
+    url_to_signatures: dict[str, set[str]] = {}
+    if raw_urls:
+        statement = (
+            select(Document.url, DocumentChunk.content)
+            .join(DocumentChunk, DocumentChunk.document_id == Document.id)
+            .where(Document.url.in_(raw_urls))
+        )
+        for url, content in (await session.execute(statement)).all():
+            url_to_signatures.setdefault(normalize_url(url), set()).add(
+                content_signature(content)
+            )
+
+    matches: dict[str, GoldMatch] = {}
+    for qid, sources in gold_sources_by_question.items():
+        urls = {normalize_url(url) for url in hit_urls(sources)}
+        signatures: set[str] = set()
+        for url in urls:
+            signatures |= url_to_signatures.get(url, set())
+        matches[qid] = GoldMatch(urls=frozenset(urls), signatures=frozenset(signatures))
+    return matches
+
+
+def compute_metrics(records: list[dict[str, Any]], *, k: int = 5) -> dict[str, Any]:
+    # answerable(정답이 코퍼스에 존재) 문항만 분모로 삼는다. insufficient는 별도로 센다.
+    answerable = [
+        r for r in records if r["answerability"] != "insufficient" and r["has_gold"]
+    ]
+    n = len(answerable)
+    insufficient = sum(1 for r in records if r["answerability"] == "insufficient")
+    if n == 0:
+        return {"n_answerable": 0, "n_insufficient": insufficient}
+
+    def recalled(rank: int | None) -> bool:
+        return rank is not None and rank <= k
+
+    recall = sum(1 for r in answerable if recalled(r["gold_rank"])) / n
+    mrr = sum((1.0 / r["gold_rank"]) if r["gold_rank"] else 0.0 for r in answerable) / n
+    evidence_recall = (
+        sum(1 for r in answerable if recalled(r["gold_rank_evidence"])) / n
+    )
+    return {
+        "n_answerable": n,
+        "n_insufficient": insufficient,
+        f"recall@{k}": round(recall, 4),
+        "mrr": round(mrr, 4),
+        f"evidence_recall@{k}": round(evidence_recall, 4),
+        "misses": sorted(r["id"] for r in answerable if not recalled(r["gold_rank"])),
+    }
 
 
 def now_stamp() -> str:
@@ -235,6 +328,7 @@ def result_item(result: Any, *, rank: int) -> dict[str, Any]:
         "chunk_index": result.chunk_index,
         "crawled_at": result.crawled_at.isoformat() if result.crawled_at else None,
         "content_preview": " ".join(result.content.split())[:240],
+        "content_sig": content_signature(result.content),
     }
 
 
@@ -258,6 +352,7 @@ def evidence_item(candidate: Any) -> dict[str, Any]:
         "chunk_index": display.chunk_index,
         "crawled_at": display.crawled_at.isoformat() if display.crawled_at else None,
         "content_preview": " ".join(display.content.split())[:240],
+        "content_sig": content_signature(display.content),
     }
 
 
@@ -277,7 +372,11 @@ async def run() -> None:
     from app.core.db import AsyncSessionLocal, engine
     from app.services.chroma_client import get_chroma_collection
     from app.services.embedding_provider import VoyageEmbedder
-    from app.services.retriever import HybridRetriever, classify_question_intent, filter_evidence_candidates
+    from app.services.retriever import (
+        HybridRetriever,
+        classify_question_intent,
+        filter_evidence_candidates,
+    )
 
     questions = load_questions(args.questions, category=args.category, limit=args.limit)
     gold_sources_by_question = load_gold_sources(args.gold_sources)
@@ -302,31 +401,52 @@ async def run() -> None:
     )
 
     summary_rows: list[dict[str, Any]] = []
+    metric_records: list[dict[str, Any]] = []
     with jsonl_path.open("w", encoding="utf-8") as jsonl_file:
         # 같은 세션을 재사용해 20개 질문을 순차 실행한다.
         # 병렬화하면 외부 embedding API rate limit과 DB/Chroma 상태 추적이 복잡해져 초기 평가에는 불리하다.
         async with AsyncSessionLocal() as session:
+            gold_matches = await build_gold_matches(session, gold_sources_by_question)
             for question in questions:
                 response = await retriever.retrieve_with_status(
                     session,
                     question=question.question,
                     category=args.retrieval_category,
-                    semantic_top_n=args.semantic_top_n or settings.retriever_semantic_top_n,
+                    semantic_top_n=args.semantic_top_n
+                    or settings.retriever_semantic_top_n,
                     bm25_top_n=args.bm25_top_n or settings.retriever_bm25_top_n,
                 )
 
                 # retrieved: retriever가 반환한 최종 top-k 후보 항목이다.
                 # evidence_candidates: 답변 생성 프롬프트에 포함되도록 필터링/그룹핑한 후보 항목이다.
-                evidence_candidates = filter_evidence_candidates(question.question, response.results)
-                retrieved = [result_item(result, rank=index + 1) for index, result in enumerate(response.results)]
-                evidence = [evidence_item(candidate) for candidate in evidence_candidates]
-                gold_sources = gold_sources_by_question.get(question.id, [])
-                top_gold_rank = first_gold_rank(retrieved, gold_sources)
-                evidence_with_rank = [
-                    {"rank": index + 1, **item}
-                    for index, item in enumerate(evidence)
+                evidence_candidates = filter_evidence_candidates(
+                    question.question, response.results
+                )
+                retrieved = [
+                    result_item(result, rank=index + 1)
+                    for index, result in enumerate(response.results)
                 ]
-                evidence_gold_rank = first_gold_rank(evidence_with_rank, gold_sources)
+                evidence = [
+                    evidence_item(candidate) for candidate in evidence_candidates
+                ]
+                gold_sources = gold_sources_by_question.get(question.id, [])
+                gold_match = gold_matches.get(question.id)
+                top_gold_rank = first_gold_rank(retrieved, gold_match)
+                evidence_with_rank = [
+                    {"rank": index + 1, **item} for index, item in enumerate(evidence)
+                ]
+                evidence_gold_rank = first_gold_rank(evidence_with_rank, gold_match)
+                metric_records.append(
+                    {
+                        "id": question.id,
+                        "answerability": question.answerability,
+                        "has_gold": bool(
+                            gold_match and (gold_match.urls or gold_match.signatures)
+                        ),
+                        "gold_rank": top_gold_rank,
+                        "gold_rank_evidence": evidence_gold_rank,
+                    }
+                )
                 payload = {
                     "id": question.id,
                     "category": question.category,
@@ -335,7 +455,9 @@ async def run() -> None:
                     "classified_intent": classify_question_intent(question.question),
                     "gold_url": question.gold_url,
                     "gold_title": question.gold_title,
-                    "gold_sources": [gold_source.__dict__ for gold_source in gold_sources],
+                    "gold_sources": [
+                        gold_source.__dict__ for gold_source in gold_sources
+                    ],
                     "gold_hit_top": top_gold_rank is not None,
                     "gold_hit_top_rank": top_gold_rank,
                     "gold_hit_evidence": evidence_gold_rank is not None,
@@ -368,9 +490,15 @@ async def run() -> None:
                         "retrieved_count": len(retrieved),
                         "evidence_count": len(evidence),
                         "gold_urls": pipe_join(gold.gold_url for gold in gold_sources),
-                        "gold_relevance": pipe_join(gold.relevance for gold in gold_sources),
-                        "gold_source_scopes": pipe_join(gold.source_scope for gold in gold_sources),
-                        "gold_page_kinds": pipe_join(gold.page_kind for gold in gold_sources),
+                        "gold_relevance": pipe_join(
+                            gold.relevance for gold in gold_sources
+                        ),
+                        "gold_source_scopes": pipe_join(
+                            gold.source_scope for gold in gold_sources
+                        ),
+                        "gold_page_kinds": pipe_join(
+                            gold.page_kind for gold in gold_sources
+                        ),
                         "gold_hit_top": top_gold_rank is not None,
                         "gold_hit_top_rank": top_gold_rank or "",
                         "gold_hit_evidence": evidence_gold_rank is not None,
@@ -378,10 +506,18 @@ async def run() -> None:
                         "top_urls": pipe_join(item["url"] for item in retrieved),
                         "evidence_urls": pipe_join(item["url"] for item in evidence),
                         "top_titles": pipe_join(item["title"] for item in retrieved),
-                        "top_source_scopes": pipe_join(item["source_scope"] for item in retrieved),
-                        "top_page_kinds": pipe_join(item["page_kind"] for item in retrieved),
-                        "evidence_source_scopes": pipe_join(item["source_scope"] for item in evidence),
-                        "evidence_page_kinds": pipe_join(item["page_kind"] for item in evidence),
+                        "top_source_scopes": pipe_join(
+                            item["source_scope"] for item in retrieved
+                        ),
+                        "top_page_kinds": pipe_join(
+                            item["page_kind"] for item in retrieved
+                        ),
+                        "evidence_source_scopes": pipe_join(
+                            item["source_scope"] for item in evidence
+                        ),
+                        "evidence_page_kinds": pipe_join(
+                            item["page_kind"] for item in evidence
+                        ),
                     }
                 )
 
@@ -393,10 +529,20 @@ async def run() -> None:
             writer.writerows(summary_rows)
 
     await engine.dispose()
+
+    # answerable 문항 기준 집계 지표를 계산해 별도 파일과 콘솔에 남긴다.
+    metrics = compute_metrics(metric_records)
+    metrics_path = args.out_dir / f"retrieval-{stamp}-metrics.json"
+    with metrics_path.open("w", encoding="utf-8") as metrics_file:
+        json.dump(metrics, metrics_file, ensure_ascii=False, indent=2)
+
     # 출력 경로만 알린다. API key나 환경변수 값은 출력하지 않는다.
     print(f"questions: {len(questions)}")
     print(f"jsonl: {jsonl_path.relative_to(REPO_ROOT)}")
     print(f"csv: {csv_path.relative_to(REPO_ROOT)}")
+    print(f"metrics: {metrics_path.relative_to(REPO_ROOT)}")
+    for key, value in metrics.items():
+        print(f"  {key}: {value}")
 
 
 if __name__ == "__main__":

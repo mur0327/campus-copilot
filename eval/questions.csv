@@ -3,8 +3,8 @@ Q001,휴학/복학,휴학 신청은 어떻게 하나요?,procedure,,,answerable,
 Q002,휴학/복학,복학 신청 기간은 언제인가요?,date,,,answerable,false,복학;신청;기간,
 Q003,장학금,국가장학금 신청은 어디서 하나요?,procedure,,,answerable,true,국가장학금;신청;한국장학재단,
 Q004,장학금,교내 장학금 종류는 어디서 확인하나요?,fact,,,answerable,false,교내장학금;장학;종류,
-Q005,등록금,등록금 납부 기간은 어디서 확인하나요?,date,,,answerable,false,등록금;납부;기간,
-Q006,등록금,등록금 납부확인서는 어떻게 발급하나요?,procedure,,,answerable,true,등록금;납부확인서;발급,
+Q005,등록금,등록금 납부 기간은 어디서 확인하나요?,date,,,insufficient,false,등록금;납부;기간,"등록금 납부는 연도별·개인 우편/문자 안내, 정적 페이지 없음"
+Q006,등록금,등록금 납부확인서는 어떻게 발급하나요?,procedure,,,insufficient,true,등록금;납부확인서;발급,"납부확인서는 종합정보시스템 발급, 페이지 없음"
 Q007,수강신청,수강신청 기간은 언제인가요?,date,,,answerable,false,수강신청;기간,
 Q008,수강신청,수강신청 정정은 어떻게 하나요?,procedure,,,answerable,true,수강신청;정정;변경,
 Q009,졸업/학점,졸업에 필요한 학점은 몇 학점인가요?,fact,,,answerable,false,졸업;학점;이수,
@@ -13,8 +13,8 @@ Q011,성적/시험,성적 이의신청은 어떻게 하나요?,procedure,,,answe
 Q012,성적/시험,시험 기간은 학사일정에서 어디를 보면 되나요?,date,,,answerable,false,시험;학사일정;기간,
 Q013,증명서,재학증명서는 어디서 발급하나요?,procedure,,,answerable,true,재학증명서;발급,
 Q014,증명서,졸업증명서 온라인 발급이 가능한가요?,fact,,,answerable,false,졸업증명서;온라인;발급,
-Q015,입학/편입,편입학 모집요강은 어디서 확인하나요?,fact,,,answerable,false,편입학;모집요강,
-Q016,입학/편입,입학 상담은 어디로 문의하면 되나요?,contact,,,answerable,false,입학;상담;문의,
+Q015,입학/편입,편입학 모집요강은 어디서 확인하나요?,fact,,,insufficient,false,편입학;모집요강,편입 모집요강 실페이지(transPDF)가 canvas PDF뷰어라 본문 미파싱
+Q016,입학/편입,입학 상담은 어디로 문의하면 되나요?,contact,,,insufficient,false,입학;상담;문의,"입학상담은 메인 배너→카카오톡, 셀렉터 미수집"
 Q017,학사일정,이번 학기 개강일은 어디서 확인하나요?,date,,,answerable,false,학사일정;개강일,
 Q018,학사일정,방학 기간은 어디서 확인하나요?,date,,,answerable,false,학사일정;방학,
 Q019,부서/문의처,휴학 관련 문의는 어느 부서에 해야 하나요?,contact,,,answerable,false,휴학;문의;교무;학사,

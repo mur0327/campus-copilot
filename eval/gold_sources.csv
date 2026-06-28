@@ -1,4 +1,19 @@
 question_id,gold_url,gold_title,relevance,source_scope,page_kind,notes
-Q001,https://www.honam.ac.kr/General_Rest,일반휴학,primary,general_academic,academic,재학생 일반 휴학 신청 절차의 핵심 정답 문서
-Q001,https://www.honam.ac.kr/military_Rest,군휴학,secondary,general_academic,academic,군휴학에 해당하는 경우 함께 허용할 정답 문서
-Q001,https://www.honam.ac.kr/ComeBack,복학,related,general_academic,academic,복학 안내가 필요한 후속 질문과 연결되는 관련 문서
+Q001,https://www.honam.ac.kr/General_Rest,일반휴학,primary,general_academic,academic,
+Q001,https://www.honam.ac.kr/military_Rest,입대휴학,secondary,general_academic,academic,군휴학 해당 시 정답
+Q002,https://www.honam.ac.kr/ComeBack,복학,primary,general_academic,academic,
+Q003,https://enter.honam.ac.kr/scholarship,장학제도,primary,admission,admission,국가장학금 내용 포함
+Q004,https://www.honam.ac.kr/ScholarshipType,장학금 종류,primary,general_academic,academic,교내장학금 종류
+Q007,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청기간 포함
+Q008,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청 정정 포함
+Q009,https://www.honam.ac.kr/GraduateGrades,졸업학점,primary,general_academic,academic,졸업학점 구성표
+Q010,https://www.honam.ac.kr/Early_Graduation,조기졸업,primary,general_academic,academic,조기졸업 조건/신청
+Q011,https://www.honam.ac.kr/ExamResult,시험/성적,primary,general_academic,academic,성적 이의신청 포함
+Q012,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,
+Q013,https://www.honam.ac.kr/ProofIssuanceGuide,증명발급안내,primary,general_academic,certificate,증명서 종류·유의사항·연락처(재학증명서 포함)
+Q013,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,secondary,general_academic,certificate,발급 방법·장소·금액
+Q014,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,인터넷발급 안내
+Q017,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,개강일 포함
+Q018,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,방학 기간 포함
+Q019,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,휴학 키워드 없음→의미적 연결 필요(난이도 높음). 교무/학사 부서 연락처
+Q020,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,'장학/학자금 대출 문의' 연락처 포함
