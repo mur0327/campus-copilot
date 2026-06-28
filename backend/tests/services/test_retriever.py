@@ -299,6 +299,84 @@ def test_merge_ranked_results_keeps_distinct_content():
     assert len(merged) == 2
 
 
+def test_intent_boost_demotes_schedule_for_requirement_question():
+    # 요건(조건) 질문에 일정 문서가 더 높은 점수여도, 학사 제도 문서가 위로 올라와야 한다.
+    schedule = make_result("학사일정 조기졸업 신청 기간", page_kind="schedule").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.565,
+            "url": "https://sw.honam.ac.kr/UniversitySchedule",
+        }
+    )
+    academic = make_result("조기졸업 조건 안내", page_kind="academic").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.384,
+            "url": "https://www.honam.ac.kr/Early_Graduation",
+        }
+    )
+
+    merged = merge_ranked_results([schedule, academic], [], 1.0, 0.0, 6, question="조기졸업 신청 조건은 무엇인가요?")
+
+    assert merged[0].url == "https://www.honam.ac.kr/Early_Graduation"
+
+
+def test_intent_boost_promotes_schedule_for_deadline_question():
+    # 시점(기간/언제) 질문은 학사일정을 우대하고 교과과정 페이지를 강하게 낮춘다.
+    schedule = make_result("방학 학사일정", page_kind="schedule").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.30,
+            "url": "https://www.honam.ac.kr/AcademicCalendar",
+        }
+    )
+    curriculum = make_result("개설년도 안내", page_kind="academic").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.33,
+            "url": "https://x.honam.ac.kr/DepartmentCurriculum/2023",
+        }
+    )
+
+    merged = merge_ranked_results([schedule, curriculum], [], 1.0, 0.0, 6, question="방학 기간은 언제인가요?")
+
+    assert merged[0].page_kind == "schedule"
+
+
+def test_intent_boost_promotes_contact_page_for_contact_question():
+    # 연락처 질문은 전화번호/문의 본문이나 contact 페이지를 우대한다.
+    contact = make_result("장학/학자금 대출 문의 062-940-5955", page_kind="contact").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.30, "url": "https://www.honam.ac.kr/CamPhNum"}
+    )
+    other = make_result("일반 안내 문서", page_kind="academic").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.33, "url": "https://www.honam.ac.kr/Other"}
+    )
+
+    merged = merge_ranked_results(
+        [contact, other], [], 1.0, 0.0, 6, question="장학금 문의 전화번호는 어디서 확인하나요?"
+    )
+
+    assert merged[0].url.endswith("CamPhNum")
+
+
+def test_intent_boost_is_skipped_without_question():
+    # 질문이 없으면 점수를 바꾸지 않는다(기존 호출 호환).
+    higher = make_result("일정", page_kind="schedule").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.5}
+    )
+    lower = make_result("제도", page_kind="academic").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.4, "url": "https://www.honam.ac.kr/x"}
+    )
+
+    merged = merge_ranked_results([higher, lower], [], 1.0, 0.0, 6)
+
+    assert [r.score for r in merged] == [0.5, 0.4]
+
+
 @pytest.mark.asyncio
 async def test_hybrid_retriever_rebuilds_bm25_on_watermark_change():
     class FakeSession:

@@ -269,6 +269,8 @@ def merge_ranked_results(
     semantic_weight: float,
     bm25_weight: float,
     final_top_k: int,
+    *,
+    question: str | None = None,
 ) -> list[RetrievalResult]:
     merged: dict[UUID, RetrievalResult] = {}
 
@@ -283,8 +285,11 @@ def merge_ranked_results(
         else:
             merged[result.chunk_id] = result.model_copy(update={"score": round(score, 6)})
 
+    # 의도-인지 재점수는 dedup·top-k 슬라이스 전에 적용해야 하위 후보도 끌어올릴 수 있다.
+    candidates = apply_intent_boost(list(merged.values()), question) if question else list(merged.values())
+
     ranked = sorted(
-        merged.values(),
+        candidates,
         key=lambda result: (
             result.score,
             # 같은 본문이 여러 학과 사이트에 복제된 경우 대표 사이트 문서를 대표로 남긴다.
@@ -295,6 +300,63 @@ def merge_ranked_results(
         reverse=True,
     )
     return _dedup_ranked_results(ranked)[:final_top_k]
+
+
+# 곱셈 boost 계수. 1 근처의 보수적 값으로 동점 구간만 부드럽게 재정렬한다.
+# 강한 패널티(STRONG)는 page_kind 의미충돌(요건 질문↔일정 문서 등)에만 쓴다.
+RANK_FACTOR_BOOST = 1.15
+RANK_FACTOR_SOFT_BOOST = 1.1
+RANK_FACTOR_CONTACT_BOOST = 1.2
+RANK_FACTOR_SOFT_PENALTY = 0.9
+RANK_FACTOR_STRONG_PENALTY = 0.7
+RANK_FACTOR_MIN = 0.7
+RANK_FACTOR_MAX = 1.4
+PHONE_RE = re.compile(r"\d{2,4}-\d{3,4}-\d{4}")
+DEPARTMENT_CURRICULUM_MARKER = "DepartmentCurriculum"
+DEPARTMENT_BOARD_MARKERS = ("FrequentlyQuestions", "DepartmentNotice", "DepartmentNews")
+
+
+def apply_intent_boost(results: list[RetrievalResult], question: str) -> list[RetrievalResult]:
+    intent = classify_question_intent(question)
+    certificate_query = "증명서" in question
+    return [
+        result.model_copy(update={"score": round(result.score * _intent_factor(result, intent, certificate_query), 6)})
+        for result in results
+    ]
+
+
+def _intent_factor(result: RetrievalResult, intent: str, certificate_query: bool) -> float:
+    factor = 1.0
+    kind = result.page_kind
+    url = result.url
+
+    # page_kind 의미충돌은 강하게, 단순 선호는 약하게 차등한다.
+    if intent == "requirement":
+        if kind == "academic":
+            factor *= RANK_FACTOR_BOOST
+        if kind == "schedule":
+            factor *= RANK_FACTOR_STRONG_PENALTY
+    elif intent == "deadline":
+        if kind == "schedule":
+            factor *= RANK_FACTOR_BOOST
+        if DEPARTMENT_CURRICULUM_MARKER in url:
+            factor *= RANK_FACTOR_STRONG_PENALTY
+    elif intent == "contact":
+        if kind == "contact" or PHONE_RE.search(result.content or "") or "문의" in (result.content or ""):
+            factor *= RANK_FACTOR_CONTACT_BOOST
+
+    # 증명서 질의는 의도와 별개로 증명 안내 페이지를 우대한다.
+    if certificate_query and kind == "certificate":
+        factor *= RANK_FACTOR_BOOST
+
+    # 일반 학사 질의는 대표 사이트를 약하게 우대하고 학과 게시판/FAQ는 약하게 낮춘다.
+    if intent in {"procedure", "factual"}:
+        if result.source_scope == "general_academic":
+            factor *= RANK_FACTOR_SOFT_BOOST
+        if any(marker in url for marker in DEPARTMENT_BOARD_MARKERS):
+            factor *= RANK_FACTOR_SOFT_PENALTY
+
+    return min(max(factor, RANK_FACTOR_MIN), RANK_FACTOR_MAX)
 
 
 def _dedup_ranked_results(results: list[RetrievalResult]) -> list[RetrievalResult]:
@@ -478,6 +540,7 @@ class HybridRetriever:
             self.semantic_weight,
             self.bm25_weight,
             self.final_top_k,
+            question=question,
         )
         results = await self.expand_detail_context(session, results, question=question, category=category)
         # 상세 컨텍스트 확장이 문서별로 같은 표를 다시 붙일 수 있어 최종 단계에서 한 번 더 중복을 제거한다.
