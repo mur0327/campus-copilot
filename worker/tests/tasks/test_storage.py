@@ -268,3 +268,48 @@ async def test_crawl_advisory_lock_skips_unlock_when_not_acquired():
 
     # 잠금을 못 잡았으면 unlock도 호출하지 않는다(남의 잠금을 풀면 안 된다).
     assert calls == ["SELECT pg_try_advisory_lock($1)"]
+
+
+@pytest.mark.asyncio
+async def test_load_reparse_html_targets_reconstructs_seed_site_and_skips_non_seed_hosts():
+    rows = [
+        {
+            "url": "https://www.honam.ac.kr/General_Rest",
+            "title": "휴학 안내",
+            "menu_path": "학사",
+            "source_scope": "general_academic",
+            "page_kind": "academic",
+        },
+        {
+            "url": "https://enter.honam.ac.kr/Scholarship",
+            "title": "장학",
+            "menu_path": "입학",
+            "source_scope": "admission",
+            "page_kind": "admission",
+        },
+        {
+            "url": "https://com.honam.ac.kr/SubjectRoadmap",
+            "title": "로드맵",
+            "menu_path": "학과",
+            "source_scope": "department",
+            "page_kind": "academic",
+        },
+    ]
+
+    class Conn:
+        async def fetch(self, query, *args):
+            return rows
+
+    targets = await storage.load_reparse_html_targets(Conn())
+    by_url = {target.url: target for target in targets}
+
+    # seed host(www/enter)는 site_name/url을 복원해 포함, 학과(com) host는 제외한다.
+    assert set(by_url) == {
+        "https://www.honam.ac.kr/General_Rest",
+        "https://enter.honam.ac.kr/Scholarship",
+    }
+    www = by_url["https://www.honam.ac.kr/General_Rest"]
+    assert www.site_name == "호남대학교"
+    assert www.site_url == "https://www.honam.ac.kr"
+    assert www.title_hint == "휴학 안내"
+    assert all(target.source_type == "html" and target.year is None for target in targets)

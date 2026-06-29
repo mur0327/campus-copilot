@@ -130,7 +130,7 @@ async def test_run_crawl_returns_counts(monkeypatch):
     async def fake_discover_pdf_targets(progress_callback=None):
         return []
 
-    async def fake_execute_ingestion(html_targets, pdf_targets, initial_failures=None):
+    async def fake_execute_ingestion(html_targets, pdf_targets, initial_failures=None, **kwargs):
         assert initial_failures == ["https://timeout.honam.ac.kr/main: simulated timeout"]
         return CrawlStats(
             pages_crawled=3,
@@ -159,15 +159,15 @@ async def test_run_crawl_applies_limit_and_forwards_discovery_failures(monkeypat
             url="https://example.com/html-1",
             menu_path="HTML 1",
             source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+            source_scope="general_academic",
+            page_kind="academic",
         ),
         CrawlTarget(
             url="https://example.com/html-2",
             menu_path="HTML 2",
             source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+            source_scope="general_academic",
+            page_kind="academic",
         ),
     ]
     pdf_targets = [
@@ -175,15 +175,15 @@ async def test_run_crawl_applies_limit_and_forwards_discovery_failures(monkeypat
             url="https://example.com/pdf-1",
             menu_path="PDF 1",
             source_type="pdf",
-        source_scope="general_academic",
-        page_kind="academic",
+            source_scope="general_academic",
+            page_kind="academic",
         ),
         CrawlTarget(
             url="https://example.com/pdf-2",
             menu_path="PDF 2",
             source_type="pdf",
-        source_scope="general_academic",
-        page_kind="academic",
+            source_scope="general_academic",
+            page_kind="academic",
         ),
     ]
     progress_events: list[tuple[str, int, int]] = []
@@ -203,7 +203,7 @@ async def test_run_crawl_applies_limit_and_forwards_discovery_failures(monkeypat
         assert progress_callback is not None
         return pdf_targets
 
-    async def fake_execute_ingestion(html_targets, pdf_targets, initial_failures=None):
+    async def fake_execute_ingestion(html_targets, pdf_targets, initial_failures=None, **kwargs):
         recorded["html_targets"] = html_targets
         recorded["pdf_targets"] = pdf_targets
         recorded["initial_failures"] = initial_failures
@@ -234,15 +234,15 @@ async def test_execute_ingestion_records_partial_failure_without_failing_job(mon
             url="https://example.com/ok",
             menu_path="OK",
             source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+            source_scope="general_academic",
+            page_kind="academic",
         ),
         CrawlTarget(
             url="https://example.com/bad",
             menu_path="BAD",
             source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+            source_scope="general_academic",
+            page_kind="academic",
         ),
     ]
     recorded: dict[str, object] = {}
@@ -304,8 +304,8 @@ async def test_execute_ingestion_records_partial_failure_without_failing_job(mon
             title="Example",
             menu_path=target.menu_path,
             category=None,
-        source_scope="unknown",
-        page_kind="unknown",
+            source_scope="unknown",
+            page_kind="unknown",
             source_type=target.source_type,
             content_hash="hash-1",
             crawled_at=datetime(2026, 4, 19, tzinfo=UTC),
@@ -342,8 +342,7 @@ async def test_execute_ingestion_records_partial_failure_without_failing_job(mon
     ]
     assert recorded["finished"]["status"] == "completed"
     assert recorded["finished"]["error"] == (
-        "https://timeout.honam.ac.kr/main: simulated timeout\n"
-        "https://example.com/bad: boom"
+        "https://timeout.honam.ac.kr/main: simulated timeout\nhttps://example.com/bad: boom"
     )
 
 
@@ -422,8 +421,8 @@ async def test_execute_ingestion_repairs_existing_document_with_missing_chunks(m
             title="졸업학점 2025",
             menu_path=target.menu_path,
             category=None,
-        source_scope="unknown",
-        page_kind="unknown",
+            source_scope="unknown",
+            page_kind="unknown",
             source_type=target.source_type,
             content_hash="same-hash",
             crawled_at=datetime(2026, 4, 19, tzinfo=UTC),
@@ -553,8 +552,8 @@ async def test_execute_ingestion_processes_changed_html_with_limited_parallelism
             url=f"https://example.com/page-{index}",
             menu_path=f"Page {index}",
             source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+            source_scope="general_academic",
+            page_kind="academic",
         )
         for index in range(3)
     ]
@@ -599,8 +598,8 @@ async def test_execute_ingestion_processes_changed_html_with_limited_parallelism
             title="Example",
             menu_path=target.menu_path,
             category=None,
-        source_scope="unknown",
-        page_kind="unknown",
+            source_scope="unknown",
+            page_kind="unknown",
             source_type=target.source_type,
             content_hash=f"hash-{target.url}",
             crawled_at=datetime(2026, 4, 19, tzinfo=UTC),

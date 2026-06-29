@@ -6,6 +6,7 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -138,6 +139,25 @@ def fetch_html(url: str, timeout: int | None = None) -> str:
 
 def _fetch_cache_dir() -> Path | None:
     return Path(settings.crawl_fetch_cache_dir) if settings.crawl_fetch_cache_dir else None
+
+
+@contextmanager
+def _override_fetch_cache_mode(mode: str | None):
+    """이번 실행 동안만 fetch 캐시 모드를 바꾼다(없으면 no-op).
+
+    반드시 advisory lock 안에서만 호출해야 한다. 그래야 동시에 도는 다른 ingestion이
+    이 전역 값을 읽지 않는다(캐시 모드 누수 방지). 캐시를 읽는 코드는 ingestion 경로뿐이고
+    그 경로는 advisory lock으로 직렬화된다.
+    """
+    if mode is None:
+        yield
+        return
+    previous = settings.crawl_fetch_cache_mode
+    settings.crawl_fetch_cache_mode = mode  # type: ignore[assignment]
+    try:
+        yield
+    finally:
+        settings.crawl_fetch_cache_mode = previous
 
 
 def cached_html(url: str) -> str | None:
@@ -1060,16 +1080,32 @@ async def execute_ingestion(
     html_targets: list[CrawlTarget],
     pdf_targets: list[CrawlTarget],
     initial_failures: list[str] | None = None,
+    *,
+    process_documents: bool = True,
+    index_documents: bool = True,
+    force: bool = False,
+    fetch_cache_mode: str | None = None,
 ) -> CrawlStats:
+    """fetch→diff→parse→save→index 한 회차를 잠금 아래에서 실행한다.
+
+    process_documents=False면 문서 패스를 건너뛰고(예: 재색인만), index_documents=False면
+    색인 패스를 건너뛴다(예: 파싱·저장까지만). force=True면 content_hash 비교를 건너뛰어
+    변경이 없어도 전부 재파싱한다. fetch_cache_mode가 주어지면 advisory lock을 잡은 뒤
+    그 모드(예: cache_first)로 문서 패스를 돌린다(재파싱 시 네트워크 회피).
+    """
     targets = [*html_targets, *pdf_targets]
     failures = list(initial_failures or [])
     logger.info(
         "crawl ingestion starting: total_targets=%s html_targets=%s pdf_targets=%s "
-        "initial_failures=%s ingestion_concurrency=%s markdown_concurrency=%s",
+        "initial_failures=%s process_documents=%s index_documents=%s force=%s "
+        "ingestion_concurrency=%s markdown_concurrency=%s",
         len(targets),
         len(html_targets),
         len(pdf_targets),
         len(failures),
+        process_documents,
+        index_documents,
+        force,
         settings.crawl_ingestion_concurrency,
         settings.crawl_markdown_concurrency,
     )
@@ -1089,20 +1125,30 @@ async def execute_ingestion(
                 total_pages=len(targets),
             )
             try:
-                await progress.update("대상 확인 중")
-                existing_states = await load_existing_document_states(
-                    connection,
-                    [target.url for target in targets],
-                )
+                pass_result = DocumentPassResult()
+                if process_documents:
+                    await progress.update("대상 확인 중")
+                    # force면 기존 상태를 비워 should_skip이 항상 False가 되게 한다.
+                    existing_states = (
+                        {}
+                        if force
+                        else await load_existing_document_states(
+                            connection,
+                            [target.url for target in targets],
+                        )
+                    )
+                    # 캐시 모드 오버라이드는 lock 안에서만 적용한다(전역 누수 방지).
+                    with _override_fetch_cache_mode(fetch_cache_mode):
+                        pass_result = await run_document_processing_pass(
+                            progress,
+                            targets,
+                            existing_states,
+                            failures,
+                        )
 
-                pass_result = await run_document_processing_pass(
-                    progress,
-                    targets,
-                    existing_states,
-                    failures,
-                )
-
-                indexing_ok = await run_index_pass(progress, failures)
+                indexing_ok = True
+                if index_documents:
+                    indexing_ok = await run_index_pass(progress, failures)
                 await finish_crawl_job(
                     connection,
                     crawl_job_id,
@@ -1133,22 +1179,17 @@ async def execute_ingestion(
 
 
 async def run_crawl(progress_callback: ProgressCallback | None = None) -> CrawlStats:
-    """Crawl Honam University pages and feed the indexing pipeline."""
+    """Crawl Honam University pages and feed the indexing pipeline.
+
+    full discover→index 파이프라인의 얇은 래퍼다. 스케줄러/트리거가 쓰는 진입점이라
+    progress_callback 인터페이스를 유지한다. phase를 골라 돌리려면 tasks.pipeline을 쓴다.
+    """
+    # run_crawl ↔ pipeline 순환 import를 피하려 함수 안에서 import한다.
+    from tasks.pipeline import run_pipeline
+
     if progress_callback is not None:
         await progress_callback("대상 검색 시작", processed_pages=0, total_pages=0)
-    html_discovery, pdf_targets = await asyncio.gather(
-        discover_html_targets_with_failures(progress_callback=progress_callback),
-        discover_pdf_targets(progress_callback=progress_callback),
-    )
-    html_targets, pdf_targets = apply_crawl_target_limit(
-        html_discovery.targets,
-        pdf_targets,
-    )
-    stats = await execute_ingestion(
-        html_targets,
-        pdf_targets,
-        initial_failures=html_discovery.failures,
-    )
+    stats = await run_pipeline(progress_callback=progress_callback)
     logger.info(
         "crawl completed: pages_crawled=%s pages_changed=%s failures=%s",
         stats.pages_crawled,
