@@ -782,10 +782,15 @@ async def fetch_and_maybe_parse_document(
             pdf_bytes, from_cache = await _fetch_bytes_in_thread(fetch_pdf_bytes, target.url), False
         content_hash = build_content_hash(pdf_bytes, target=target)
         if should_skip_existing_document(existing_state, content_hash):
+            # hash가 기존 문서와 같으면 과거에 정상 파싱된 유효 PDF다.
+            # parse는 건너뛰더라도 cold 캐시는 채워, network 크롤이 매번 재-fetch만
+            # 하고 캐시가 비는 일을 막는다(HTML이 skip 전 write-through하는 것과 대칭).
+            if not from_cache:
+                store_fetched_pdf(target.url, pdf_bytes)
             return DocumentProcessingResult(target=target)
 
         document = await parse_pdf(target=target, pdf_bytes=pdf_bytes)
-        # parse_pdf가 성공한 유효 PDF만 캐시에 저장한다.
+        # 신규/변경 PDF는 사전 유효성 게이트가 없으므로 parse_pdf 성공 후에만 캐시한다.
         if not from_cache:
             store_fetched_pdf(target.url, pdf_bytes)
         return DocumentProcessingResult(target=target, document=document)

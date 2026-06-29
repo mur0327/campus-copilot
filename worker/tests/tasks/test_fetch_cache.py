@@ -13,6 +13,7 @@ import pytest  # noqa: E402
 import tasks.crawl as crawl  # noqa: E402
 import tasks.fetch_cache as fetch_cache  # noqa: E402
 from tasks.contracts import CrawlTarget, ParsedDocument  # noqa: E402
+from tasks.storage import ExistingDocumentState  # noqa: E402
 
 
 def _html_target(url: str) -> CrawlTarget:
@@ -20,6 +21,16 @@ def _html_target(url: str) -> CrawlTarget:
         url=url,
         menu_path="학사",
         source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
+    )
+
+
+def _pdf_target(url: str) -> CrawlTarget:
+    return CrawlTarget(
+        url=url,
+        menu_path="졸업",
+        source_type="pdf",
         source_scope="general_academic",
         page_kind="academic",
     )
@@ -113,3 +124,25 @@ async def test_valid_html_is_cached_after_validation(tmp_path, monkeypatch):
 
     assert result.document is not None
     assert fetch_cache.read_html(tmp_path, target.url) == valid_html
+
+
+@pytest.mark.asyncio
+async def test_unchanged_pdf_is_cached_even_when_parse_is_skipped(tmp_path, monkeypatch):
+    monkeypatch.setattr(crawl.settings, "crawl_fetch_cache_dir", str(tmp_path))
+    monkeypatch.setattr(crawl.settings, "crawl_fetch_cache_mode", "network")
+    pdf_bytes = b"%PDF-1.4 unchanged"
+    monkeypatch.setattr(crawl, "fetch_pdf_bytes", lambda url: pdf_bytes)
+    monkeypatch.setattr(crawl, "build_content_hash", lambda raw, target=None: "same-hash")
+
+    async def fail_parse_pdf(*args, **kwargs):
+        raise AssertionError("unchanged pdf should skip parse_pdf")
+
+    monkeypatch.setattr(crawl, "parse_pdf", fail_parse_pdf)
+
+    target = _pdf_target("https://www.honam.ac.kr/grad.pdf")
+    existing = ExistingDocumentState(content_hash="same-hash", chunk_count=3)
+    result = await crawl.fetch_and_maybe_parse_document(target, existing)
+
+    # 변경 없음이라 parse/저장은 건너뛰지만(write-through), cold 캐시는 채워야 한다.
+    assert result.document is None
+    assert fetch_cache.read_bytes(tmp_path, target.url) == pdf_bytes
