@@ -7,6 +7,7 @@ import logging
 from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
@@ -14,6 +15,7 @@ from curl_cffi import requests
 
 from core.config import settings
 from core.db import create_pool
+from tasks import fetch_cache
 from tasks.bm25 import write_bm25_indexes
 from tasks.classify import infer_page_kind, infer_source_scope
 from tasks.contracts import (
@@ -103,12 +105,8 @@ def apply_crawl_target_limit(
 
     combined_targets = [*html_targets, *pdf_targets]
     limited_targets = combined_targets[: settings.crawl_target_limit]
-    limited_html_targets = [
-        target for target in limited_targets if target.source_type == "html"
-    ]
-    limited_pdf_targets = [
-        target for target in limited_targets if target.source_type == "pdf"
-    ]
+    limited_html_targets = [target for target in limited_targets if target.source_type == "html"]
+    limited_pdf_targets = [target for target in limited_targets if target.source_type == "pdf"]
     logger.info(
         "crawl target limit applied: limit=%s original_total=%s limited_total=%s "
         "limited_html=%s limited_pdf=%s",
@@ -135,6 +133,39 @@ def fetch_html(url: str, timeout: int | None = None) -> str:
     )
     response.raise_for_status()
     return response.text
+
+
+def _fetch_cache_dir() -> Path | None:
+    return Path(settings.crawl_fetch_cache_dir) if settings.crawl_fetch_cache_dir else None
+
+
+def cached_html(url: str) -> str | None:
+    # cache_first 모드일 때만 캐시된 원본 HTML을 반환한다(네트워크 회피 재파싱용).
+    cache_dir = _fetch_cache_dir()
+    if cache_dir is None or settings.crawl_fetch_cache_mode != "cache_first":
+        return None
+    return fetch_cache.read_html(cache_dir, url)
+
+
+def store_fetched_html(url: str, html: str) -> None:
+    # 검증(extract_article_html)을 통과한 HTML만 캐시에 저장한다.
+    cache_dir = _fetch_cache_dir()
+    if cache_dir is not None:
+        fetch_cache.write_html(cache_dir, url, html)
+
+
+def cached_pdf_bytes(url: str) -> bytes | None:
+    cache_dir = _fetch_cache_dir()
+    if cache_dir is None or settings.crawl_fetch_cache_mode != "cache_first":
+        return None
+    return fetch_cache.read_bytes(cache_dir, url)
+
+
+def store_fetched_pdf(url: str, data: bytes) -> None:
+    # 파싱(parse_pdf)을 통과한 PDF만 캐시에 저장한다.
+    cache_dir = _fetch_cache_dir()
+    if cache_dir is not None:
+        fetch_cache.write_bytes(cache_dir, url, data)
 
 
 def dedupe_targets(targets: list[CrawlTarget]) -> list[CrawlTarget]:
@@ -273,9 +304,8 @@ def is_download_url(url: str) -> bool:
 def is_honam_url(url: str) -> bool:
     parsed = urlparse(url)
     hostname = parsed.hostname or ""
-    return (
-        parsed.scheme in {"http", "https"}
-        and (hostname == "honam.ac.kr" or hostname.endswith(".honam.ac.kr"))
+    return parsed.scheme in {"http", "https"} and (
+        hostname == "honam.ac.kr" or hostname.endswith(".honam.ac.kr")
     )
 
 
@@ -470,8 +500,7 @@ async def discover_html_targets_with_failures(
     targets: list[CrawlTarget] = []
     failures: list[str] = []
     seed_source_scopes_by_host = {
-        urlparse(seed.url).hostname or "": seed.source_scope
-        for seed in settings.crawl_seed_sites
+        urlparse(seed.url).hostname or "": seed.source_scope for seed in settings.crawl_seed_sites
     }
     seen_department_urls: set[str] = set()
 
@@ -598,9 +627,7 @@ async def discover_html_targets_with_failures(
     retry_failures = [result.failure for result in retry_results if result.failure is not None]
     recovered_urls = {result.parent_url for result in retry_results if result.targets}
     unresolved_failures = [
-        failure
-        for failure in retry_failures
-        if failure_url(failure) not in recovered_urls
+        failure for failure in retry_failures if failure_url(failure) not in recovered_urls
     ]
     retry_targets_by_parent = {
         result.parent_url: result.targets for result in retry_results if result.targets
@@ -722,11 +749,18 @@ async def fetch_and_maybe_parse_document(
 ) -> DocumentProcessingResult:
     try:
         if target.source_type == "html":
-            html = await _fetch_html_in_thread(fetch_html, target.url)
+            cached = cached_html(target.url)
+            if cached is not None:
+                html, from_cache = cached, True
+            else:
+                html, from_cache = await _fetch_html_in_thread(fetch_html, target.url), False
             try:
                 article_html = extract_article_html(html)
             except ValueError:
+                # 본문 selector가 없는(에러/리다이렉트 등) 응답은 무효이므로 캐시에 남기지 않는다.
                 return DocumentProcessingResult(target=target)
+            if not from_cache:
+                store_fetched_html(target.url, html)
             content_hash = build_content_hash(article_html, target=target)
             if should_skip_existing_document(existing_state, content_hash):
                 return DocumentProcessingResult(target=target)
@@ -740,15 +774,20 @@ async def fetch_and_maybe_parse_document(
                 ),
             )
 
-        pdf_bytes = await _fetch_bytes_in_thread(fetch_pdf_bytes, target.url)
+        cached_bytes = cached_pdf_bytes(target.url)
+        if cached_bytes is not None:
+            pdf_bytes, from_cache = cached_bytes, True
+        else:
+            pdf_bytes, from_cache = await _fetch_bytes_in_thread(fetch_pdf_bytes, target.url), False
         content_hash = build_content_hash(pdf_bytes, target=target)
         if should_skip_existing_document(existing_state, content_hash):
             return DocumentProcessingResult(target=target)
 
-        return DocumentProcessingResult(
-            target=target,
-            document=await parse_pdf(target=target, pdf_bytes=pdf_bytes),
-        )
+        document = await parse_pdf(target=target, pdf_bytes=pdf_bytes)
+        # parse_pdf가 성공한 유효 PDF만 캐시에 저장한다.
+        if not from_cache:
+            store_fetched_pdf(target.url, pdf_bytes)
+        return DocumentProcessingResult(target=target, document=document)
     except Exception as exc:  # pragma: no cover - exercised through integration
         return DocumentProcessingResult(target=target, failure=f"{target.url}: {exc}")
 
@@ -1011,9 +1050,7 @@ async def execute_ingestion(
                 try:
                     index_summary = await index_crawl_documents(connection)
                     if index_summary and index_summary.errors:
-                        failures.extend(
-                            f"indexing: {error}" for error in index_summary.errors
-                        )
+                        failures.extend(f"indexing: {error}" for error in index_summary.errors)
                         await finish_crawl_job(
                             connection,
                             crawl_job_id,

@@ -1,3 +1,4 @@
+from typing import Literal
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, field_validator, model_validator
@@ -63,6 +64,11 @@ class WorkerSettings(BaseSettings):
     crawl_document_timeout_seconds: int = 120
     crawl_target_limit: int = 0
     crawl_impersonate: str = "chrome120"
+    # fetch artifact 캐시. dir이 설정되면 document fetch 원본을 파일에 저장한다.
+    # mode="network": 항상 네트워크 fetch 후 write-through(스케줄 크롤, 변경 감지).
+    # mode="cache_first": 캐시 우선, 없을 때만 fetch(재파싱용, 네트워크 회피).
+    crawl_fetch_cache_dir: str | None = None
+    crawl_fetch_cache_mode: Literal["network", "cache_first"] = "network"
     crawl_schedule: str = "0 3 * * *"
     crawl4ai_base_directory: str = "/tmp/crawl4ai"
     pdf_hybrid_backend: str | None = None
