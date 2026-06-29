@@ -5,12 +5,14 @@ phase만 골라 실행할 수 있게 묶는 얇은 오케스트레이터다. 실
 discovery/execute_ingestion이 하고, 여기서는 어떤 구간을 돌릴지 결정한다.
 
 phase 구간:
-- discover: 네트워크 discovery로 대상 URL을 수집한다(느림).
+- discover: 네트워크 discovery로 대상 URL을 수집한다(느림). 검증된 타깃을 artifact에 저장.
 - parse:    fetch→diff→parse→save. --from parse면 네트워크 없이 fetch 캐시로 재파싱한다.
 - index:    임베딩 + BM25 재색인.
 
---from parse는 기존에 저장된 활성 문서를 대상으로(네트워크 discovery 없이) fetch 캐시를
-cache_first로 읽어 재파싱한다. 파서 개선(parser_version 범프)을 코퍼스에 싸게 반영하는 길이다.
+--from parse는 DISCOVER가 저장해 둔 target artifact를 읽어(네트워크 discovery 없이) fetch
+캐시를 cache_first로 읽어 재파싱한다. artifact에 discovery 시점 메타(year/site_name/site_url)가
+그대로 담겨 있어 PDF·학과 페이지까지 충실히 재처리된다. 파서 개선(parser_version 범프)을
+코퍼스에 싸게 반영하는 길이다.
 """
 
 from __future__ import annotations
@@ -19,14 +21,19 @@ import argparse
 import asyncio
 import logging
 from enum import IntEnum
+from pathlib import Path
 
-from core.db import create_pool
-from tasks import crawl
+from core.config import settings
+from tasks import crawl, target_artifact
 from tasks.contracts import CrawlStats, CrawlTarget
 from tasks.crawl import ProgressCallback
-from tasks.storage import load_reparse_html_targets
 
 logger = logging.getLogger(__name__)
+
+
+def _target_artifact_path() -> Path | None:
+    path = settings.crawl_target_artifact_path
+    return Path(path) if path else None
 
 
 class Phase(IntEnum):
@@ -63,15 +70,22 @@ async def _resolve_targets(
         return html_targets, pdf_targets, list(html_discovery.failures)
 
     if start <= Phase.PARSE:
-        # parse부터 시작하면 네트워크 discovery 없이 기존 HTML 문서를 캐시로 재파싱한다.
-        # (충실히 복원 가능한 HTML만 — PDF/학과 페이지 제외, storage 주석 참고.)
-        pool = await create_pool()
-        try:
-            async with pool.acquire() as connection:
-                html_targets = await load_reparse_html_targets(connection)
-        finally:
-            await pool.close()
-        return html_targets, [], []
+        # parse부터 시작하면 네트워크 discovery 없이 DISCOVER가 저장한 artifact를 읽는다.
+        artifact_path = _target_artifact_path()
+        if artifact_path is None:
+            raise ValueError(
+                "crawl_target_artifact_path is not configured; set it and run a full discover "
+                "first (python -m tasks.pipeline --from discover)"
+            )
+        if not artifact_path.exists():
+            raise ValueError(
+                f"no target artifact at {artifact_path}; run a full discover first "
+                f"(python -m tasks.pipeline --from discover)"
+            )
+        targets = target_artifact.read_targets(artifact_path)
+        html_targets = [target for target in targets if target.source_type != "pdf"]
+        pdf_targets = [target for target in targets if target.source_type == "pdf"]
+        return html_targets, pdf_targets, []
 
     # index만 다시 돌릴 때는 대상이 필요 없다(이미 저장된 pending chunk를 색인).
     return [], [], []
@@ -114,7 +128,7 @@ async def run_pipeline(
     # 이미 전부 재파싱되고, 이미 최신인 문서는 건너뛰는 게 맞다. 명시 --force만 강제한다.
     reparse_from_cache = process_documents and start >= Phase.PARSE
     fetch_cache_mode = "cache_first" if reparse_from_cache else None
-    return await crawl.execute_ingestion(
+    result = await crawl.execute_ingestion(
         html_targets,
         pdf_targets,
         initial_failures=failures,
@@ -123,6 +137,21 @@ async def run_pipeline(
         force=force,
         fetch_cache_mode=fetch_cache_mode,
     )
+
+    # discovery를 실제로 돌렸고 ingestion이 스킵되지 않았을 때만 artifact를 갱신한다.
+    # 그래야 artifact가 "마지막으로 실제 ingest된 discovery"를 가리키고, 잠금 경합으로
+    # 스킵된 동시 크롤이 남의 스냅샷을 덮어쓰지 않는다(경로 미설정이면 저장 생략).
+    if start <= Phase.DISCOVER and not result.skipped:
+        artifact_path = _target_artifact_path()
+        if artifact_path is not None:
+            target_artifact.write_targets(artifact_path, [*html_targets, *pdf_targets])
+            logger.info(
+                "pipeline wrote target artifact: path=%s count=%s",
+                artifact_path,
+                len(html_targets) + len(pdf_targets),
+            )
+
+    return result
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:

@@ -25,7 +25,7 @@ def _path(cache_dir: Path, url: str, suffix: str) -> Path:
     return cache_dir / f"{cache_key(url)}{suffix}"
 
 
-def _atomic_write(path: Path, data: bytes) -> None:
+def atomic_write_bytes(path: Path, data: bytes) -> None:
     # 같은 디렉터리에 임시 파일로 쓴 뒤 rename해서, 동시 reader가 잘린 파일을 보지 않게 한다.
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
@@ -51,7 +51,7 @@ def read_html(cache_dir: Path, url: str) -> str | None:
 
 
 def write_html(cache_dir: Path, url: str, html: str) -> None:
-    _atomic_write(_path(cache_dir, url, HTML_SUFFIX), html.encode("utf-8"))
+    atomic_write_bytes(_path(cache_dir, url, HTML_SUFFIX), html.encode("utf-8"))
 
 
 def read_bytes(cache_dir: Path, url: str) -> bytes | None:
@@ -65,4 +65,4 @@ def read_bytes(cache_dir: Path, url: str) -> bytes | None:
 
 
 def write_bytes(cache_dir: Path, url: str, data: bytes) -> None:
-    _atomic_write(_path(cache_dir, url, BYTES_SUFFIX), data)
+    atomic_write_bytes(_path(cache_dir, url, BYTES_SUFFIX), data)

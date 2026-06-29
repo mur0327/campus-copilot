@@ -7,12 +7,10 @@ from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from urllib.parse import urlparse
 
 import asyncpg
 
-from core.config import settings
-from tasks.contracts import CrawlTarget, ParsedDocument
+from tasks.contracts import ParsedDocument
 
 logger = logging.getLogger(__name__)
 
@@ -134,53 +132,6 @@ async def load_existing_document_states(
         )
         for row in rows
     }
-
-
-async def load_reparse_html_targets(
-    connection: asyncpg.Connection,
-) -> list[CrawlTarget]:
-    """v3 파서 개선을 재반영하기 위한 HTML 재파싱 대상을 복원한다.
-
-    네트워크 discovery 없이 기존 코퍼스를 다시 파싱하려는 용도다. 그런데 discovery
-    시점 메타인 site_name/site_url/year는 documents 테이블에 저장되지 않는다. 이 값들은
-    content_hash 계산에도 들어가므로(parse.build_content_hash), 충실히 복원하지 못하면
-    해시가 어긋나 재파싱 결과가 오염되거나 다음 크롤마다 변경으로 오인된다.
-
-    따라서 **seed 설정에서 host로 충실히 복원 가능한** HTML 페이지만 대상으로 한다:
-    - site_name/site_url ← URL host와 일치하는 seed의 name/url (general_academic/admission).
-    - year ← HTML에는 없음(None).
-    - title_hint ← 저장된 title.
-    학과(department) 페이지(seed가 아닌 host)와 PDF는 year/site_name을 복원할 수 없어
-    제외한다. 이들의 충실한 재파싱은 discovery 산출물을 저장하는 increment ⑤에서 다룬다.
-    """
-    rows = await connection.fetch(
-        """
-        SELECT url, title, menu_path, source_scope, page_kind
-        FROM documents
-        WHERE is_active = TRUE AND source_type = 'html'
-        ORDER BY url
-        """
-    )
-    seed_by_host = {urlparse(seed.url).hostname: seed for seed in settings.crawl_seed_sites}
-    targets: list[CrawlTarget] = []
-    for row in rows:
-        seed = seed_by_host.get(urlparse(row["url"]).hostname)
-        if seed is None:
-            # seed가 아닌 host(학과 사이트 등)는 site_name/url을 복원할 수 없어 건너뛴다.
-            continue
-        targets.append(
-            CrawlTarget(
-                url=row["url"],
-                menu_path=row["menu_path"],
-                source_type="html",
-                source_scope=row["source_scope"],
-                page_kind=row["page_kind"],
-                title_hint=row["title"],
-                site_name=seed.name,
-                site_url=seed.url.rstrip("/"),
-            )
-        )
-    return targets
 
 
 async def upsert_document(connection: asyncpg.Connection, document: ParsedDocument) -> str:

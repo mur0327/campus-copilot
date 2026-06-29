@@ -69,6 +69,9 @@ class WorkerSettings(BaseSettings):
     # mode="cache_first": 캐시 우선, 없을 때만 fetch(재파싱용, 네트워크 회피).
     crawl_fetch_cache_dir: str | None = None
     crawl_fetch_cache_mode: Literal["network", "cache_first"] = "network"
+    # discovery가 만든 검증된 타깃 목록을 저장할 JSON 경로. 설정되면 DISCOVER가 쓰고
+    # `--from parse` 재파싱이 네트워크 discovery 없이 이 파일을 읽는다.
+    crawl_target_artifact_path: str | None = None
     crawl_schedule: str = "0 3 * * *"
     crawl4ai_base_directory: str = "/tmp/crawl4ai"
     pdf_hybrid_backend: str | None = None
