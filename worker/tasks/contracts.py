@@ -60,6 +60,8 @@ class CrawlStats:
     pages_skipped: int = 0
     status_counts: dict[DocumentProcessingStatus, int] = field(default_factory=dict)
     failures: list[str] = field(default_factory=list)
+    # 다른 프로세스가 크롤 advisory lock을 쥐고 있어 이번 회차를 건너뛴 경우 True.
+    skipped: bool = False
 
 
 @dataclass(slots=True)

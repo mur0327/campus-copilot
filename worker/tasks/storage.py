@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -10,11 +12,43 @@ import asyncpg
 
 from tasks.contracts import ParsedDocument
 
+logger = logging.getLogger(__name__)
+
+# 크롤 작업 전체에 대한 전역 잠금 키. 값 자체는 의미가 없고 충돌만 피하면 된다.
+# Postgres advisory lock은 세션(연결) 단위라, 프로세스가 죽어 연결이 끊기면
+# 자동으로 해제된다(별도 크래시 복구 로직이 필요 없음).
+CRAWL_ADVISORY_LOCK_KEY = 0x43505F4352_41574C  # 'CP_CRAWL' 비트 패턴 → 고정 키
+
 
 @dataclass(slots=True)
 class ExistingDocumentState:
     content_hash: str | None
     chunk_count: int
+
+
+@asynccontextmanager
+async def crawl_advisory_lock(connection: asyncpg.Connection) -> AsyncIterator[bool]:
+    """크롤 한 회차에 대한 크로스 프로세스 상호배제.
+
+    pg_try_advisory_lock으로 비차단 획득한다. 이미 다른 프로세스(예: 스케줄 크롤과
+    별도 phase CLI)가 쥐고 있으면 False를 내고, 그쪽이 끝날 때까지 기다리지 않는다.
+    잠금은 같은 연결로 pg_advisory_unlock하거나 연결이 끊기면 자동 해제된다.
+
+    단위 테스트의 가짜 연결처럼 fetchval이 없으면 잠금을 건너뛰고 획득한 것으로 본다.
+    """
+    try:
+        acquired = await connection.fetchval(
+            "SELECT pg_try_advisory_lock($1)", CRAWL_ADVISORY_LOCK_KEY
+        )
+    except AttributeError:
+        logger.debug("crawl advisory lock skipped by connection fake")
+        yield True
+        return
+    try:
+        yield bool(acquired)
+    finally:
+        if acquired:
+            await connection.fetchval("SELECT pg_advisory_unlock($1)", CRAWL_ADVISORY_LOCK_KEY)
 
 
 def build_chunk_rows(document_id: str, document: ParsedDocument) -> list[dict]:

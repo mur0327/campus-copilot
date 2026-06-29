@@ -134,3 +134,21 @@ async def test_trigger_allows_new_crawl_after_previous_finishes():
     assert first.json() == {"status": "triggered"}
     assert second.json() == {"status": "triggered"}
     assert calls == 2
+
+
+@pytest.mark.asyncio
+async def test_run_marks_skipped_when_crawl_reports_skipped():
+    class SkippedStats:
+        skipped = True
+
+    async def fake_run_crawl(progress_callback=None):
+        return SkippedStats()
+
+    service = CrawlTriggerService(run_crawl=fake_run_crawl)
+
+    await service.trigger()
+    await service.wait_for_idle()
+
+    status = await service.status()
+    assert status["status"] == "skipped"
+    assert status["error"] is None

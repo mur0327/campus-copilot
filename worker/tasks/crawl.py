@@ -45,6 +45,7 @@ from tasks.parse import (
 )
 from tasks.storage import (
     ExistingDocumentState,
+    crawl_advisory_lock,
     create_crawl_job,
     finish_crawl_job,
     load_existing_document_states,
@@ -1070,7 +1071,12 @@ async def execute_ingestion(
 
     pool = await create_pool()
     try:
-        async with pool.acquire() as connection:
+        async with pool.acquire() as connection, crawl_advisory_lock(connection) as acquired:
+            if not acquired:
+                # 다른 프로세스가 크롤 중이다. 작업 row를 만들지 않고 조용히 건너뛴다.
+                logger.info("crawl ingestion skipped: another crawl holds the advisory lock")
+                return CrawlStats(failures=failures, skipped=True)
+
             crawl_job_id = await create_crawl_job(connection)
             progress = IngestionProgress(
                 connection=connection,

@@ -234,3 +234,37 @@ async def test_asyncpg_jsonb_requires_serialized_meta():
         assert stored == "안내"
     finally:
         await connection.close()
+
+
+@pytest.mark.asyncio
+async def test_crawl_advisory_lock_acquires_and_releases():
+    calls: list[tuple[str, tuple]] = []
+
+    class Conn:
+        async def fetchval(self, query, *args):
+            calls.append((query, args))
+            return True
+
+    async with storage.crawl_advisory_lock(Conn()) as acquired:
+        assert acquired is True
+
+    assert calls == [
+        ("SELECT pg_try_advisory_lock($1)", (storage.CRAWL_ADVISORY_LOCK_KEY,)),
+        ("SELECT pg_advisory_unlock($1)", (storage.CRAWL_ADVISORY_LOCK_KEY,)),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_crawl_advisory_lock_skips_unlock_when_not_acquired():
+    calls: list[str] = []
+
+    class Conn:
+        async def fetchval(self, query, *args):
+            calls.append(query)
+            return False
+
+    async with storage.crawl_advisory_lock(Conn()) as acquired:
+        assert acquired is False
+
+    # 잠금을 못 잡았으면 unlock도 호출하지 않는다(남의 잠금을 풀면 안 된다).
+    assert calls == ["SELECT pg_try_advisory_lock($1)"]

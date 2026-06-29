@@ -96,7 +96,16 @@ class CrawlTriggerService:
     async def _run(self, label: str) -> None:
         try:
             logger.info("%s started", label)
-            await self.run_crawl(progress_callback=self.update_progress)  # type: ignore[call-arg]
+            result = await self.run_crawl(progress_callback=self.update_progress)  # type: ignore[call-arg]
+            if getattr(result, "skipped", False):
+                # 다른 프로세스가 advisory lock을 쥐고 있어 이번 회차는 실행되지 않았다.
+                async with self._lock:
+                    self._status = "skipped"
+                    self._current_stage = "다른 크롤 진행 중"
+                    self._completed_at = datetime.now(UTC)
+                    self._error = None
+                logger.info("%s skipped: another crawl already running", label)
+                return
             async with self._lock:
                 self._status = "completed"
                 self._current_stage = "완료"

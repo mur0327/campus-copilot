@@ -1050,6 +1050,51 @@ async def test_index_crawl_documents_repeats_batches_and_accumulates_summary(mon
 
 
 @pytest.mark.asyncio
+async def test_execute_ingestion_skips_when_advisory_lock_unavailable(monkeypatch):
+    target = CrawlTarget(
+        url="https://example.com/locked",
+        menu_path="공지",
+        source_type="html",
+        source_scope="general_academic",
+        page_kind="academic",
+    )
+    events: list[str] = []
+
+    class FakeConnection:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def fetchval(self, query, *args):
+            events.append(query)
+            return False  # pg_try_advisory_lock 실패 = 다른 프로세스가 크롤 중
+
+    class FakePool:
+        def acquire(self):
+            return FakeConnection()
+
+        async def close(self):
+            events.append("close")
+
+    async def fake_create_pool():
+        return FakePool()
+
+    async def fake_create_crawl_job(connection):
+        raise AssertionError("skipped run must not create a crawl job")
+
+    monkeypatch.setattr("tasks.crawl.create_pool", fake_create_pool)
+    monkeypatch.setattr("tasks.crawl.create_crawl_job", fake_create_crawl_job)
+
+    stats = await execute_ingestion([target], [])
+
+    assert stats.skipped is True
+    # 잠금 시도(try)만 하고, 못 잡았으니 unlock 없이 연결을 반납한다.
+    assert events == ["SELECT pg_try_advisory_lock($1)", "close"]
+
+
+@pytest.mark.asyncio
 async def test_execute_ingestion_runs_indexing_after_persistence_before_finish(monkeypatch):
     target = CrawlTarget(
         url="https://example.com/changed",
