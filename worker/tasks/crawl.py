@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -912,15 +912,150 @@ async def index_crawl_documents(connection):
     return summary
 
 
+@dataclass(slots=True)
+class IngestionProgress:
+    """크롤 한 회차의 진행 상태를 패스들 사이에서 공유하는 컨텍스트.
+
+    각 패스(문서 처리·색인)는 카운터를 직접 갱신하고, 단계가 바뀔 때마다
+    crawl_jobs row에 진행률을 기록한다. 카운터를 한곳에 모아 두면 패스를 따로
+    호출하더라도 동일한 작업으로 묶어 진행률을 일관되게 보고할 수 있다.
+    """
+
+    connection: object
+    crawl_job_id: object
+    total_pages: int
+    processed_pages: int = 0
+    pages_crawled: int = 0
+    pages_changed: int = 0
+
+    async def update(self, current_stage: str) -> None:
+        try:
+            await update_crawl_job_progress(
+                self.connection,
+                self.crawl_job_id,
+                current_stage=current_stage,
+                total_pages=self.total_pages,
+                processed_pages=self.processed_pages,
+                pages_crawled=self.pages_crawled,
+                pages_changed=self.pages_changed,
+            )
+        except AttributeError:
+            logger.debug("crawl progress update skipped by connection fake")
+
+
+@dataclass(slots=True)
+class DocumentPassResult:
+    pages_skipped: int = 0
+    status_counts: dict[DocumentProcessingStatus, int] = field(default_factory=dict)
+
+
+async def run_document_processing_pass(
+    progress: IngestionProgress,
+    targets: list[CrawlTarget],
+    existing_states: dict[str, ExistingDocumentState],
+    failures: list[str],
+) -> DocumentPassResult:
+    """fetch→diff→parse→save 패스.
+
+    대상별로 원본을 가져오고(캐시/네트워크), content_hash로 변경 여부를 가린 뒤
+    변경분만 파싱·저장한다. progress의 카운터를 갱신하고 실패는 failures에 누적한다.
+    """
+    result = DocumentPassResult()
+
+    async def record_processing_progress(item: DocumentProcessingResult) -> None:
+        progress.processed_pages += 1
+        if item.crawled:
+            progress.pages_crawled += 1
+        if item.failure is not None:
+            logger.warning(
+                "crawl document result: processed=%s/%s status=%s "
+                "source_type=%s pages_crawled=%s pages_changed=%s "
+                "url=%s failure=%s",
+                progress.processed_pages,
+                progress.total_pages,
+                item.status.value,
+                item.target.source_type,
+                progress.pages_crawled,
+                progress.pages_changed,
+                item.target.url,
+                item.failure[:500],
+            )
+        else:
+            logger.info(
+                "crawl document result: processed=%s/%s status=%s "
+                "source_type=%s pages_crawled=%s pages_changed=%s url=%s",
+                progress.processed_pages,
+                progress.total_pages,
+                item.status.value,
+                item.target.source_type,
+                progress.pages_crawled,
+                progress.pages_changed,
+                item.target.url,
+            )
+        await progress.update("문서 수집 중")
+
+    async with create_article_markdown_renderer(
+        concurrency=settings.crawl_markdown_concurrency
+    ) as markdown_renderer:
+        document_results = fetch_and_maybe_parse_documents(
+            targets,
+            existing_states,
+            on_result=record_processing_progress,
+            markdown_renderer=markdown_renderer,
+        )
+
+        async for item in document_results:
+            result.status_counts[item.status] = result.status_counts.get(item.status, 0) + 1
+            if item.failure is not None:
+                failures.append(item.failure)
+            if item.status == DocumentProcessingStatus.SKIPPED:
+                result.pages_skipped += 1
+            if item.document is not None:
+                await progress.update("문서 저장 중")
+                await persist_document(progress.connection, item.document)
+                progress.pages_changed += 1
+                logger.info(
+                    "crawl document persisted: changed=%s processed=%s/%s url=%s chunks=%s",
+                    progress.pages_changed,
+                    progress.processed_pages,
+                    progress.total_pages,
+                    item.document.url,
+                    len(item.document.chunks),
+                )
+    logger.info(
+        "crawl ingestion documents completed: processed=%s total=%s "
+        "crawled=%s changed=%s skipped=%s failed=%s",
+        progress.processed_pages,
+        progress.total_pages,
+        progress.pages_crawled,
+        progress.pages_changed,
+        result.pages_skipped,
+        result.status_counts.get(DocumentProcessingStatus.FAILED, 0),
+    )
+    return result
+
+
+async def run_index_pass(progress: IngestionProgress, failures: list[str]) -> bool:
+    """색인 패스. 성공이면 True, 색인 오류/예외면 failures에 기록하고 False."""
+    await progress.update("색인 생성 중")
+    try:
+        index_summary = await index_crawl_documents(progress.connection)
+    except Exception as exc:
+        failures.append(f"indexing: {exc}")
+        logger.exception("crawl indexing failed")
+        return False
+    if index_summary and index_summary.errors:
+        failures.extend(f"indexing: {error}" for error in index_summary.errors)
+        return False
+    return True
+
+
 async def execute_ingestion(
     html_targets: list[CrawlTarget],
     pdf_targets: list[CrawlTarget],
     initial_failures: list[str] | None = None,
 ) -> CrawlStats:
     targets = [*html_targets, *pdf_targets]
-    pages_crawled = 0
-    pages_changed = 0
-    pages_skipped = 0
     failures = list(initial_failures or [])
     logger.info(
         "crawl ingestion starting: total_targets=%s html_targets=%s pdf_targets=%s "
@@ -937,182 +1072,53 @@ async def execute_ingestion(
     try:
         async with pool.acquire() as connection:
             crawl_job_id = await create_crawl_job(connection)
+            progress = IngestionProgress(
+                connection=connection,
+                crawl_job_id=crawl_job_id,
+                total_pages=len(targets),
+            )
             try:
-                total_pages = len(targets)
-                processed_pages = 0
-                pages_crawled = 0
-                pages_changed = 0
-
-                async def update_progress(current_stage: str) -> None:
-                    try:
-                        await update_crawl_job_progress(
-                            connection,
-                            crawl_job_id,
-                            current_stage=current_stage,
-                            total_pages=total_pages,
-                            processed_pages=processed_pages,
-                            pages_crawled=pages_crawled,
-                            pages_changed=pages_changed,
-                        )
-                    except AttributeError:
-                        logger.debug("crawl progress update skipped by connection fake")
-
-                await update_progress("대상 확인 중")
+                await progress.update("대상 확인 중")
                 existing_states = await load_existing_document_states(
                     connection,
                     [target.url for target in targets],
                 )
 
-                async def record_processing_progress(result: DocumentProcessingResult) -> None:
-                    nonlocal processed_pages, pages_crawled
-                    processed_pages += 1
-                    if result.crawled:
-                        pages_crawled += 1
-                    log_context = {
-                        "processed_pages": processed_pages,
-                        "total_pages": total_pages,
-                        "status": result.status.value,
-                        "source_type": result.target.source_type,
-                        "url": result.target.url,
-                        "pages_crawled": pages_crawled,
-                        "pages_changed": pages_changed,
-                    }
-                    if result.failure is not None:
-                        logger.warning(
-                            "crawl document result: processed=%s/%s status=%s "
-                            "source_type=%s pages_crawled=%s pages_changed=%s "
-                            "url=%s failure=%s",
-                            log_context["processed_pages"],
-                            log_context["total_pages"],
-                            log_context["status"],
-                            log_context["source_type"],
-                            log_context["pages_crawled"],
-                            log_context["pages_changed"],
-                            log_context["url"],
-                            result.failure[:500],
-                        )
-                    else:
-                        logger.info(
-                            "crawl document result: processed=%s/%s status=%s "
-                            "source_type=%s pages_crawled=%s pages_changed=%s url=%s",
-                            log_context["processed_pages"],
-                            log_context["total_pages"],
-                            log_context["status"],
-                            log_context["source_type"],
-                            log_context["pages_crawled"],
-                            log_context["pages_changed"],
-                            log_context["url"],
-                        )
-                    await update_progress("문서 수집 중")
-
-                status_counts: dict[DocumentProcessingStatus, int] = {}
-                async with create_article_markdown_renderer(
-                    concurrency=settings.crawl_markdown_concurrency
-                ) as markdown_renderer:
-                    document_results = fetch_and_maybe_parse_documents(
-                        targets,
-                        existing_states,
-                        on_result=record_processing_progress,
-                        markdown_renderer=markdown_renderer,
-                    )
-
-                    async for result in document_results:
-                        status_counts[result.status] = status_counts.get(result.status, 0) + 1
-                        if result.failure is not None:
-                            failures.append(result.failure)
-                        if result.status == DocumentProcessingStatus.SKIPPED:
-                            pages_skipped += 1
-                        if result.document is not None:
-                            await update_progress("문서 저장 중")
-                            await persist_document(connection, result.document)
-                            pages_changed += 1
-                            logger.info(
-                                "crawl document persisted: changed=%s processed=%s/%s "
-                                "url=%s chunks=%s",
-                                pages_changed,
-                                processed_pages,
-                                total_pages,
-                                result.document.url,
-                                len(result.document.chunks),
-                            )
-                logger.info(
-                    "crawl ingestion documents completed: processed=%s total=%s "
-                    "crawled=%s changed=%s skipped=%s failed=%s",
-                    processed_pages,
-                    total_pages,
-                    pages_crawled,
-                    pages_changed,
-                    pages_skipped,
-                    status_counts.get(DocumentProcessingStatus.FAILED, 0),
+                pass_result = await run_document_processing_pass(
+                    progress,
+                    targets,
+                    existing_states,
+                    failures,
                 )
-                await update_progress("색인 생성 중")
 
-                try:
-                    index_summary = await index_crawl_documents(connection)
-                    if index_summary and index_summary.errors:
-                        failures.extend(f"indexing: {error}" for error in index_summary.errors)
-                        await finish_crawl_job(
-                            connection,
-                            crawl_job_id,
-                            status="failed",
-                            pages_crawled=pages_crawled,
-                            pages_changed=pages_changed,
-                            error="\n".join(failures),
-                        )
-                        return CrawlStats(
-                            pages_crawled=pages_crawled,
-                            pages_changed=pages_changed,
-                            pages_skipped=pages_skipped,
-                            status_counts=status_counts,
-                            failures=failures,
-                        )
-                except Exception as exc:
-                    failures.append(f"indexing: {exc}")
-                    logger.exception("crawl indexing failed")
-                    await finish_crawl_job(
-                        connection,
-                        crawl_job_id,
-                        status="failed",
-                        pages_crawled=pages_crawled,
-                        pages_changed=pages_changed,
-                        error="\n".join(failures),
-                    )
-                    return CrawlStats(
-                        pages_crawled=pages_crawled,
-                        pages_changed=pages_changed,
-                        pages_skipped=pages_skipped,
-                        status_counts=status_counts,
-                        failures=failures,
-                    )
-
+                indexing_ok = await run_index_pass(progress, failures)
                 await finish_crawl_job(
                     connection,
                     crawl_job_id,
-                    status="completed",
-                    pages_crawled=pages_crawled,
-                    pages_changed=pages_changed,
+                    status="completed" if indexing_ok else "failed",
+                    pages_crawled=progress.pages_crawled,
+                    pages_changed=progress.pages_changed,
                     error="\n".join(failures) if failures else None,
+                )
+                return CrawlStats(
+                    pages_crawled=progress.pages_crawled,
+                    pages_changed=progress.pages_changed,
+                    pages_skipped=pass_result.pages_skipped,
+                    status_counts=pass_result.status_counts,
+                    failures=failures,
                 )
             except Exception as exc:
                 await finish_crawl_job(
                     connection,
                     crawl_job_id,
                     status="failed",
-                    pages_crawled=pages_crawled,
-                    pages_changed=pages_changed,
+                    pages_crawled=progress.pages_crawled,
+                    pages_changed=progress.pages_changed,
                     error=str(exc),
                 )
                 raise
     finally:
         await pool.close()
-
-    return CrawlStats(
-        pages_crawled=pages_crawled,
-        pages_changed=pages_changed,
-        pages_skipped=pages_skipped,
-        status_counts=status_counts if "status_counts" in locals() else {},
-        failures=failures,
-    )
 
 
 async def run_crawl(progress_callback: ProgressCallback | None = None) -> CrawlStats:
