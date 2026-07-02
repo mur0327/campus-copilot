@@ -93,6 +93,7 @@ services:
     volumes:
       - ./worker:/app
       - ./.data/bm25:/.data/bm25
+      - ./.data/crawl:/.data/crawl
     ulimits:
       nofile:
         soft: 65536
