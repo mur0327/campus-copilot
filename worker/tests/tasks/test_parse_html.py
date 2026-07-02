@@ -10,6 +10,7 @@ from tasks.contracts import CrawlTarget
 from tasks.parsers.graduation_credit import normalize_graduation_credit_table
 from tasks.parsers.html_tables import (
     extract_html_table_chunks,
+    has_board_list_table,
     prefer_structured_html_table_chunks,
 )
 from tasks.parsers.markdown import (
@@ -445,6 +446,28 @@ def test_extract_html_table_chunks_skips_calendar_grid_but_keeps_data_table():
 
     assert len(chunks) == 1
     assert "구분: 1학년" in chunks[0].content
+
+
+def test_has_board_list_table_detects_board_list_and_keeps_data_pages():
+    board_html = """
+    <article class="articleBox">
+      <table>
+        <tr><th>번호</th><th>분류</th><th>제목</th><th>작성자</th><th>조회수</th></tr>
+        <tr><td>30</td><td>대학</td><td>Q: 증명서 발급은?</td><td>양서정</td><td>306</td></tr>
+      </table>
+    </article>
+    """
+    data_html = """
+    <article class="articleBox">
+      <table>
+        <tr><th>구분</th><th>신청학점</th></tr>
+        <tr><td>1학년</td><td>15학점</td></tr>
+      </table>
+    </article>
+    """
+
+    assert has_board_list_table(board_html) is True
+    assert has_board_list_table(data_html) is False
 
 
 def test_normalize_markdown_table_drops_calendar_grid():

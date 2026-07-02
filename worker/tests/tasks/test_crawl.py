@@ -376,20 +376,20 @@ def test_extract_department_sites_skips_external_and_normalizes_relative_links()
     ]
 
 
-def test_extract_article_box_targets_uses_article_links_as_child_targets():
+def test_extract_article_box_targets_uses_read_links_as_child_targets():
     html = """
     <html>
       <body>
         <article class="articleBox">
-          <a href="/AcademicCalendar/main/2026">2026년</a>
-          <a href="/AcademicCalendar/main/2025">2025년</a>
+          <a href="/BachelorNotice/1/read/5266">수강신청 안내</a>
+          <a href="/BachelorNotice/1/read/5265">복학 안내</a>
         </article>
       </body>
     </html>
     """
     parent = CrawlTarget(
-        url="https://www.honam.ac.kr/AcademicCalendar",
-        menu_path="학사일정",
+        url="https://www.honam.ac.kr/BachelorNotice",
+        menu_path="학사공지",
         source_type="html",
         source_scope="general_academic",
         page_kind="academic",
@@ -411,15 +411,15 @@ def test_extract_article_box_targets_uses_article_links_as_child_targets():
     ]
     assert target_summaries == [
         (
-            "학사일정 > 2026년",
-            "https://www.honam.ac.kr/AcademicCalendar/main/2026",
+            "학사공지 > 수강신청 안내",
+            "https://www.honam.ac.kr/BachelorNotice/1/read/5266",
             "general_academic",
             "호남대학교",
             "https://www.honam.ac.kr",
         ),
         (
-            "학사일정 > 2025년",
-            "https://www.honam.ac.kr/AcademicCalendar/main/2025",
+            "학사공지 > 복학 안내",
+            "https://www.honam.ac.kr/BachelorNotice/1/read/5265",
             "general_academic",
             "호남대학교",
             "https://www.honam.ac.kr",
@@ -432,18 +432,17 @@ def test_extract_article_box_targets_skips_download_links():
     <html>
       <body>
         <article class="articleBox">
-          <a href="/AcademicCalendar/main/2026">2026년</a>
+          <a href="/BachelorNotice/1/read/5266">수강신청 안내</a>
+          <a href="/BachelorNotice/1/read/5266/download/1">첨부파일</a>
           <a href="/GraduateGrades/pdfdownload/2025">PDF 다운로드</a>
-          <a href="/BudgetAnnounce/download/865">파일 다운로드</a>
-          <a href="/attach/schoolsong/SchoolSong_20260223.mp4">교가 영상</a>
-          <a href="/img/contents/A01/hnsm_AI.zip">zip 다운로드</a>
+          <a href="/attach/read/SchoolSong_20260223.mp4">교가 영상</a>
         </article>
       </body>
     </html>
     """
     parent = CrawlTarget(
-        url="https://www.honam.ac.kr/GraduateGrades",
-        menu_path="졸업학점",
+        url="https://www.honam.ac.kr/BachelorNotice",
+        menu_path="학사공지",
         source_type="html",
         source_scope="general_academic",
         page_kind="academic",
@@ -452,7 +451,49 @@ def test_extract_article_box_targets_skips_download_links():
     targets = extract_article_box_targets(parent=parent, html=html)
 
     assert [target.url for target in targets] == [
-        "https://www.honam.ac.kr/AcademicCalendar/main/2026"
+        "https://www.honam.ac.kr/BachelorNotice/1/read/5266"
+    ]
+
+
+def test_extract_article_box_targets_keeps_only_read_details():
+    # 연도 탭·카테고리 탭·페이지네이션은 따라가지 않고 1페이지 게시글 상세만 남긴다.
+    html = """
+    <html>
+      <body>
+        <article class="articleBox">
+          <div class="categoryBox">
+            <a href="/FrequentlyQuestions/category589">대학</a>
+          </div>
+          <div class="tabMenuBox2">
+            <ul><li><a href="/AcademicCalendar/main/2025">2025년</a></li></ul>
+          </div>
+          <ul class="subjectRoadmapTab">
+            <li><a href="/SubjectRoadmap2025">2025년</a></li>
+          </ul>
+          <a href="/FrequentlyQuestions/1/read/29">Q: 증명서 발급은 어떻게 하나요?</a>
+          <div class="boardPage">
+            <div class="btn-group">
+              <a href="/FrequentlyQuestions/1" class="btn">1</a>
+              <a href="/FrequentlyQuestions/2" class="btn">2</a>
+              <a href="/FrequentlyQuestions/3" class="btn"><span class="hide">다음 페이지</span></a>
+            </div>
+          </div>
+        </article>
+      </body>
+    </html>
+    """
+    parent = CrawlTarget(
+        url="https://dreamlife.honam.ac.kr/FrequentlyQuestions",
+        menu_path="자주하는질문",
+        source_type="html",
+        source_scope="department",
+        page_kind="academic",
+    )
+
+    targets = extract_article_box_targets(parent=parent, html=html)
+
+    assert [target.url for target in targets] == [
+        "https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/29",
     ]
 
 
@@ -461,16 +502,16 @@ def test_extract_article_box_targets_skips_external_links():
     <html>
       <body>
         <article class="articleBox">
-          <a href="/AcademicCalendar/main/2026">2026년</a>
-          <a href="https://www.work.go.kr/job">외부 취업사이트</a>
-          <a href="https://com.honam.ac.kr/DepartmentOverview">학과 소개</a>
+          <a href="/BachelorNotice/1/read/5266">수강신청 안내</a>
+          <a href="https://www.work.go.kr/job/1/read/3">외부 취업사이트</a>
+          <a href="https://com.honam.ac.kr/DepartmentNotice/1/read/140">학과 공지</a>
         </article>
       </body>
     </html>
     """
     parent = CrawlTarget(
-        url="https://www.honam.ac.kr/AcademicCalendar",
-        menu_path="학사일정",
+        url="https://www.honam.ac.kr/BachelorNotice",
+        menu_path="학사공지",
         source_type="html",
         source_scope="general_academic",
         page_kind="academic",
@@ -479,8 +520,8 @@ def test_extract_article_box_targets_skips_external_links():
     targets = extract_article_box_targets(parent=parent, html=html)
 
     assert [target.url for target in targets] == [
-        "https://www.honam.ac.kr/AcademicCalendar/main/2026",
-        "https://com.honam.ac.kr/DepartmentOverview",
+        "https://www.honam.ac.kr/BachelorNotice/1/read/5266",
+        "https://com.honam.ac.kr/DepartmentNotice/1/read/140",
     ]
 
 
@@ -663,17 +704,17 @@ async def test_discover_html_targets_keeps_article_child_targets(monkeypatch):
     <html>
       <body>
         <ul id="mainMenu">
-          <li><a href="/AcademicCalendar">학사일정</a></li>
+          <li><a href="/BachelorNotice">학사공지</a></li>
         </ul>
       </body>
     </html>
     """
-    calendar_html = """
+    notice_html = """
     <html>
       <body>
         <article class="articleBox">
-          <a href="/AcademicCalendar/main/2026">2026년</a>
-          <a href="/AcademicCalendar/main/2025">2025년</a>
+          <a href="/BachelorNotice/1/read/5266">수강신청 안내</a>
+          <a href="/BachelorNotice/1/read/5265">복학 안내</a>
         </article>
       </body>
     </html>
@@ -682,11 +723,11 @@ async def test_discover_html_targets_keeps_article_child_targets(monkeypatch):
     def fetcher(url: str) -> str:
         if url == "https://www.honam.ac.kr/main":
             return main_html
-        if url == "https://www.honam.ac.kr/AcademicCalendar":
-            return calendar_html
+        if url == "https://www.honam.ac.kr/BachelorNotice":
+            return notice_html
         if url in {
-            "https://www.honam.ac.kr/AcademicCalendar/main/2026",
-            "https://www.honam.ac.kr/AcademicCalendar/main/2025",
+            "https://www.honam.ac.kr/BachelorNotice/1/read/5266",
+            "https://www.honam.ac.kr/BachelorNotice/1/read/5265",
         }:
             return "<html><body><article class='articleBox'>child</article></body></html>"
         raise AssertionError(f"unexpected url: {url}")
@@ -694,9 +735,9 @@ async def test_discover_html_targets_keeps_article_child_targets(monkeypatch):
     targets = await discover_html_targets(fetcher=fetcher)
 
     assert [(target.menu_path, target.url) for target in targets] == [
-        ("학사일정", "https://www.honam.ac.kr/AcademicCalendar"),
-        ("학사일정 > 2026년", "https://www.honam.ac.kr/AcademicCalendar/main/2026"),
-        ("학사일정 > 2025년", "https://www.honam.ac.kr/AcademicCalendar/main/2025"),
+        ("학사공지", "https://www.honam.ac.kr/BachelorNotice"),
+        ("학사공지 > 수강신청 안내", "https://www.honam.ac.kr/BachelorNotice/1/read/5266"),
+        ("학사공지 > 복학 안내", "https://www.honam.ac.kr/BachelorNotice/1/read/5265"),
     ]
 
 
@@ -707,17 +748,17 @@ async def test_discover_html_targets_validates_article_child_targets(monkeypatch
     <html>
       <body>
         <ul id="mainMenu">
-          <li><a href="/AcademicCalendar">학사일정</a></li>
+          <li><a href="/BachelorNotice">학사공지</a></li>
         </ul>
       </body>
     </html>
     """
-    calendar_html = """
+    notice_html = """
     <html>
       <body>
         <article class="articleBox">
-          <a href="/AcademicCalendar/main/2026">2026년</a>
-          <a href="/AcademicCalendar/main/2025">2025년</a>
+          <a href="/BachelorNotice/1/read/5266">수강신청 안내</a>
+          <a href="/BachelorNotice/1/read/5265">이전된 공지</a>
         </article>
       </body>
     </html>
@@ -728,19 +769,19 @@ async def test_discover_html_targets_validates_article_child_targets(monkeypatch
     def fetcher(url: str) -> str:
         if url == "https://www.honam.ac.kr/main":
             return main_html
-        if url == "https://www.honam.ac.kr/AcademicCalendar":
-            return calendar_html
-        if url == "https://www.honam.ac.kr/AcademicCalendar/main/2025":
+        if url == "https://www.honam.ac.kr/BachelorNotice":
+            return notice_html
+        if url == "https://www.honam.ac.kr/BachelorNotice/1/read/5265":
             return moved_html
-        if url == "https://www.honam.ac.kr/AcademicCalendar/main/2026":
+        if url == "https://www.honam.ac.kr/BachelorNotice/1/read/5266":
             return fallback_html
         raise AssertionError(f"unexpected url: {url}")
 
     targets = await discover_html_targets(fetcher=fetcher)
 
     assert [target.url for target in targets] == [
-        "https://www.honam.ac.kr/AcademicCalendar",
-        "https://www.honam.ac.kr/AcademicCalendar/main/2026",
+        "https://www.honam.ac.kr/BachelorNotice",
+        "https://www.honam.ac.kr/BachelorNotice/1/read/5266",
     ]
 
 

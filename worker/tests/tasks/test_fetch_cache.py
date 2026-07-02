@@ -127,6 +127,32 @@ async def test_valid_html_is_cached_after_validation(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_board_list_page_is_not_indexed(monkeypatch):
+    # 게시판 목록 페이지(번호/제목/조회수)는 자식 링크 발견용일 뿐, 문서로 색인하지 않는다.
+    board_html = """
+    <html><body><article class="articleBox">
+      <table>
+        <tr><th>번호</th><th>제목</th><th>조회수</th></tr>
+        <tr><td>30</td><td>Q: 증명서 발급은 어떻게 하나요?</td><td>306</td></tr>
+      </table>
+    </article></body></html>
+    """
+    monkeypatch.setattr(crawl, "fetch_html", lambda url: board_html)
+
+    async def fail_parse_html(*args, **kwargs):
+        raise AssertionError("board list pages must be skipped before parse")
+
+    monkeypatch.setattr(crawl, "parse_html", fail_parse_html)
+
+    result = await crawl.fetch_and_maybe_parse_document(
+        _html_target("https://dreamlife.honam.ac.kr/FrequentlyQuestions"), None
+    )
+
+    assert result.document is None
+    assert result.failure is None
+
+
+@pytest.mark.asyncio
 async def test_unchanged_pdf_is_cached_even_when_parse_is_skipped(tmp_path, monkeypatch):
     monkeypatch.setattr(crawl.settings, "crawl_fetch_cache_dir", str(tmp_path))
     monkeypatch.setattr(crawl.settings, "crawl_fetch_cache_mode", "network")

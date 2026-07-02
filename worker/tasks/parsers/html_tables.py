@@ -71,6 +71,29 @@ def _column_headers(header_rows: list[list[str]], width: int) -> list[str]:
     return headers
 
 
+BOARD_LIST_HEADER_HINTS = ("번호", "조회", "작성자", "작성일")
+
+
+def has_board_list_table(article_html: str) -> bool:
+    """게시판 목록 표(번호/제목/조회수)가 있는 페이지인지 판정한다.
+
+    목록 페이지는 게시글 "제목"만 나열해 사용자 질문과 질문끼리 강하게 매칭되지만
+    답이 없다. 링크 발견(자식 확장)에는 쓰되 문서로 색인하지 않기 위한 판별이다.
+    파싱(crawl4ai) 전에 BS4만으로 싸게 판정할 수 있다.
+    """
+    soup = BeautifulSoup(article_html, "html.parser")
+    for table in soup.select("table"):
+        rows = _expand_html_table(table)
+        if len(rows) < 2:
+            continue
+        headers = _column_headers(rows[: _header_depth(table)], width=len(rows[0]))
+        if any("제목" in header for header in headers) and any(
+            hint in header for header in headers for hint in BOARD_LIST_HEADER_HINTS
+        ):
+            return True
+    return False
+
+
 def extract_html_table_chunks(article_html: str, start_index: int) -> list[ParsedChunk]:
     soup = BeautifulSoup(article_html, "html.parser")
     table_chunks: list[ParsedChunk] = []

@@ -44,6 +44,7 @@ from tasks.parse import (
     parse_html,
     parse_pdf,
 )
+from tasks.parsers.html_tables import has_board_list_table
 from tasks.storage import (
     ExistingDocumentState,
     crawl_advisory_lock,
@@ -284,6 +285,13 @@ def extract_department_sites(
 
 
 def extract_article_box_targets(parent: CrawlTarget, html: str) -> list[CrawlTarget]:
+    """articleBox 자식 링크 중 1페이지의 게시글 상세(/read/)만 대상으로 수집한다.
+
+    연도·카테고리 탭과 페이지네이션은 따라가지 않는다. 현재 연도 페이지는 메뉴가
+    직접 가리키므로 과거 연도 탭은 불필요하고, 게시판은 최신 글이 모이는 1페이지의
+    상세면 충분하다(밀려난 옛 공지는 만료된 마감일 등 오답 위험이 있다).
+    /read/ 경로는 전 호스트(학과 서브도메인·enter 포함) 공통 게시글 상세 패턴이다.
+    """
     soup = BeautifulSoup(html, "html.parser")
     targets: list[CrawlTarget] = []
     for anchor in soup.select(settings.crawl_article_link_selector):
@@ -292,6 +300,8 @@ def extract_article_box_targets(parent: CrawlTarget, html: str) -> list[CrawlTar
             continue
         absolute_url = urljoin(parent.url, href)
         if is_download_url(absolute_url) or not is_honam_url(absolute_url):
+            continue
+        if "/read/" not in urlparse(absolute_url).path:
             continue
 
         label = anchor.get_text(strip=True)
@@ -782,6 +792,10 @@ async def fetch_and_maybe_parse_document(
                 return DocumentProcessingResult(target=target)
             if not from_cache:
                 store_fetched_html(target.url, html)
+            if has_board_list_table(article_html):
+                # 게시판 목록 페이지는 게시글 제목만 나열해 검색 노이즈다.
+                # 자식 링크 발견에는 이미 쓰였으므로 문서로는 색인하지 않는다.
+                return DocumentProcessingResult(target=target)
             content_hash = build_content_hash(article_html, target=target)
             if should_skip_existing_document(existing_state, content_hash):
                 return DocumentProcessingResult(target=target)
