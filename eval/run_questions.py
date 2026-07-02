@@ -235,6 +235,38 @@ def first_gold_rank(items: list[dict[str, Any]], match: GoldMatch | None) -> int
     return None
 
 
+def gold_rank_in_pool(results: list[Any], match: GoldMatch | None) -> int | None:
+    # 후보 풀(semantic/BM25 top-N)에서 gold가 처음 등장한 순위다. 미스 부검용:
+    # "풀에 아예 못 들어옴"과 "풀에는 있는데 병합에서 밀림"을 구분할 수 있게 한다.
+    if match is None or (not match.urls and not match.signatures):
+        return None
+
+    for index, result in enumerate(results, start=1):
+        if content_signature(result.content) in match.signatures:
+            return index
+        if normalize_url(result.url) in match.urls:
+            return index
+    return None
+
+
+def diagnose_miss(record: dict[str, Any], *, k: int = 5) -> str | None:
+    # answerable 미스의 원인을 단계별로 분류한다(부검 자동화).
+    # corpus_missing: gold 문서가 코퍼스에 없음(크롤 커버리지 문제).
+    # pool_miss: semantic/BM25 후보 풀 어느 쪽에도 진입 실패(색인 신호 문제).
+    # merge_loss: 풀에는 있었지만 병합/부스트 후 최종 top-k에서 탈락(랭킹 문제).
+    # ranked_low: 최종 결과에는 있으나 k위 밖.
+    rank = record["gold_rank"]
+    if rank is not None and rank <= k:
+        return None
+    if not record["gold_in_corpus"]:
+        return "corpus_missing"
+    if record["gold_rank_semantic"] is None and record["gold_rank_bm25"] is None:
+        return "pool_miss"
+    if rank is None:
+        return "merge_loss"
+    return "ranked_low"
+
+
 async def build_gold_matches(
     session: Any, gold_sources_by_question: dict[str, list[GoldSource]]
 ) -> dict[str, GoldMatch]:
@@ -302,6 +334,12 @@ def compute_metrics(records: list[dict[str, Any]], *, k: int = 5) -> dict[str, A
         "mrr": round(mrr, 4),
         f"evidence_recall@{k}": round(evidence_recall, 4),
         "misses": sorted(r["id"] for r in answerable if not recalled(r["gold_rank"])),
+        # 미스별 원인 분류. 어느 단계(커버리지/색인/랭킹)를 고쳐야 하는지 바로 보여준다.
+        "miss_diagnosis": {
+            r["id"]: diagnose_miss(r, k=k)
+            for r in sorted(answerable, key=lambda item: item["id"])
+            if not recalled(r["gold_rank"])
+        },
     }
 
 
@@ -407,15 +445,35 @@ async def run() -> None:
         # 병렬화하면 외부 embedding API rate limit과 DB/Chroma 상태 추적이 복잡해져 초기 평가에는 불리하다.
         async with AsyncSessionLocal() as session:
             gold_matches = await build_gold_matches(session, gold_sources_by_question)
+            semantic_top_n = args.semantic_top_n or settings.retriever_semantic_top_n
+            bm25_top_n = args.bm25_top_n or settings.retriever_bm25_top_n
             for question in questions:
                 response = await retriever.retrieve_with_status(
                     session,
                     question=question.question,
                     category=args.retrieval_category,
-                    semantic_top_n=args.semantic_top_n
-                    or settings.retriever_semantic_top_n,
-                    bm25_top_n=args.bm25_top_n or settings.retriever_bm25_top_n,
+                    semantic_top_n=semantic_top_n,
+                    bm25_top_n=bm25_top_n,
                 )
+
+                # 부검용 풀 진단: gold가 각 후보 풀에 들어왔는지 기록한다.
+                # 병합 전 순위가 있어야 미스 원인을 색인/병합/랭킹 단계로 가를 수 있다.
+                gold_match = gold_matches.get(question.id)
+                try:
+                    semantic_pool = await retriever.search_chroma(
+                        session,
+                        question.question,
+                        args.retrieval_category,
+                        semantic_top_n,
+                    )
+                except Exception:
+                    # semantic 열화 시에도 평가는 계속한다(상태는 retrieval_status에 이미 기록).
+                    semantic_pool = []
+                bm25_pool = (
+                    await retriever.ensure_bm25_index(session, args.retrieval_category)
+                ).search(question.question, bm25_top_n)
+                gold_rank_semantic = gold_rank_in_pool(semantic_pool, gold_match)
+                gold_rank_bm25 = gold_rank_in_pool(bm25_pool, gold_match)
 
                 # retrieved: retriever가 반환한 최종 top-k 후보 항목이다.
                 # evidence_candidates: 답변 생성 프롬프트에 포함되도록 필터링/그룹핑한 후보 항목이다.
@@ -430,7 +488,6 @@ async def run() -> None:
                     evidence_item(candidate) for candidate in evidence_candidates
                 ]
                 gold_sources = gold_sources_by_question.get(question.id, [])
-                gold_match = gold_matches.get(question.id)
                 top_gold_rank = first_gold_rank(retrieved, gold_match)
                 evidence_with_rank = [
                     {"rank": index + 1, **item} for index, item in enumerate(evidence)
@@ -443,8 +500,12 @@ async def run() -> None:
                         "has_gold": bool(
                             gold_match and (gold_match.urls or gold_match.signatures)
                         ),
+                        # 시그니처가 비면 gold 문서가 코퍼스에 없다(라벨만 존재).
+                        "gold_in_corpus": bool(gold_match and gold_match.signatures),
                         "gold_rank": top_gold_rank,
                         "gold_rank_evidence": evidence_gold_rank,
+                        "gold_rank_semantic": gold_rank_semantic,
+                        "gold_rank_bm25": gold_rank_bm25,
                     }
                 )
                 payload = {
@@ -462,6 +523,9 @@ async def run() -> None:
                     "gold_hit_top_rank": top_gold_rank,
                     "gold_hit_evidence": evidence_gold_rank is not None,
                     "gold_hit_evidence_rank": evidence_gold_rank,
+                    "gold_in_corpus": bool(gold_match and gold_match.signatures),
+                    "gold_rank_semantic_pool": gold_rank_semantic,
+                    "gold_rank_bm25_pool": gold_rank_bm25,
                     "expected_answerability": question.answerability,
                     "needs_procedure": question.needs_procedure,
                     "expected_keywords": question.expected_keywords,
@@ -503,6 +567,9 @@ async def run() -> None:
                         "gold_hit_top_rank": top_gold_rank or "",
                         "gold_hit_evidence": evidence_gold_rank is not None,
                         "gold_hit_evidence_rank": evidence_gold_rank or "",
+                        "gold_in_corpus": bool(gold_match and gold_match.signatures),
+                        "gold_rank_semantic_pool": gold_rank_semantic or "",
+                        "gold_rank_bm25_pool": gold_rank_bm25 or "",
                         "top_urls": pipe_join(item["url"] for item in retrieved),
                         "evidence_urls": pipe_join(item["url"] for item in evidence),
                         "top_titles": pipe_join(item["title"] for item in retrieved),
