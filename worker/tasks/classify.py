@@ -27,6 +27,11 @@ def infer_page_kind(
     url: str,
     menu_path: str | None = None,
 ) -> PageKind:
+    # 게시글 상세(/read/)는 주제와 무관하게 notice로 분류한다. 게시글은 시한부 소식이라
+    # 제도·절차 질문의 정답이 아니며, 검색이 안내 페이지와 구분할 수 있어야 한다.
+    # (수집 규칙과 동형: articleBox 자식 확장이 /read/ 상세만 수집한다.)
+    if "/read/" in urlparse(url).path:
+        return "notice"
     text = f"{url} {menu_path or ''}".casefold()
     is_transport_guide = any(
         keyword in text

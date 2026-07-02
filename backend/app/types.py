@@ -12,5 +12,6 @@ PageKind = Literal[
     "schedule",
     "certificate",
     "contact",
+    "notice",
     "unknown",
 ]

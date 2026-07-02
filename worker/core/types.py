@@ -12,6 +12,7 @@ PageKind = Literal[
     "schedule",
     "certificate",
     "contact",
+    "notice",
     "unknown",
 ]
 SourceType = Literal["html", "pdf"]

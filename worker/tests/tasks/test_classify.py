@@ -111,3 +111,26 @@ def test_infer_page_kind_classifies_document_function_independently_from_source(
     assert (
         infer_page_kind(url="https://com.honam.ac.kr/SiteMap", menu_path="사이트맵") == "academic"
     )
+
+
+def test_infer_page_kind_marks_read_details_as_notice_regardless_of_topic():
+    # 게시글 상세는 menu_path에 학사일정·증명 같은 주제어가 있어도 notice가 우선이다.
+    assert (
+        infer_page_kind(
+            url="https://www.honam.ac.kr/BachelorNotice/1/read/5266",
+            menu_path="학사공지 > 2026-1학기 수강신청 안내",
+        )
+        == "notice"
+    )
+    assert (
+        infer_page_kind(
+            url="https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/22",
+            menu_path="자주하는질문 > 휴학 신청",
+        )
+        == "notice"
+    )
+    # 안내 페이지는 기존 분류를 유지한다.
+    assert (
+        infer_page_kind(url="https://www.honam.ac.kr/AcademicCalendar", menu_path="학사일정")
+        == "schedule"
+    )
