@@ -52,12 +52,10 @@ def test_infer_page_kind_classifies_document_function_independently_from_source(
         == "academic"
     )
     assert (
-        infer_page_kind(url="https://enter.honam.ac.kr/faq/1", menu_path="입학 FAQ")
-        == "admission"
+        infer_page_kind(url="https://enter.honam.ac.kr/faq/1", menu_path="입학 FAQ") == "admission"
     )
     assert (
-        infer_page_kind(url="https://www.honam.ac.kr/Schedule", menu_path="학사일정")
-        == "schedule"
+        infer_page_kind(url="https://www.honam.ac.kr/Schedule", menu_path="학사일정") == "schedule"
     )
     assert (
         infer_page_kind(
@@ -111,6 +109,5 @@ def test_infer_page_kind_classifies_document_function_independently_from_source(
         == "academic"
     )
     assert (
-        infer_page_kind(url="https://com.honam.ac.kr/SiteMap", menu_path="사이트맵")
-        == "academic"
+        infer_page_kind(url="https://com.honam.ac.kr/SiteMap", menu_path="사이트맵") == "academic"
     )

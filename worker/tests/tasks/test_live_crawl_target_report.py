@@ -233,13 +233,9 @@ def test_build_summary_rows_includes_zero_count_metadata_values() -> None:
         ]
     )
 
-    source_scope_rows = [
-        row for row in rows if row["group_type"] == "source_scope"
-    ]
+    source_scope_rows = [row for row in rows if row["group_type"] == "source_scope"]
     page_kind_rows = [row for row in rows if row["group_type"] == "page_kind"]
-    pair_rows = [
-        row for row in rows if row["group_type"] == "source_scope_page_kind"
-    ]
+    pair_rows = [row for row in rows if row["group_type"] == "source_scope_page_kind"]
 
     assert {row["source_scope"] for row in source_scope_rows} == set(get_args(SourceScope))
     assert {row["page_kind"] for row in page_kind_rows} == set(get_args(PageKind))
@@ -266,9 +262,7 @@ async def test_live_write_crawl_target_report(pytestconfig: pytest.Config) -> No
     )
 
     if os.getenv("RUN_LIVE_CRAWL_TARGET_REPORT") != "1":
-        pytest.skip(
-            "live crawl target report is opt-in; set RUN_LIVE_CRAWL_TARGET_REPORT=1"
-        )
+        pytest.skip("live crawl target report is opt-in; set RUN_LIVE_CRAWL_TARGET_REPORT=1")
 
     mode = pytestconfig.getoption("--mode")
     if mode not in {"fast", "full"}:
@@ -385,8 +379,7 @@ async def test_live_write_crawl_target_report(pytestconfig: pytest.Config) -> No
             cache_hits += 1
             if verbose_fetch:
                 print(
-                    f"[{elapsed():7.2f}s] cache hit #{cache_hits:04d} "
-                    f"{_phase_for_url(url)}: {url}",
+                    f"[{elapsed():7.2f}s] cache hit #{cache_hits:04d} {_phase_for_url(url)}: {url}",
                     flush=True,
                 )
             html = cache_path.read_text(encoding="utf-8")
@@ -398,8 +391,7 @@ async def test_live_write_crawl_target_report(pytestconfig: pytest.Config) -> No
         current_request = request_count
         if verbose_fetch:
             print(
-                f"[{elapsed():7.2f}s] fetch #{current_request:04d} "
-                f"{_phase_for_url(url)}: {url}",
+                f"[{elapsed():7.2f}s] fetch #{current_request:04d} {_phase_for_url(url)}: {url}",
                 flush=True,
             )
 

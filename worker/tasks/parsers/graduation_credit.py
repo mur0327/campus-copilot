@@ -15,9 +15,8 @@ GRADUATION_CREDIT_SUBHEADERS = {"핵심교양", "균형교양", "소양교양", 
 
 
 def is_graduation_credit_target(target: CrawlTarget) -> bool:
-    return (
-        target.source_type == "pdf"
-        and ("졸업학점" in target.menu_path or "GraduateGrades" in target.url)
+    return target.source_type == "pdf" and (
+        "졸업학점" in target.menu_path or "GraduateGrades" in target.url
     )
 
 

@@ -92,8 +92,7 @@ class MetadataRefreshSummary:
 
 def build_seed_source_scope_by_host() -> dict[str, SourceScope]:
     return {
-        urlparse(seed.url).hostname or "": seed.source_scope
-        for seed in settings.crawl_seed_sites
+        urlparse(seed.url).hostname or "": seed.source_scope for seed in settings.crawl_seed_sites
     }
 
 

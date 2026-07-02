@@ -62,27 +62,29 @@ def infer_page_kind(
         and not is_license_course
     ):
         return "certificate"
-    if any(
-        keyword in text
-        for keyword in (
-            "연락처",
-            "전화번호",
-            "오시는 길",
-            "오시는길",
-            "찾아오시는 길",
-            "찾아오시는길",
-            "캠퍼스맵",
-            "campusmap",
-            "campus_map",
-            "contact",
-            "directions",
-            "location",
+    if (
+        any(
+            keyword in text
+            for keyword in (
+                "연락처",
+                "전화번호",
+                "오시는 길",
+                "오시는길",
+                "찾아오시는 길",
+                "찾아오시는길",
+                "캠퍼스맵",
+                "campusmap",
+                "campus_map",
+                "contact",
+                "directions",
+                "location",
+            )
         )
-    ) and not is_transport_location:
+        and not is_transport_location
+    ):
         return "contact"
     if (
-        ("입학" in text or "admission" in text or "enter.honam.ac.kr" in text)
-        and not is_academic_year_reference
-    ):
+        "입학" in text or "admission" in text or "enter.honam.ac.kr" in text
+    ) and not is_academic_year_reference:
         return "admission"
     return "academic"

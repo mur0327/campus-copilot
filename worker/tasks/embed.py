@@ -143,11 +143,7 @@ async def prune_orphan_vectors(connection, collection) -> int:
     rows = await connection.fetch(ACTIVE_CHROMA_IDS_SQL)
     active_ids = {row["chroma_id"] for row in rows}
     existing = collection.get(include=[])
-    orphan_ids = [
-        chroma_id
-        for chroma_id in existing.get("ids", [])
-        if chroma_id not in active_ids
-    ]
+    orphan_ids = [chroma_id for chroma_id in existing.get("ids", []) if chroma_id not in active_ids]
     if orphan_ids:
         collection.delete(ids=orphan_ids)
     return len(orphan_ids)

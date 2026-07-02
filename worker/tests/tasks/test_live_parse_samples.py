@@ -39,8 +39,7 @@ def _print_document_summary(label: str, document) -> None:
 
     for chunk in document.chunks[:5]:
         print(
-            f"chunk #{chunk.chunk_index:03d} type={chunk.chunk_type} "
-            f"meta={chunk.meta}",
+            f"chunk #{chunk.chunk_index:03d} type={chunk.chunk_type} meta={chunk.meta}",
             flush=True,
         )
         print(_preview(chunk.content), flush=True)
@@ -50,8 +49,7 @@ def _print_document_summary(label: str, document) -> None:
     ]
     for chunk in derived_chunks[:3]:
         print(
-            f"derived chunk #{chunk.chunk_index:03d} type={chunk.chunk_type} "
-            f"meta={chunk.meta}",
+            f"derived chunk #{chunk.chunk_index:03d} type={chunk.chunk_type} meta={chunk.meta}",
             flush=True,
         )
         print(chunk.content, flush=True)
@@ -90,8 +88,8 @@ async def test_live_parse_representative_html_and_pdf_samples() -> None:
                 url="https://www.honam.ac.kr/AcademicCalendar",
                 menu_path="학사일정",
                 source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+                source_scope="general_academic",
+                page_kind="academic",
                 site_name="호남대학교",
                 site_url="https://www.honam.ac.kr",
             ),
@@ -102,8 +100,8 @@ async def test_live_parse_representative_html_and_pdf_samples() -> None:
                 url="https://www.honam.ac.kr/ClassLessonApply",
                 menu_path="수강신청",
                 source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+                source_scope="general_academic",
+                page_kind="academic",
                 site_name="호남대학교",
                 site_url="https://www.honam.ac.kr",
             ),
@@ -114,8 +112,8 @@ async def test_live_parse_representative_html_and_pdf_samples() -> None:
                 url="https://com.honam.ac.kr/SubjectRoadmap2026",
                 menu_path="컴퓨터공학과 > 교과목로드맵 2026",
                 source_type="html",
-        source_scope="general_academic",
-        page_kind="academic",
+                source_scope="general_academic",
+                page_kind="academic",
                 site_name="컴퓨터공학과",
                 site_url="https://com.honam.ac.kr",
             ),

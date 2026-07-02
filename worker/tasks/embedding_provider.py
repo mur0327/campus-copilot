@@ -10,8 +10,7 @@ VOYAGE_RETRY_DELAYS_SECONDS = (0.5, 1.0)
 
 
 class VoyageClient(Protocol):
-    def embed(self, texts: list[str], *, model: str, input_type: str):
-        ...
+    def embed(self, texts: list[str], *, model: str, input_type: str): ...
 
 
 class VoyageEmbedder:

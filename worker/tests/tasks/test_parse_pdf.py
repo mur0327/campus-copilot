@@ -13,9 +13,7 @@ async def test_parse_pdf_preserves_chunk_order_within_page():
         return [
             Document(
                 page_content=(
-                    "서론 문장입니다.\n\n"
-                    "|구분|학점|\n|---|---|\n|총계|130|\n\n"
-                    "결론 문장입니다."
+                    "서론 문장입니다.\n\n|구분|학점|\n|---|---|\n|총계|130|\n\n결론 문장입니다."
                 ),
                 metadata={"page": 1},
             )
@@ -62,10 +60,7 @@ async def test_parse_pdf_preserves_page_metadata_across_pages():
                 metadata={"page": 1},
             ),
             Document(
-                page_content=(
-                    "2페이지 시작입니다.\n\n"
-                    "|구분|학점|\n|---|---|\n|총계|130|"
-                ),
+                page_content=("2페이지 시작입니다.\n\n|구분|학점|\n|---|---|\n|총계|130|"),
                 metadata={"page": 2},
             ),
         ]
@@ -153,8 +148,7 @@ async def test_parse_graduation_credit_pdf_expands_multi_level_headers_and_merge
         return [
             Document(
                 page_content=(
-                    header +
-                    "|---|---|---|---|---|---|---|---|---|\n"
+                    header + "|---|---|---|---|---|---|---|---|---|\n"
                     "|||핵심 교양|균형 교양|소양 교양|소계|전공선택|||\n"
                     "|사회 경영 대학|경영학부<br><br>경영학전공 무역학전공|12|9|9|30|60|30|120|\n"
                     "||관광경영학과|12|9|9|30|60|30|120|\n"

@@ -96,10 +96,7 @@ async def test_live_discover_crawl_urls() -> None:
     displayed_html_targets = html_targets if limit <= 0 else html_targets[:limit]
     print("\n=== html urls ===")
     for index, target in enumerate(displayed_html_targets, start=1):
-        print(
-            f"{index:04d} | {target.site_name or '-'} | "
-            f"{target.menu_path} | {target.url}"
-        )
+        print(f"{index:04d} | {target.site_name or '-'} | {target.menu_path} | {target.url}")
     if limit > 0 and len(html_targets) > limit:
         print(f"... omitted {len(html_targets) - limit} html urls; set LIVE_CRAWL_URL_LIMIT=0")
 
