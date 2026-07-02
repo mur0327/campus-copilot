@@ -124,15 +124,24 @@ def test_tokenize_korean_light_keeps_hangul_and_numbers():
 
 def test_bm25_index_returns_matching_chunk_first():
     first = make_result("휴학 신청은 포털에서 진행합니다.")
-    second = first.model_copy(update={"chunk_id": uuid4(), "content": "장학금 안내입니다."})
+    second = first.model_copy(update={"chunk_id": uuid4(), "content": "장학금 안내입니다.", "title": "장학금"})
 
     index = BM25Index([first, second])
 
     assert index.search("휴학 신청", top_n=1)[0].chunk_id == first.chunk_id
 
 
+def test_bm25_index_fallback_corpus_includes_title_tokens():
+    # 본문에 질의어가 없어도 제목("휴학")으로 찾을 수 있어야 한다(worker 색인 규칙과 동일).
+    result = make_result("포털에서 신청서를 제출합니다.").model_copy(update={"title": "휴학"})
+
+    index = BM25Index([result])
+
+    assert index.search("휴학", top_n=1)[0].chunk_id == result.chunk_id
+
+
 def test_bm25_index_with_punctuation_only_content_returns_empty_results():
-    index = BM25Index([make_result("!!!")])
+    index = BM25Index([make_result("!!!").model_copy(update={"title": None})])
 
     assert index.search("휴학 신청", top_n=1) == []
 
@@ -361,6 +370,45 @@ def test_intent_boost_promotes_contact_page_for_contact_question():
     )
 
     assert merged[0].url.endswith("CamPhNum")
+
+
+def test_title_boost_promotes_matching_title_over_department_notice():
+    # 질의 핵심어("휴학")가 제목에 들어간 안내 페이지가, 제목이 무관한
+    # 학과 공지 상세보다 위로 올라와야 한다(recall-bound 미스의 주 패턴).
+    guide = make_result("휴학 절차 안내 본문", page_kind="academic").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.30,
+            "title": "일반휴학",
+            "url": "https://www.honam.ac.kr/General_Rest",
+        }
+    )
+    notice = make_result("휴학 관련 언급이 있는 공지", page_kind="academic").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.33,
+            "title": "2026학년도 행사 안내",
+            "url": "https://sw.honam.ac.kr/DepartmentNotice/1/read/1",
+        }
+    )
+
+    merged = merge_ranked_results([guide, notice], [], 1.0, 0.0, 6, question="휴학 신청은 어떻게 하나요?")
+
+    assert merged[0].url == "https://www.honam.ac.kr/General_Rest"
+
+
+def test_title_boost_ignores_results_without_title():
+    # 제목이 없거나 질의 핵심어가 제목에 없으면 점수를 바꾸지 않는다.
+    untitled = make_result("본문", page_kind="academic").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.5, "title": None}
+    )
+
+    merged = merge_ranked_results([untitled], [], 1.0, 0.0, 6, question="휴학 신청은 어떻게 하나요?")
+
+    # intent boost(procedure→general_academic 소프트 우대)만 적용된 값이어야 한다.
+    assert merged[0].score == pytest.approx(0.5 * 1.1)
 
 
 def test_intent_boost_is_skipped_without_question():

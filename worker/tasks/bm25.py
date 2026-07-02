@@ -45,6 +45,12 @@ def tokenize_korean_light(text: str) -> list[str]:
     return [token.lower() for token in TOKEN_RE.findall(text)]
 
 
+def bm25_index_text(title: str | None, content: str) -> str:
+    # 제목은 문서 주제를 가장 압축한 신호라 chunk 본문과 함께 색인한다.
+    # (backend retriever의 BM25Index 폴백 경로와 같은 규칙을 유지할 것.)
+    return f"{title} {content}" if title else content
+
+
 def build_bm25_cache_path(cache_dir: str | Path, category: str | None) -> Path:
     category_key = category if category is not None else "_all"
     digest = sha256(category_key.encode("utf-8")).hexdigest()[:16]
@@ -76,7 +82,10 @@ def _write_bm25_index(
     rows: list[object],
 ) -> None:
     records = [_row_to_record(row) for row in rows]
-    corpus = [tokenize_korean_light(record["content"]) for record in records]
+    corpus = [
+        tokenize_korean_light(bm25_index_text(record["title"], record["content"]))
+        for record in records
+    ]
     index = BM25Okapi(corpus) if any(corpus) else None
     cache_path = build_bm25_cache_path(cache_dir, category)
     with cache_path.open("wb") as cache_file:

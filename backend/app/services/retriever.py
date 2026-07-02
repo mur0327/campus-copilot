@@ -223,7 +223,15 @@ class BM25Index:
         index: BM25Okapi | None = None,
     ) -> None:
         self.results = results
-        self.corpus = corpus if corpus is not None else [tokenize_korean_light(result.content) for result in results]
+        # 폴백 코퍼스도 worker의 bm25_index_text와 같은 규칙(제목+본문)으로 만든다.
+        self.corpus = (
+            corpus
+            if corpus is not None
+            else [
+                tokenize_korean_light(f"{result.title} {result.content}" if result.title else result.content)
+                for result in results
+            ]
+        )
         self.index = index if index is not None else BM25Okapi(self.corpus) if any(self.corpus) else None
 
     def search(self, query: str, top_n: int) -> list[RetrievalResult]:
@@ -307,6 +315,7 @@ def merge_ranked_results(
 RANK_FACTOR_BOOST = 1.15
 RANK_FACTOR_SOFT_BOOST = 1.1
 RANK_FACTOR_CONTACT_BOOST = 1.2
+RANK_FACTOR_TITLE_BOOST = 1.2
 RANK_FACTOR_SOFT_PENALTY = 0.9
 RANK_FACTOR_STRONG_PENALTY = 0.7
 RANK_FACTOR_MIN = 0.7
@@ -319,10 +328,24 @@ DEPARTMENT_BOARD_MARKERS = ("FrequentlyQuestions", "DepartmentNotice", "Departme
 def apply_intent_boost(results: list[RetrievalResult], question: str) -> list[RetrievalResult]:
     intent = classify_question_intent(question)
     certificate_query = "증명서" in question
-    return [
-        result.model_copy(update={"score": round(result.score * _intent_factor(result, intent, certificate_query), 6)})
-        for result in results
-    ]
+    query_keywords = normalize_query_keywords(question)
+    boosted: list[RetrievalResult] = []
+    for result in results:
+        factor = _intent_factor(result, intent, certificate_query) * _title_factor(result, query_keywords)
+        factor = min(max(factor, RANK_FACTOR_MIN), RANK_FACTOR_MAX)
+        boosted.append(result.model_copy(update={"score": round(result.score * factor, 6)}))
+    return boosted
+
+
+def _title_factor(result: RetrievalResult, query_keywords: set[str]) -> float:
+    # 제목은 문서 주제를 가장 압축한 신호다. "휴학" 질의에 제목 "일반휴학"처럼
+    # 질의 핵심어가 제목에 부분 문자열로 들어가면 우대한다(BM25 통 토큰 매칭의 빈틈 보완).
+    title = (result.title or "").strip()
+    if not title or not query_keywords:
+        return 1.0
+    if any(keyword in title for keyword in query_keywords):
+        return RANK_FACTOR_TITLE_BOOST
+    return 1.0
 
 
 def _intent_factor(result: RetrievalResult, intent: str, certificate_query: bool) -> float:

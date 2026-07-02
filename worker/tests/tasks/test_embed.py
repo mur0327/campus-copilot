@@ -182,6 +182,10 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
         all_payload = pickle.load(cache_file)
 
     assert len(all_payload["records"]) == summary.chunks_seen
+    # 제목 토큰도 corpus에 들어가야 "휴학" 질의가 제목만 맞는 chunk도 찾는다.
+    assert "휴학" in all_payload["corpus"][0]
+    # 표시용 content에는 제목을 덧붙이지 않는다.
+    assert all_payload["records"][0]["content"] == "휴학 신청은 포털에서 진행합니다."
     assert len(all_payload["corpus"]) == summary.chunks_seen
     all_chunk_ids = [record["chunk_id"] for record in all_payload["records"]]
     assert len(all_chunk_ids) == len(set(all_chunk_ids))
