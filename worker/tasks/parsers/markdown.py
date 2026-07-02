@@ -13,6 +13,7 @@ from tasks.parsers.graduation_credit import (
     normalize_graduation_credit_table,
 )
 from tasks.parsers.table_core import (
+    is_calendar_table,
     is_markdown_separator_row,
     markdown_table_row,
     normalize_table_rows,
@@ -55,7 +56,8 @@ def split_markdown_ordered_blocks(markdown: str) -> list[tuple[str, str]]:
 def normalize_markdown_table(
     block_content: str,
     target: CrawlTarget | None = None,
-) -> tuple[str, dict[str, object]]:
+) -> tuple[str, dict[str, object]] | None:
+    """markdown 표 블록을 정규화한다. 달력 그리드면 None을 반환해 chunk 생성을 막는다."""
     rows = [
         row
         for row in (markdown_table_row(line) for line in block_content.splitlines())
@@ -66,6 +68,11 @@ def normalize_markdown_table(
 
     if target is not None and is_graduation_credit_target(target):
         return normalize_graduation_credit_table(rows)
+
+    if is_calendar_table(rows[0], rows[1:]):
+        # crawl4ai markdown으로 넘어온 달력도 HTML 경로와 같은 기준으로 걸러야
+        # 그리드 노이즈가 남지 않고 표 병합 순서도 어긋나지 않는다.
+        return None
 
     return normalize_table_rows(rows)
 
@@ -106,7 +113,10 @@ def markdown_blocks_to_chunks(markdown: str) -> list[ParsedChunk]:
                 chunks.append(text_chunk)
             continue
 
-        normalized_content, normalized_meta = normalize_markdown_table(block_content)
+        normalized = normalize_markdown_table(block_content)
+        if normalized is None:
+            continue
+        normalized_content, normalized_meta = normalized
         chunks.append(
             ParsedChunk(
                 chunk_index=len(chunks),

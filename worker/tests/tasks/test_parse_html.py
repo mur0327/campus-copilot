@@ -12,7 +12,12 @@ from tasks.parsers.html_tables import (
     extract_html_table_chunks,
     prefer_structured_html_table_chunks,
 )
-from tasks.parsers.markdown import markdown_to_text_chunks, split_markdown_ordered_blocks
+from tasks.parsers.markdown import (
+    markdown_blocks_to_chunks,
+    markdown_to_text_chunks,
+    normalize_markdown_table,
+    split_markdown_ordered_blocks,
+)
 from tasks.parsers.roadmap import build_semester_roadmap_chunks
 
 
@@ -440,6 +445,47 @@ def test_extract_html_table_chunks_skips_calendar_grid_but_keeps_data_table():
 
     assert len(chunks) == 1
     assert "구분: 1학년" in chunks[0].content
+
+
+def test_normalize_markdown_table_drops_calendar_grid():
+    # 실제 학사일정 페이지는 crawl4ai markdown 경로로도 달력이 들어온다.
+    # HTML 경로와 같은 기준으로 걸러야 그리드 노이즈 chunk가 남지 않는다.
+    calendar_block = "\n".join(
+        [
+            "| S | M | T | W | T | F | S |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+            "|  |  |  |  | 1 | 2 | 3 |",
+            "| 4 | 5 | 6 | 7 | 8 | 9 | 10 |",
+        ]
+    )
+
+    assert normalize_markdown_table(calendar_block) is None
+
+
+def test_markdown_blocks_to_chunks_skips_calendar_but_keeps_data_table():
+    markdown = "\n".join(
+        [
+            "## 학사일정",
+            "",
+            "| S | M | T | W | T | F | S |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+            "| 4 | 5 | 6 | 7 | 8 | 9 | 10 |",
+            "",
+            "* 12-29 ~ 01-16 동계 계절수업",
+            "",
+            "| 구분 | 신청학점 |",
+            "| --- | --- |",
+            "| 1학년 | 15학점 |",
+        ]
+    )
+
+    chunks = markdown_blocks_to_chunks(markdown)
+
+    table_chunks = [chunk for chunk in chunks if chunk.chunk_type == "table"]
+    assert len(table_chunks) == 1
+    assert "구분: 1학년" in table_chunks[0].content
+    # 달력이 빠져도 텍스트(실제 일정 목록)는 남는다.
+    assert any("동계 계절수업" in chunk.content for chunk in chunks)
 
 
 def test_build_semester_roadmap_chunks_groups_records_by_grade_and_semester():

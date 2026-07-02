@@ -31,7 +31,7 @@ from tasks.parsers.markdown import (
 from tasks.parsers.roadmap import build_semester_roadmap_chunks
 
 MarkdownRenderer = Callable[[str], Awaitable[str]]
-PARSER_VERSION = "phase2-parser-v3"
+PARSER_VERSION = "phase2-parser-v4"
 logger = logging.getLogger(__name__)
 
 
@@ -271,10 +271,13 @@ async def parse_pdf(
                     chunk_index += 1
                 continue
 
-            normalized_content, normalized_meta = normalize_markdown_table(
+            normalized = normalize_markdown_table(
                 block_content,
                 target=target,
             )
+            if normalized is None:
+                continue
+            normalized_content, normalized_meta = normalized
             chunks.append(
                 ParsedChunk(
                     chunk_index=chunk_index,
