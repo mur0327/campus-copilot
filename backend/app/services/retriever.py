@@ -309,7 +309,9 @@ def merge_ranked_results(
         ),
         reverse=True,
     )
-    return _dedup_ranked_results(ranked)[:final_top_k]
+    # 같은 문서의 청크들이 top-k 슬롯을 여러 개 차지하면 다른 문서가 밀려난다.
+    # 문서당 최고 청크 1개만 남겨 top-k를 서로 다른 문서로 채운다.
+    return _dedup_by_document(_dedup_ranked_results(ranked))[:final_top_k]
 
 
 # 곱셈 boost 계수. 1 근처의 보수적 값으로 동점 구간만 부드럽게 재정렬한다.
@@ -324,7 +326,6 @@ RANK_FACTOR_MIN = 0.7
 RANK_FACTOR_MAX = 1.4
 PHONE_RE = re.compile(r"\d{2,4}-\d{3,4}-\d{4}")
 DEPARTMENT_CURRICULUM_MARKER = "DepartmentCurriculum"
-DEPARTMENT_BOARD_MARKERS = ("FrequentlyQuestions", "DepartmentNotice", "DepartmentNews")
 
 
 def apply_intent_boost(results: list[RetrievalResult], question: str) -> list[RetrievalResult]:
@@ -374,14 +375,28 @@ def _intent_factor(result: RetrievalResult, intent: str, certificate_query: bool
     if certificate_query and kind == "certificate":
         factor *= RANK_FACTOR_BOOST
 
-    # 일반 학사 질의는 대표 사이트를 약하게 우대하고 학과 게시판/FAQ는 약하게 낮춘다.
-    if intent in {"procedure", "factual"}:
-        if result.source_scope == "general_academic":
-            factor *= RANK_FACTOR_SOFT_BOOST
-        if any(marker in url for marker in DEPARTMENT_BOARD_MARKERS):
-            factor *= RANK_FACTOR_SOFT_PENALTY
+    # 일반 학사 질의는 대표 사이트를 약하게 우대한다.
+    if intent in {"procedure", "factual"} and result.source_scope == "general_academic":
+        factor *= RANK_FACTOR_SOFT_BOOST
+
+    # 게시글(notice)은 시한부 소식이라 제도·기간·연락처 질문의 정답이 아니다.
+    # 의도와 무관하게 약하게 낮춰 안내 페이지가 동점 구간에서 앞서게 한다.
+    if kind == "notice":
+        factor *= RANK_FACTOR_SOFT_PENALTY
 
     return min(max(factor, RANK_FACTOR_MIN), RANK_FACTOR_MAX)
+
+
+def _dedup_by_document(results: list[RetrievalResult]) -> list[RetrievalResult]:
+    # 입력이 점수 내림차순이므로 문서별 첫 항목이 대표(최고 점수 청크)로 남는다.
+    seen: set[UUID] = set()
+    deduped: list[RetrievalResult] = []
+    for result in results:
+        if result.document_id in seen:
+            continue
+        seen.add(result.document_id)
+        deduped.append(result)
+    return deduped
 
 
 def _dedup_ranked_results(results: list[RetrievalResult]) -> list[RetrievalResult]:

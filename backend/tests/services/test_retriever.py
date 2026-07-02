@@ -418,6 +418,57 @@ def test_title_boost_ignores_results_without_title():
     assert merged[0].score == pytest.approx(0.5 * 1.1)
 
 
+def test_notice_penalty_applies_to_contact_and_deadline_intents():
+    # 게시글(notice)은 의도와 무관하게 약하게 낮아져, 근소 우위여도 안내 페이지에 밀린다.
+    notice = make_result("휴학 문의는 학과 사무실로 062-940-0000", page_kind="notice").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.40,
+            "title": "학과공지",
+            "url": "https://inc.honam.ac.kr/DepartmentNotice/1/read/2369",
+        }
+    )
+    contact_page = make_result("학사지원과 062-940-5555 휴학 문의", page_kind="contact").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.38,
+            "title": "부서 전화번호",
+            "url": "https://www.honam.ac.kr/CamPhNum",
+        }
+    )
+
+    merged = merge_ranked_results(
+        [notice, contact_page], [], 1.0, 0.0, 6, question="휴학 관련 문의는 어느 부서에 해야 하나요?"
+    )
+
+    assert merged[0].url == "https://www.honam.ac.kr/CamPhNum"
+
+
+def test_merge_keeps_one_chunk_per_document_in_final_top_k():
+    # 같은 문서의 청크 여러 개가 top-k 슬롯을 도배하지 않아야 다른 문서가 들어온다.
+    document_id = uuid4()
+    first_chunk = make_result("수강신청 안내 본문 1", document_id=document_id).model_copy(
+        update={"chunk_id": uuid4(), "score": 0.9}
+    )
+    second_chunk = make_result("수강신청 안내 본문 2", document_id=document_id).model_copy(
+        update={"chunk_id": uuid4(), "score": 0.8}
+    )
+    other_doc = make_result("복학 안내 본문").model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "document_id": uuid4(),
+            "score": 0.5,
+            "url": "https://example.test/b",
+        }
+    )
+
+    merged = merge_ranked_results([first_chunk, second_chunk, other_doc], [], 1.0, 0.0, 2)
+
+    assert [result.chunk_id for result in merged] == [first_chunk.chunk_id, other_doc.chunk_id]
+
+
 def test_intent_boost_is_skipped_without_question():
     # 질문이 없으면 점수를 바꾸지 않는다(기존 호출 호환).
     higher = make_result("일정", page_kind="schedule").model_copy(
