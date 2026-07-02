@@ -124,7 +124,14 @@ def test_tokenize_korean_light_keeps_hangul_and_numbers():
 
 def test_bm25_index_returns_matching_chunk_first():
     first = make_result("휴학 신청은 포털에서 진행합니다.")
-    second = first.model_copy(update={"chunk_id": uuid4(), "content": "장학금 안내입니다.", "title": "장학금"})
+    second = first.model_copy(
+        update={
+            "chunk_id": uuid4(),
+            "content": "장학금 안내입니다.",
+            "title": "장학금",
+            "menu_path": "장학 > 안내",
+        }
+    )
 
     index = BM25Index([first, second])
 
@@ -141,7 +148,7 @@ def test_bm25_index_fallback_corpus_includes_title_tokens():
 
 
 def test_bm25_index_with_punctuation_only_content_returns_empty_results():
-    index = BM25Index([make_result("!!!").model_copy(update={"title": None})])
+    index = BM25Index([make_result("!!!").model_copy(update={"title": None, "menu_path": None})])
 
     assert index.search("휴학 신청", top_n=1) == []
 

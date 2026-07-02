@@ -59,7 +59,10 @@ async def test_embed_pending_chunks_updates_chroma_ids():
 
     @dataclass
     class FakeEmbedder:
+        encoded: list | None = None
+
         def encode(self, texts):
+            self.encoded = list(texts)
             return [[0.1, 0.2, 0.3] for _ in texts]
 
     class FakeCollection:
@@ -71,16 +74,19 @@ async def test_embed_pending_chunks_updates_chroma_ids():
 
     connection = FakeConnection()
     collection = FakeCollection()
+    embedder = FakeEmbedder()
 
     summary = await embed_pending_chunks(
         connection=connection,
         collection=collection,
-        embedder=FakeEmbedder(),
+        embedder=embedder,
         batch_size=64,
     )
 
     assert summary.chunks_seen == 1
     assert summary.chunks_indexed == 1
+    # 임베딩 입력에는 문서 맥락(제목·메뉴 경로)이 본문 앞에 붙는다.
+    assert embedder.encoded == ["휴학\n학사 > 휴학\n휴학 신청 안내"]
     assert collection.upserts[0][0] == ["chunk:chunk-1"]
     assert all(type(value) is float for value in collection.upserts[0][1][0])
     assert collection.upserts[0][3][0]["source_scope"] == "general_academic"
@@ -182,9 +188,10 @@ async def test_write_bm25_indexes_persists_all_and_category_indexes(tmp_path: Pa
         all_payload = pickle.load(cache_file)
 
     assert len(all_payload["records"]) == summary.chunks_seen
-    # 제목 토큰도 corpus에 들어가야 "휴학" 질의가 제목만 맞는 chunk도 찾는다.
+    # 제목·메뉴 경로 토큰도 corpus에 들어가야 주제 맥락으로 찾을 수 있다.
     assert "휴학" in all_payload["corpus"][0]
-    # 표시용 content에는 제목을 덧붙이지 않는다.
+    assert "학사" in all_payload["corpus"][0]
+    # 표시용 content에는 맥락을 덧붙이지 않는다.
     assert all_payload["records"][0]["content"] == "휴학 신청은 포털에서 진행합니다."
     assert len(all_payload["corpus"]) == summary.chunks_seen
     all_chunk_ids = [record["chunk_id"] for record in all_payload["records"]]

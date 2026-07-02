@@ -45,10 +45,15 @@ def tokenize_korean_light(text: str) -> list[str]:
     return [token.lower() for token in TOKEN_RE.findall(text)]
 
 
-def bm25_index_text(title: str | None, content: str) -> str:
-    # 제목은 문서 주제를 가장 압축한 신호라 chunk 본문과 함께 색인한다.
-    # (backend retriever의 BM25Index 폴백 경로와 같은 규칙을 유지할 것.)
-    return f"{title} {content}" if title else content
+def search_index_text(title: str | None, menu_path: str | None, content: str) -> str:
+    """검색 색인 입력 텍스트를 만든다(BM25 토큰화와 임베딩 입력 공통 규칙).
+
+    청크 본문만으로는 "무엇에 대한 답인지"가 벡터/토큰에 실리지 않는다. 문서 제목과
+    메뉴 경로를 앞에 붙여 주제 맥락을 준다. 표시용 content는 바꾸지 않는다.
+    (backend retriever의 BM25Index 폴백 경로와 같은 규칙을 유지할 것.)
+    """
+    context = "\n".join(part for part in (title, menu_path) if part)
+    return f"{context}\n{content}" if context else content
 
 
 def build_bm25_cache_path(cache_dir: str | Path, category: str | None) -> Path:
@@ -83,7 +88,9 @@ def _write_bm25_index(
 ) -> None:
     records = [_row_to_record(row) for row in rows]
     corpus = [
-        tokenize_korean_light(bm25_index_text(record["title"], record["content"]))
+        tokenize_korean_light(
+            search_index_text(record["title"], record["menu_path"], record["content"])
+        )
         for record in records
     ]
     index = BM25Okapi(corpus) if any(corpus) else None

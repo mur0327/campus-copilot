@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from tasks.bm25 import search_index_text
+
 logger = logging.getLogger(__name__)
 
 ACTIVE_CHROMA_IDS_SQL = """
@@ -77,7 +79,8 @@ async def embed_pending_chunks(connection, collection, embedder, batch_size: int
     if not rows:
         return summary
 
-    texts = [row["content"] for row in rows]
+    # 임베딩 입력에 문서 맥락(제목·메뉴 경로)을 붙인다. 표시용 content는 그대로 둔다.
+    texts = [search_index_text(row["title"], row["menu_path"], row["content"]) for row in rows]
     embeddings = embedder.encode(texts)
     ids = [build_chroma_id(str(row["id"])) for row in rows]
     metadatas = [

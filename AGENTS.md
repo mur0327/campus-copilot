@@ -47,6 +47,9 @@ docker compose exec worker python -m tasks.pipeline --from parse --force
   캐시 미스만 네트워크로 폴백합니다.
 - 파서를 수정하면 `worker/tasks/parse.py`의 `PARSER_VERSION`을 범프하세요. content_hash에
   버전이 포함되어 다음 실행에서 자동으로 전부 재파싱됩니다(`--force` 불필요).
+- 색인 입력 규칙(제목·메뉴 경로를 본문 앞에 붙임)이 바뀌면 전량 재임베딩이 필요합니다:
+  `UPDATE document_chunks SET chroma_id = NULL;` 실행 후 `--from index`를 돌리세요
+  (같은 chroma ID로 덮어써서 프룬이 필요 없습니다).
 - 동시 실행은 Postgres advisory lock으로 보호됩니다. 스케줄 크롤과 CLI가 겹치면 늦게 온 쪽이
   조용히 skip됩니다(status="skipped").
 

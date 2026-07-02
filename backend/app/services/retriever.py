@@ -223,12 +223,14 @@ class BM25Index:
         index: BM25Okapi | None = None,
     ) -> None:
         self.results = results
-        # 폴백 코퍼스도 worker의 bm25_index_text와 같은 규칙(제목+본문)으로 만든다.
+        # 폴백 코퍼스도 worker의 search_index_text와 같은 규칙(제목+메뉴경로+본문)으로 만든다.
         self.corpus = (
             corpus
             if corpus is not None
             else [
-                tokenize_korean_light(f"{result.title} {result.content}" if result.title else result.content)
+                tokenize_korean_light(
+                    "\n".join(part for part in (result.title, result.menu_path, result.content) if part)
+                )
                 for result in results
             ]
         )
