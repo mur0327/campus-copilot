@@ -26,6 +26,7 @@ SELECT
     d.category,
     d.source_scope,
     d.page_kind,
+    d.search_keywords,
     d.crawled_at
 FROM document_chunks c
 JOIN documents d ON d.id = c.document_id
@@ -45,14 +46,22 @@ def tokenize_korean_light(text: str) -> list[str]:
     return [token.lower() for token in TOKEN_RE.findall(text)]
 
 
-def search_index_text(title: str | None, menu_path: str | None, content: str) -> str:
+def search_index_text(
+    title: str | None,
+    menu_path: str | None,
+    content: str,
+    keywords: str | None = None,
+) -> str:
     """검색 색인 입력 텍스트를 만든다(BM25 토큰화와 임베딩 입력 공통 규칙).
 
     청크 본문만으로는 "무엇에 대한 답인지"가 벡터/토큰에 실리지 않는다. 문서 제목과
     메뉴 경로를 앞에 붙여 주제 맥락을 준다. 표시용 content는 바꾸지 않는다.
     (backend retriever의 BM25Index 폴백 경로와 같은 규칙을 유지할 것.)
+
+    keywords는 문서 확장(어휘 갭 보완)용 검색 키워드로, BM25 경로에서만 전달한다.
+    임베딩 경로는 keywords를 넘기지 않아(dense 오염 회피) 기본값 None을 쓴다.
     """
-    context = "\n".join(part for part in (title, menu_path) if part)
+    context = "\n".join(part for part in (title, menu_path, keywords) if part)
     return f"{context}\n{content}" if context else content
 
 
@@ -89,7 +98,12 @@ def _write_bm25_index(
     records = [_row_to_record(row) for row in rows]
     corpus = [
         tokenize_korean_light(
-            search_index_text(record["title"], record["menu_path"], record["content"])
+            search_index_text(
+                record["title"],
+                record["menu_path"],
+                record["content"],
+                record["search_keywords"],
+            )
         )
         for record in records
     ]
@@ -123,6 +137,7 @@ def _row_to_record(row) -> dict:
         "category": row["category"],
         "source_scope": _row_value(row, "source_scope", "unknown"),
         "page_kind": _row_value(row, "page_kind", "unknown"),
+        "search_keywords": _row_value(row, "search_keywords", None),
         "crawled_at": row["crawled_at"],
         "meta": _normalize_jsonb_meta(row["meta"]),
     }

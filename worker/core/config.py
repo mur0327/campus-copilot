@@ -84,6 +84,11 @@ class WorkerSettings(BaseSettings):
     voyage_api_key: str = ""
     index_batch_size: int = 64
     bm25_cache_dir: str = ".data/bm25"
+    # 보조 LLM: 색인 시점 오프라인 유틸용(문서 검색 키워드 생성 등). 답변 생성 LLM과 별개.
+    # 지연이 무관한 배치라 저가·고빈도 모델을 쓴다. 키가 없으면 키워드 생성은 스킵한다.
+    aux_llm_provider: str = "gemini"
+    aux_llm_model: str = "gemini-3.1-flash-lite"
+    gemini_api_key: str = ""
     trigger_host: str = "0.0.0.0"
     trigger_port: int = 8088
 

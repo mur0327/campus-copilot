@@ -28,6 +28,8 @@ class Document(Base):
     page_kind: Mapped[str] = mapped_column(Text, nullable=False)
     source_type: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str | None] = mapped_column(Text)
+    # 문서 확장용 검색 키워드(어휘 갭 보완). 색인 시 보조 LLM이 생성해 BM25 입력에만 얹는다.
+    search_keywords: Mapped[str | None] = mapped_column(Text)
     crawled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
