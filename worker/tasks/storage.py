@@ -150,6 +150,10 @@ async def upsert_document(connection: asyncpg.Connection, document: ParsedDocume
             page_kind = EXCLUDED.page_kind,
             source_type = EXCLUDED.source_type,
             content_hash = EXCLUDED.content_hash,
+            -- 본문이 바뀌면 문서 확장 키워드를 무효화해 다음 색인에서 재생성한다.
+            search_keywords = CASE
+                WHEN documents.content_hash IS DISTINCT FROM EXCLUDED.content_hash
+                THEN NULL ELSE documents.search_keywords END,
             crawled_at = EXCLUDED.crawled_at,
             is_active = TRUE
         RETURNING id

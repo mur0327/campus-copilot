@@ -24,6 +24,8 @@ dependencies = [
     # Settings
     "pydantic-settings>=2.13.1",
     "voyageai>=0.3.7",
+    # 보조 LLM(오프라인 문서 키워드 생성)
+    "google-genai>=1.33.0",
 ]
 
 [dependency-groups]
