@@ -148,6 +148,21 @@ def test_bm25_index_fallback_corpus_includes_title_tokens():
     assert index.search("휴학", top_n=1)[0].chunk_id == result.chunk_id
 
 
+def test_bm25_index_query_synonym_expansion_bridges_vocabulary_gap():
+    # 질의어("전화번호")가 문서에 없어도 도메인 동의어(연락처)로 매칭돼야 한다.
+    # 전화번호부는 "전화번호" 대신 "연락처"로만 표기하기 때문이다.
+    directory = make_result("장학 담당 연락처 940-5955 학자금 대출 문의").model_copy(
+        update={"title": "교내전화번호", "menu_path": None}
+    )
+    unrelated = directory.model_copy(
+        update={"chunk_id": uuid4(), "content": "교내 식당 메뉴 안내", "title": "식단"}
+    )
+
+    index = BM25Index([directory, unrelated])
+
+    assert index.search("장학금 전화번호", top_n=1)[0].chunk_id == directory.chunk_id
+
+
 def test_bm25_index_with_punctuation_only_content_returns_empty_results():
     index = BM25Index([make_result("!!!").model_copy(update={"title": None, "menu_path": None})])
 

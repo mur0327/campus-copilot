@@ -227,6 +227,24 @@ def _canonical_url(url: str) -> str:
     return urlunsplit((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"), "", ""))
 
 
+# BM25 질의 확장용 도메인 동의어. 정답 문서가 쓰는 어휘와 사용자 질의 어휘가 어긋나
+# 키워드 정확매칭이 안 되는 recall 갭을 메운다(방학↔계절학기·개강 등). 트리거가 질의에
+# 부분 문자열로 나타나면 동의어 토큰을 질의에 얹는다. 과적합 회피를 위해 작게 유지한다.
+BM25_QUERY_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "전화번호": ("연락처", "전화"),
+    "장학금": ("장학",),
+}
+
+
+def expand_query_tokens(query: str, tokens: list[str]) -> list[str]:
+    extra: list[str] = []
+    for trigger, synonyms in BM25_QUERY_SYNONYMS.items():
+        if trigger in query:
+            for synonym in synonyms:
+                extra.extend(tokenize_korean_light(synonym))
+    return tokens + extra if extra else tokens
+
+
 class BM25Index:
     def __init__(
         self,
@@ -253,7 +271,7 @@ class BM25Index:
         if self.index is None or top_n <= 0:
             return []
 
-        query_tokens = tokenize_korean_light(query)
+        query_tokens = expand_query_tokens(query, tokenize_korean_light(query))
         raw_scores = self.index.get_scores(query_tokens)
         scored = [
             (result, float(raw_score), _token_overlap(tokens, query_tokens))
@@ -343,6 +361,9 @@ def merge_ranked_results(
 RANK_FACTOR_BOOST = 1.15
 RANK_FACTOR_SOFT_BOOST = 1.1
 RANK_FACTOR_CONTACT_BOOST = 1.2
+# 전화번호부/연락처 안내 페이지(page_kind=contact)는 연락처 질문의 정식 정답이라,
+# 우연히 전화번호·"문의"가 섞인 문서보다 강하게(최대치) 우대해 확실히 표면화한다.
+RANK_FACTOR_CONTACT_STRONG = 1.4
 RANK_FACTOR_TITLE_BOOST = 1.2
 RANK_FACTOR_SOFT_PENALTY = 0.9
 RANK_FACTOR_STRONG_PENALTY = 0.7
@@ -397,7 +418,10 @@ def _intent_factor(result: RetrievalResult, intent: str, certificate_query: bool
         if DEPARTMENT_CURRICULUM_MARKER in url:
             factor *= RANK_FACTOR_STRONG_PENALTY
     elif intent == "contact":
-        if kind == "contact" or PHONE_RE.search(result.content or "") or "문의" in (result.content or ""):
+        # 종합 전화번호부(contact 페이지)는 정식 정답이라 강하게, 우연한 전화/문의 언급은 약하게.
+        if kind == "contact":
+            factor *= RANK_FACTOR_CONTACT_STRONG
+        elif PHONE_RE.search(result.content or "") or "문의" in (result.content or ""):
             factor *= RANK_FACTOR_CONTACT_BOOST
 
     # 증명서 질의는 의도와 별개로 증명 안내 페이지를 우대한다.
