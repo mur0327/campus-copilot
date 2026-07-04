@@ -755,6 +755,50 @@ async def test_retrieve_with_status_degrades_to_semantic_only_when_bm25_is_missi
 
 
 @pytest.mark.asyncio
+async def test_retrieve_with_status_returns_pools_only_when_requested(tmp_path: Path):
+    # include_pools=True면 검색이 실제로 쓴 병합 전 풀을 그대로 넘겨 평가가 재임베딩 없이
+    # 진단하게 한다. 기본값에서는 production 응답을 가볍게 유지하려 None으로 둔다.
+    chunk_id = uuid4()
+
+    class PoolSession:
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            return FakeResult([make_row(chunk_id)])
+
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[chunk_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    default_response = await retriever.retrieve_with_status(
+        PoolSession(),
+        question="휴학 신청",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+    assert default_response.semantic_pool is None
+    assert default_response.bm25_pool is None
+
+    pooled_response = await retriever.retrieve_with_status(
+        PoolSession(),
+        question="휴학 신청",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+        include_pools=True,
+    )
+    assert pooled_response.semantic_pool is not None
+    assert pooled_response.semantic_pool[0].chunk_id == chunk_id
+
+
+@pytest.mark.asyncio
 async def test_retrieve_expands_heading_with_following_table_for_detail_question(tmp_path: Path):
     document_id = uuid4()
     heading_id = uuid4()

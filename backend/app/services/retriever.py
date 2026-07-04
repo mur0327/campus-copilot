@@ -114,6 +114,10 @@ class RetrievalStatus(BaseModel):
 class RetrievalResponse(BaseModel):
     results: list[RetrievalResult]
     status: RetrievalStatus
+    # include_pools=True일 때만 채워지는 진단용 병합 전 풀(평가 부검용).
+    # 검색이 실제로 쓴 풀을 그대로 담아, 별도 재검색 없이 gold 순위를 재게 한다.
+    semantic_pool: list[RetrievalResult] | None = None
+    bm25_pool: list[RetrievalResult] | None = None
 
 
 class EvidenceCandidate(BaseModel):
@@ -586,6 +590,7 @@ class HybridRetriever:
         category: str | None,
         semantic_top_n: int,
         bm25_top_n: int,
+        include_pools: bool = False,
     ) -> RetrievalResponse:
         bm25_index, bm25_available, bm25_error = await self._ensure_bm25_index_status(session, category)
         bm25_results = bm25_index.search(question, bm25_top_n)
@@ -624,6 +629,9 @@ class HybridRetriever:
                 semantic_error=semantic_error,
                 bm25_error=bm25_error,
             ),
+            # 검색이 실제로 사용한 병합 전 풀을 그대로 넘겨 평가가 재검색 없이 진단하게 한다.
+            semantic_pool=semantic_results if include_pools else None,
+            bm25_pool=bm25_results if include_pools else None,
         )
 
     async def search_chroma(

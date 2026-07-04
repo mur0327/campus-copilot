@@ -454,24 +454,15 @@ async def run() -> None:
                     category=args.retrieval_category,
                     semantic_top_n=semantic_top_n,
                     bm25_top_n=bm25_top_n,
+                    include_pools=True,
                 )
 
                 # 부검용 풀 진단: gold가 각 후보 풀에 들어왔는지 기록한다.
                 # 병합 전 순위가 있어야 미스 원인을 색인/병합/랭킹 단계로 가를 수 있다.
+                # 검색이 실제로 쓴 풀을 그대로 읽어 재임베딩(rate-limit 오염)을 피한다.
                 gold_match = gold_matches.get(question.id)
-                try:
-                    semantic_pool = await retriever.search_chroma(
-                        session,
-                        question.question,
-                        args.retrieval_category,
-                        semantic_top_n,
-                    )
-                except Exception:
-                    # semantic 열화 시에도 평가는 계속한다(상태는 retrieval_status에 이미 기록).
-                    semantic_pool = []
-                bm25_pool = (
-                    await retriever.ensure_bm25_index(session, args.retrieval_category)
-                ).search(question.question, bm25_top_n)
+                semantic_pool = response.semantic_pool or []
+                bm25_pool = response.bm25_pool or []
                 gold_rank_semantic = gold_rank_in_pool(semantic_pool, gold_match)
                 gold_rank_bm25 = gold_rank_in_pool(bm25_pool, gold_match)
 
