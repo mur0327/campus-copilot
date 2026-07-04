@@ -14,6 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.document import Document, DocumentChunk
 from app.types import PageKind, SourceScope
 
+# RRF(Reciprocal Rank Fusion) 상수. 60은 원논문(Cormack 2009)의 표준값이라
+# 튜닝 대상이 아니다(N=20 과적합 회피 원칙). 절대 손대지 않는다.
+RRF_K = 60
 TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")
 DETAIL_QUERY_KEYWORDS = ("학점", "요건", "구성표", "기간", "금액", "시간", "기준")
 DETAIL_TABLE_MIN_CHARS = 80
@@ -86,6 +89,9 @@ class RetrievalResult(BaseModel):
     chunk_type: str
     chunk_index: int | None = None
     score: float
+    # score는 RRF(순위 융합)라 랭킹 전용이다. relevance는 가중합 정규화 유사도로
+    # evidence 게이트의 절대 관련도 판정을 담당한다(관심사 분리). merge에서만 채운다.
+    relevance: float | None = None
     title: str | None
     url: str
     menu_path: str | None
@@ -200,7 +206,10 @@ def _direct_keyword_overlap(result: RetrievalResult, query_keywords: set[str]) -
 def _is_accepted_evidence_result(result: RetrievalResult, overlap: int) -> bool:
     if not result.url.strip() or not result.content.strip():
         return False
-    if result.score >= EVIDENCE_MIN_SCORE:
+    # score는 RRF(순위)라 절대 관련도가 없다. evidence 채택은 가중합 유사도인 relevance로
+    # 판정한다(merge 이후엔 항상 채워짐, 방어적으로만 score 폴백).
+    relevance = result.relevance if result.relevance is not None else result.score
+    if relevance >= EVIDENCE_MIN_SCORE:
         return True
     return overlap >= EVIDENCE_MIN_DIRECT_OVERLAP
 
@@ -282,21 +291,32 @@ def merge_ranked_results(
     *,
     question: str | None = None,
 ) -> list[RetrievalResult]:
-    merged: dict[UUID, RetrievalResult] = {}
+    # score는 RRF(순위 융합)로 랭킹만 담당한다: 각 리스트에서 순위 rank마다 1/(RRF_K+rank)를
+    # 더해, 한쪽 리스트에서만 강한 히트도 살아남게 한다. relevance는 기존 가중합 정규화 유사도로
+    # evidence 게이트의 절대 관련도 판정을 담당한다(관심사 분리).
+    objs: dict[UUID, RetrievalResult] = {}
+    rrf_scores: dict[UUID, float] = {}
+    relevance: dict[UUID, float] = {}
 
-    for result in normalize_scores(semantic_results):
-        merged[result.chunk_id] = result.model_copy(update={"score": round(result.score * semantic_weight, 6)})
+    for rank, result in enumerate(normalize_scores(semantic_results), start=1):
+        objs[result.chunk_id] = result
+        rrf_scores[result.chunk_id] = rrf_scores.get(result.chunk_id, 0.0) + 1.0 / (RRF_K + rank)
+        relevance[result.chunk_id] = relevance.get(result.chunk_id, 0.0) + result.score * semantic_weight
 
-    for result in normalize_scores(bm25_results):
-        existing = merged.get(result.chunk_id)
-        score = result.score * bm25_weight
-        if existing:
-            merged[result.chunk_id] = existing.model_copy(update={"score": round(existing.score + score, 6)})
-        else:
-            merged[result.chunk_id] = result.model_copy(update={"score": round(score, 6)})
+    for rank, result in enumerate(normalize_scores(bm25_results), start=1):
+        objs.setdefault(result.chunk_id, result)
+        rrf_scores[result.chunk_id] = rrf_scores.get(result.chunk_id, 0.0) + 1.0 / (RRF_K + rank)
+        relevance[result.chunk_id] = relevance.get(result.chunk_id, 0.0) + result.score * bm25_weight
+
+    merged = [
+        objs[chunk_id].model_copy(
+            update={"score": round(rrf_scores[chunk_id], 8), "relevance": round(relevance[chunk_id], 6)}
+        )
+        for chunk_id in objs
+    ]
 
     # 의도-인지 재점수는 dedup·top-k 슬라이스 전에 적용해야 하위 후보도 끌어올릴 수 있다.
-    candidates = apply_intent_boost(list(merged.values()), question) if question else list(merged.values())
+    candidates = apply_intent_boost(merged, question) if question else merged
 
     ranked = sorted(
         candidates,
@@ -336,7 +356,12 @@ def apply_intent_boost(results: list[RetrievalResult], question: str) -> list[Re
     for result in results:
         factor = _intent_factor(result, intent, certificate_query) * _title_factor(result, query_keywords)
         factor = min(max(factor, RANK_FACTOR_MIN), RANK_FACTOR_MAX)
-        boosted.append(result.model_copy(update={"score": round(result.score * factor, 6)}))
+        # 랭킹(score)과 evidence 관련도(relevance)에 같은 factor를 적용해 notice 강등 등이
+        # 순위와 근거 채택 양쪽에 일관되게 반영되게 한다.
+        update: dict = {"score": round(result.score * factor, 8)}
+        if result.relevance is not None:
+            update["relevance"] = round(result.relevance * factor, 6)
+        boosted.append(result.model_copy(update=update))
     return boosted
 
 
@@ -712,7 +737,10 @@ class HybridRetriever:
             expansion = expansion_by_document.get(result.document_id)
             if expansion is None or expansion.chunk_id in added_chunk_ids:
                 continue
-            expanded_results.append(expansion.model_copy(update={"score": result.score}))
+            # 확장 청크도 부모의 relevance를 상속해 evidence 게이트 판정 기준을 일치시킨다.
+            expanded_results.append(
+                expansion.model_copy(update={"score": result.score, "relevance": result.relevance})
+            )
             added_chunk_ids.add(expansion.chunk_id)
 
         return expanded_results[: self.final_top_k]

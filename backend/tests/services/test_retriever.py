@@ -10,6 +10,7 @@ import pytest
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://campus:campus@localhost/db")
 
 from app.services.retriever import (  # noqa: E402
+    RRF_K,
     BM25Index,
     HybridRetriever,
     RetrievalResult,
@@ -248,7 +249,10 @@ def test_merge_ranked_results_deduplicates_and_combines_scores():
     merged = merge_ranked_results([base], [base.model_copy(update={"score": 1.0})], 0.7, 0.3, 6)
 
     assert len(merged) == 1
-    assert merged[0].score == 0.44
+    # relevance는 기존 가중합(정규화 0.2*0.7 + 1.0*0.3)을 그대로 담는다.
+    assert merged[0].relevance == 0.44
+    # score는 양쪽 리스트 1위 RRF 합(2/(k+1))이다.
+    assert merged[0].score == pytest.approx(2 / (RRF_K + 1))
 
 
 def test_merge_ranked_results_dedupes_mirrored_content_across_departments():
@@ -277,7 +281,9 @@ def test_merge_ranked_results_dedupes_mirrored_content_across_departments():
 
 
 def test_merge_ranked_results_prefers_general_academic_representative():
-    # 동일 본문이 대표 사이트와 학과 사이트에 동시에 있으면 대표 사이트 문서를 남긴다.
+    # 동일 본문이 대표 사이트와 학과 사이트에 각각 같은 순위로 잡히면(RRF 동점),
+    # tiebreaker가 대표 사이트 문서를 남긴다. dept는 semantic 1위, general은 bm25 1위로
+    # 둬 두 RRF 점수를 1/(k+1)로 동일하게 만든다.
     body = "방학 기간은 학사일정에서 확인합니다. 동계 방학은 12월 말부터 시작합니다."
     department = make_result(body, source_scope="department").model_copy(
         update={
@@ -296,7 +302,7 @@ def test_merge_ranked_results_prefers_general_academic_representative():
         }
     )
 
-    merged = merge_ranked_results([department, general], [], 1.0, 0.0, 6)
+    merged = merge_ranked_results([department], [general], 0.7, 0.3, 6)
 
     assert [result.url for result in merged] == ["https://www.honam.ac.kr/UniversitySchedule"]
 
@@ -414,8 +420,10 @@ def test_title_boost_ignores_results_without_title():
 
     merged = merge_ranked_results([untitled], [], 1.0, 0.0, 6, question="휴학 신청은 어떻게 하나요?")
 
-    # intent boost(procedure→general_academic 소프트 우대)만 적용된 값이어야 한다.
-    assert merged[0].score == pytest.approx(0.5 * 1.1)
+    # title boost 없이 intent boost(procedure→general_academic 소프트 우대 *1.1)만
+    # relevance(가중합 0.5)에 적용된 값이어야 한다. score는 단일 1위 RRF에 같은 factor.
+    assert merged[0].relevance == pytest.approx(0.5 * 1.1)
+    assert merged[0].score == pytest.approx(1 / (RRF_K + 1) * 1.1)
 
 
 def test_notice_penalty_applies_to_contact_and_deadline_intents():
@@ -480,7 +488,35 @@ def test_intent_boost_is_skipped_without_question():
 
     merged = merge_ranked_results([higher, lower], [], 1.0, 0.0, 6)
 
-    assert [r.score for r in merged] == [0.5, 0.4]
+    # 질문이 없으면 boost가 없어 relevance는 가중합 그대로다. 순위는 RRF(입력 순위)로 유지된다.
+    assert [r.relevance for r in merged] == [0.5, 0.4]
+    assert [r.score for r in merged] == [
+        pytest.approx(1 / (RRF_K + 1)),
+        pytest.approx(1 / (RRF_K + 2)),
+    ]
+
+
+def test_rrf_surfaces_strong_single_list_hit_over_weighted_bias():
+    # RRF는 순위로 융합하므로, 한쪽 리스트에서만 잡힌 상위 히트가 semantic 가중치(0.7)에
+    # 눌려 사라지지 않는다. bm25 1위 문서가 semantic 3위 문서보다 위로 올라와야 한다.
+    # (가중합이라면 sem 0.9*0.7=0.63이 bm 0.8*0.3=0.24를 눌러 순서가 반대가 됐을 케이스.)
+    filler1 = make_result("가나다 채우기 문서 하나").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 1.0, "url": "https://x.test/1"}
+    )
+    filler2 = make_result("라마바 채우기 문서 둘").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.95, "url": "https://x.test/2"}
+    )
+    sem_target = make_result("사아자 semantic 3위 문서").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.9, "url": "https://x.test/sem"}
+    )
+    bm_target = make_result("차카타 bm25 1위 문서").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.8, "url": "https://x.test/bm"}
+    )
+
+    merged = merge_ranked_results([filler1, filler2, sem_target], [bm_target], 0.7, 0.3, 6)
+
+    urls = [result.url for result in merged]
+    assert urls.index("https://x.test/bm") < urls.index("https://x.test/sem")
 
 
 @pytest.mark.asyncio
