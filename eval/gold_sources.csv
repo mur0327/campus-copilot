@@ -41,3 +41,14 @@ Q037,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,gener
 Q038,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,"수수료 표(국문 500원/영문 1,000원)"
 Q039,,,insufficient,,,"편입 모집요강이 다운로드 링크 페이지뿐, PDF 본문 미추출"
 Q040,,,insufficient,,,입시캘린더 페이지가 제목만 추출됨(JS 렌더링 추정)
+Q041,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,동계·하계 계절학기 일정
+Q041,https://www.honam.ac.kr/SeasonSemester,계절학기,secondary,general_academic,academic,계절학기 제도·수강신청 규정
+Q042,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,중간고사 일정 명시
+Q043,,,insufficient,,,"장학 부서 상세는 2월 학사공지 게시글에만 존재(최신 창 정책으로 미수집), CamPhNum만으론 불충분(사용자 확인)"
+Q044,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,교무처 연락처
+Q045,,,insufficient,,,"도서관 별도 사이트(library.honam.ac.kr) 크롤 범위 밖 — 정답: library.honam.ac.kr/Cheetah/HOLIS/Guide/Guide02, 시드 확장 후보"
+Q046,https://www.honam.ac.kr/Cafeteria_Diet,교내식당/식단,primary,general_academic,academic,학생식당 식단표
+Q047,https://www.honam.ac.kr/SchbusGuideSchedule,통학버스/교통편 안내,primary,general_academic,academic,노선·출발시간 시간표
+Q048,,,insufficient,,,"기숙사 별도 사이트(dorm.honam.ac.kr) 크롤 범위 밖 — 정답: dorm.honam.ac.kr/JG_JoinGuidance, 시드 확장 후보"
+Q049,,,insufficient,,,예비군 문서 없음(Q022·Q024와 동일 갭)
+Q050,,,insufficient,,,시한부 공지·학생 후기 게시글뿐 — 게시글 불인정 원칙

@@ -41,11 +41,11 @@ Q039,입학/편입,편입 지원 자격이 어떻게 되나요?,policy,,,insuffi
 Q040,입학/편입,수시 원서 접수는 언제부터인가요?,date,,,insufficient,false,수시;원서;접수;기간,입시캘린더 JS 렌더링으로 본문 없음
 Q041,학사일정,계절학기 신청 기간은 언제인가요?,date,,,answerable,false,계절학기;신청;기간,
 Q042,학사일정,중간고사 기간이 언제예요?,date,,,answerable,false,중간고사;기간;시험,
-Q043,부서/문의처,장학 담당 부서 위치가 어디인가요?,contact,,,answerable,false,장학;부서;위치,
+Q043,부서/문의처,장학 담당 부서 위치가 어디인가요?,contact,,,insufficient,false,장학;부서;위치,"상세는 2월 공지에만, 최신 창 밖(사용자 확인)"
 Q044,부서/문의처,교무처 전화번호 알려주세요,contact,,,answerable,false,교무처;전화번호,
-Q045,시설/생활,도서관 운영시간이 어떻게 되나요?,fact,,,answerable,false,도서관;운영시간,
+Q045,시설/생활,도서관 운영시간이 어떻게 되나요?,fact,,,insufficient,false,도서관;운영시간,library.honam.ac.kr 크롤 범위 밖(시드 확장 후보)
 Q046,시설/생활,학생식당 메뉴는 어디서 보나요?,fact,,,answerable,false,학생식당;메뉴;식단,
 Q047,시설/생활,통학버스 시간표 알려주세요,fact,,,answerable,false,통학버스;셔틀;시간표,
-Q048,시설/생활,기숙사 입사 신청은 어떻게 하나요?,procedure,,,answerable,true,기숙사;입사;신청,
-Q049,예비군,예비군 연기 신청은 어떻게 하나요?,procedure,,,answerable,true,예비군;연기;신청,
-Q050,기타,축제는 언제 하나요?,date,,,answerable,false,축제;대동제;일정,
+Q048,시설/생활,기숙사 입사 신청은 어떻게 하나요?,procedure,,,insufficient,true,기숙사;입사;신청,dorm.honam.ac.kr 크롤 범위 밖(시드 확장 후보)
+Q049,예비군,예비군 연기 신청은 어떻게 하나요?,procedure,,,insufficient,true,예비군;연기;신청,예비군 문서 없음
+Q050,기타,축제는 언제 하나요?,date,,,insufficient,false,축제;대동제;일정,"게시글뿐, 불인정 원칙"
