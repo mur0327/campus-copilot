@@ -17,3 +17,7 @@ Q017,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_acade
 Q018,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,방학 기간 포함
 Q019,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,휴학 키워드 없음→의미적 연결 필요(난이도 높음). 교무/학사 부서 연락처
 Q020,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,'장학/학자금 대출 문의' 연락처 포함
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,졸업학점 2025,primary,general_academic,academic,교양필수·전공필수 구성표
+Q027,https://www.honam.ac.kr/military_Rest,입대휴학,primary,general_academic,academic,신청 시기·서류·기간
+Q028,https://www.honam.ac.kr/General_Rest,일반휴학,primary,general_academic,academic,휴학기간 규정 포함
+Q029,https://www.honam.ac.kr/ScholarshipType,장학금 종류,primary,general_academic,academic,성적장학 기준 포함
