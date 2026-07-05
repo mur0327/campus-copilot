@@ -49,6 +49,6 @@ Q044,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academi
 Q045,,,insufficient,,,"도서관 별도 사이트(library.honam.ac.kr) 크롤 범위 밖 — 정답: library.honam.ac.kr/Cheetah/HOLIS/Guide/Guide02, 시드 확장 후보"
 Q046,https://www.honam.ac.kr/Cafeteria_Diet,교내식당/식단,primary,general_academic,academic,학생식당 식단표
 Q047,https://www.honam.ac.kr/SchbusGuideSchedule,통학버스/교통편 안내,primary,general_academic,academic,노선·출발시간 시간표
-Q048,,,insufficient,,,"기숙사 별도 사이트(dorm.honam.ac.kr) 크롤 범위 밖 — 정답: dorm.honam.ac.kr/JG_JoinGuidance, 시드 확장 후보"
+Q048,https://dorm.honam.ac.kr/JG_JoinGuidance,입사안내,primary,general_academic,academic,"기숙사 시드 확장으로 수집(2026-07-05), insufficient→answerable 전환"
 Q049,,,insufficient,,,예비군 문서 없음(Q022·Q024와 동일 갭)
 Q050,,,insufficient,,,시한부 공지·학생 후기 게시글뿐 — 게시글 불인정 원칙

@@ -42,6 +42,14 @@ class WorkerSettings(BaseSettings):
             url="https://enter.honam.ac.kr",
             source_scope="admission",
         ),
+        # 평가 커버리지 갭(Q048 기숙사)으로 확인된 전교 공통 사이트. 대학 CMS와 같은
+        # 구조(/main + ul#mainMenu)라 기존 셀렉터가 그대로 작동한다.
+        # 도서관(library.honam.ac.kr)은 별도 시스템(Cheetah/HOLIS)이라 비호환 — 별도 파서 필요.
+        CrawlSeedSite(
+            name="기숙사",
+            url="https://dorm.honam.ac.kr",
+            source_scope="general_academic",
+        ),
     ]
     crawl_main_path: str = "/main"
     crawl_content_selector: str = "article.articleBox"

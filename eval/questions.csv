@@ -46,6 +46,6 @@ Q044,부서/문의처,교무처 전화번호 알려주세요,contact,,,answerabl
 Q045,시설/생활,도서관 운영시간이 어떻게 되나요?,fact,,,insufficient,false,도서관;운영시간,library.honam.ac.kr 크롤 범위 밖(시드 확장 후보)
 Q046,시설/생활,학생식당 메뉴는 어디서 보나요?,fact,,,answerable,false,학생식당;메뉴;식단,
 Q047,시설/생활,통학버스 시간표 알려주세요,fact,,,answerable,false,통학버스;셔틀;시간표,
-Q048,시설/생활,기숙사 입사 신청은 어떻게 하나요?,procedure,,,insufficient,true,기숙사;입사;신청,dorm.honam.ac.kr 크롤 범위 밖(시드 확장 후보)
+Q048,시설/생활,기숙사 입사 신청은 어떻게 하나요?,procedure,,,answerable,true,기숙사;입사;신청,기숙사 시드 확장으로 answerable 전환(2026-07-05)
 Q049,예비군,예비군 연기 신청은 어떻게 하나요?,procedure,,,insufficient,true,예비군;연기;신청,예비군 문서 없음
 Q050,기타,축제는 언제 하나요?,date,,,insufficient,false,축제;대동제;일정,"게시글뿐, 불인정 원칙"

@@ -26,6 +26,11 @@ def test_worker_settings_phase_two_defaults(monkeypatch):
             url="https://enter.honam.ac.kr",
             source_scope="admission",
         ),
+        CrawlSeedSite(
+            name="기숙사",
+            url="https://dorm.honam.ac.kr",
+            source_scope="general_academic",
+        ),
     ]
     assert settings.crawl_main_path == "/main"
     assert settings.crawl_graduation_path == "/GraduateGrades"
