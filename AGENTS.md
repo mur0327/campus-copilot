@@ -50,6 +50,14 @@ docker compose exec worker python -m tasks.pipeline --from parse --force
 - 색인 입력 규칙(제목·메뉴 경로를 본문 앞에 붙임)이 바뀌면 전량 재임베딩이 필요합니다:
   `UPDATE document_chunks SET chroma_id = NULL;` 실행 후 `--from index`를 돌리세요
   (같은 chroma ID로 덮어써서 프룬이 필요 없습니다).
+- index 페이즈는 문서 검색 키워드(`documents.search_keywords`, BM25 전용 문서 확장)를
+  생성할 수 있지만 **기본 비활성**입니다(`SEARCH_KEYWORD_GENERATION_ENABLED=true`로 켬).
+  N=20 평가에서 MRR 소폭 하락이 확인되어, 질문셋 확장 후 재검증 전까지 꺼 둡니다.
+  켜면 활성+키워드 NULL 문서만 대상이라 재실행해도 중복 생성이 없고, 본문이 바뀌면
+  자동으로 NULL로 리셋됩니다. `GEMINI_API_KEY`가 없으면 조용히 스킵합니다.
+  키워드 프롬프트(`worker/tasks/keywords.py`)를 수정하면 전량 재생성이 필요합니다:
+  `UPDATE documents SET search_keywords = NULL;` 실행 후 `--from index`를 돌리세요
+  (재임베딩과 달리 임베딩 비용이 없고 BM25만 다시 씁니다).
 - 동시 실행은 Postgres advisory lock으로 보호됩니다. 스케줄 크롤과 CLI가 겹치면 늦게 온 쪽이
   조용히 skip됩니다(status="skipped").
 

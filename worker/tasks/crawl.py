@@ -934,18 +934,21 @@ async def index_crawl_documents(connection):
     logger.info("crawl indexing prune starting")
     summary.vectors_pruned = await prune_orphan_vectors(connection, collection)
     logger.info("crawl indexing prune completed: vectors_pruned=%s", summary.vectors_pruned)
-    logger.info("crawl indexing keyword generation starting")
-    keyword_generate = create_aux_generate(
-        settings.aux_llm_provider, settings.aux_llm_model, settings.gemini_api_key
-    )
-    keyword_summary = await generate_missing_keywords(connection, generate=keyword_generate)
-    logger.info(
-        "crawl indexing keyword generation completed: seen=%s updated=%s empty=%s errors=%s",
-        keyword_summary.documents_seen,
-        keyword_summary.documents_updated,
-        keyword_summary.documents_empty,
-        len(keyword_summary.errors),
-    )
+    if settings.search_keyword_generation_enabled:
+        logger.info("crawl indexing keyword generation starting")
+        keyword_generate = create_aux_generate(
+            settings.aux_llm_provider, settings.aux_llm_model, settings.gemini_api_key
+        )
+        keyword_summary = await generate_missing_keywords(connection, generate=keyword_generate)
+        logger.info(
+            "crawl indexing keyword generation completed: seen=%s updated=%s empty=%s errors=%s",
+            keyword_summary.documents_seen,
+            keyword_summary.documents_updated,
+            keyword_summary.documents_empty,
+            len(keyword_summary.errors),
+        )
+    else:
+        logger.info("crawl indexing keyword generation disabled by settings")
     logger.info("crawl indexing bm25 writing: cache_dir=%s", settings.bm25_cache_dir)
     bm25_summary = await write_bm25_indexes(connection, settings.bm25_cache_dir)
     summary.bm25_indexes_written = bm25_summary.indexes_written

@@ -33,9 +33,13 @@ GROUP BY d.id, d.title, d.menu_path
 
 KEYWORD_UPDATE_SQL = "UPDATE documents SET search_keywords = $2 WHERE id = $1"
 
-MAX_KEYWORDS = 8
+MAX_KEYWORDS = 10
 MAX_CONTENT_CHARS = 4000  # 긴 문서는 앞부분만(키워드 추출엔 충분, 토큰 절약)
 KEYWORD_CHUNK_SIZE = 50  # LLM 호출 묶음 단위(묶음마다 DB에 기록해 진행을 보존)
+# 문서마다 여러 번 샘플링해 합친다(doc2query 방식). 단일 생성은 "방학"처럼 롱테일이지만
+# 정답인 용어를 놓치므로, 온도를 두고 여러 표본의 합집합으로 재현율을 높인다.
+KEYWORD_SAMPLES = 5
+AUX_TEMPERATURE = 0.8
 # 지나치게 일반적이라 검색 변별력이 없는 말은 버린다.
 GENERIC_KEYWORDS = frozenset(
     {"안내", "정보", "문서", "페이지", "내용", "관련", "대학", "대학교", "호남대학교", "호남대"}
@@ -49,9 +53,11 @@ PROMPT_TEMPLATE = """너는 대학 학사 문서의 검색 키워드를 뽑는 �
 규칙:
 - 본문 내용이 명확히 뒷받침하는 것만. 추측하거나 지어내지 마라.
 - 이미 본문에 있는 단어는 넣지 마라.
-- 짧은 명사/명사구만. 문장·조사·어미 금지.
+- 짧고 기본적인 단어로 뽑아라. 복합어는 핵심 단어로 쪼개라.
+  (예: '수강신청기간'→'수강신청', '입학전형안내'→'입학', '기말고사일정'→'시험')
+- 문장·조사·어미 금지.
 - 최대 {max_keywords}개. 넣을 게 없으면 빈 배열 [].
-- 출력은 JSON 배열만. 예: ["여름방학", "겨울방학"]
+- 출력은 JSON 배열만. 예: ["수강신청", "성적"]
 
 제목: {title}
 메뉴: {menu_path}
@@ -132,12 +138,22 @@ def create_aux_generate(provider: str, model: str, api_key: str) -> GenerateFn |
     if provider == "gemini":
         if not api_key.strip():
             return None
-        from google import genai
+        try:
+            from google import genai
+            from google.genai import types
+        except ImportError:
+            # 라이브러리 미설치 환경(구 이미지 등)에서도 색인이 깨지지 않게 스킵한다.
+            logger.warning("google-genai not installed; keyword generation skipped")
+            return None
 
         client = genai.Client(api_key=api_key)
+        # 여러 표본을 합치므로 온도를 두어 표본 간 다양성을 준다(롱테일 용어 포착).
+        config = types.GenerateContentConfig(temperature=AUX_TEMPERATURE)
 
         async def generate(prompt: str) -> str:
-            response = await client.aio.models.generate_content(model=model, contents=prompt)
+            response = await client.aio.models.generate_content(
+                model=model, contents=prompt, config=config
+            )
             return response.text or ""
 
         return generate
@@ -151,10 +167,24 @@ async def generate_document_keywords(
     title: str | None,
     menu_path: str | None,
     content: str | None,
+    *,
+    samples: int = KEYWORD_SAMPLES,
 ) -> str:
-    """단일 문서의 키워드 문자열을 생성한다(빈 문자열 가능=넣을 게 없음)."""
-    raw = await generate(build_keyword_prompt(title, menu_path, content))
-    return format_keywords(filter_keywords(parse_keyword_response(raw), content))
+    """단일 문서의 키워드 문자열을 생성한다(빈 문자열 가능=넣을 게 없음).
+
+    여러 표본을 뽑아 합집합을 취한다(doc2query 방식). 단일 생성이 놓치는 롱테일 용어를
+    포착하려는 것으로, 순서를 보존하며 중복만 제거한다.
+    """
+    prompt = build_keyword_prompt(title, menu_path, content)
+    union: list[str] = []
+    seen: set[str] = set()
+    for _ in range(max(samples, 1)):
+        for keyword in parse_keyword_response(await generate(prompt)):
+            lowered = keyword.lower()
+            if lowered not in seen:
+                seen.add(lowered)
+                union.append(keyword)
+    return format_keywords(filter_keywords(union, content))
 
 
 async def generate_missing_keywords(

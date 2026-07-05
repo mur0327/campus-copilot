@@ -89,6 +89,9 @@ class WorkerSettings(BaseSettings):
     aux_llm_provider: str = "gemini"
     aux_llm_model: str = "gemini-3.1-flash-lite"
     gemini_api_key: str = ""
+    # 문서 검색 키워드 생성 스위치. N=20 평가에서 MRR 소폭 하락(0.78→0.74)이 확인돼
+    # 기본 비활성. 질문셋 확장 후 일반화 효과를 재검증하고 나서 켠다(2026-07-05 결정).
+    search_keyword_generation_enabled: bool = False
     trigger_host: str = "0.0.0.0"
     trigger_port: int = 8088
 
