@@ -4,6 +4,8 @@ Q001,https://www.honam.ac.kr/military_Rest,입대휴학,secondary,general_academ
 Q002,https://www.honam.ac.kr/ComeBack,복학,primary,general_academic,academic,
 Q003,https://enter.honam.ac.kr/scholarship,장학제도,primary,admission,admission,국가장학금 내용 포함
 Q004,https://www.honam.ac.kr/ScholarshipType,장학금 종류,primary,general_academic,academic,교내장학금 종류
+Q005,,,insufficient,,,등록금 납부 안내가 정적 페이지로 없음(개인별 우편·문자 안내)
+Q006,,,insufficient,,,등록금 납부 안내가 정적 페이지로 없음
 Q007,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청기간 포함
 Q008,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청 정정 포함
 Q009,https://www.honam.ac.kr/GraduateGrades,졸업학점,primary,general_academic,academic,졸업학점 구성표
@@ -13,11 +15,29 @@ Q012,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_acade
 Q013,https://www.honam.ac.kr/ProofIssuanceGuide,증명발급안내,primary,general_academic,certificate,증명서 종류·유의사항·연락처(재학증명서 포함)
 Q013,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,secondary,general_academic,certificate,발급 방법·장소·금액
 Q014,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,인터넷발급 안내
+Q015,,,insufficient,,,편입 모집요강이 PDF 뷰어로만 제공되어 본문 미추출
+Q016,,,insufficient,,,입학 상담이 카카오톡 배너로 연결되어 문서 없음
 Q017,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,개강일 포함
 Q018,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,방학 기간 포함
 Q019,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,휴학 키워드 없음→의미적 연결 필요(난이도 높음). 교무/학사 부서 연락처
 Q020,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,'장학/학자금 대출 문의' 연락처 포함
+Q021,,,insufficient,,,졸업학점 충족 여부 확인 위치 안내 문서 없음
+Q022,,,insufficient,,,"예비군 안내 문서 없음, 학과 공지에 그때그때 게시"
+Q023,,,insufficient,,,"학점 확인 위치 문서 없음, 학기마다 학과 공지에 게시"
+Q024,,,insufficient,,,"공결/출석 규정 문서 없음(대학규정 PDF 로그인 필요, 미수집)"
 Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,졸업학점 2025,primary,general_academic,academic,교양필수·전공필수 구성표
+Q026,,,insufficient,,,자판기 운영 정보 없음 — 거절 테스트
 Q027,https://www.honam.ac.kr/military_Rest,입대휴학,primary,general_academic,academic,신청 시기·서류·기간
 Q028,https://www.honam.ac.kr/General_Rest,일반휴학,primary,general_academic,academic,휴학기간 규정 포함
 Q029,https://www.honam.ac.kr/ScholarshipType,장학금 종류,primary,general_academic,academic,성적장학 기준 포함
+Q030,,,insufficient,,,"국가근로 안내 페이지 없음, 시한부 공지만 존재"
+Q031,,,insufficient,,,등록금 안내 페이지 없음(등록금심의위 회의록 게시글뿐)
+Q032,,,insufficient,,,등록금 안내 페이지 없음
+Q033,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청 최대 학점(일반 18학점) 명시
+Q034,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,수강신청 확인 및 정정 일정 포함
+Q035,https://www.honam.ac.kr/ExamResult,시험/성적,primary,general_academic,academic,성적 이의신청 절 포함
+Q036,https://www.honam.ac.kr/ExamResult,시험/성적,primary,general_academic,academic,"재수강 절 포함(C+ 이하, B+까지 인정)"
+Q037,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,인터넷발급 절 포함
+Q038,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,"수수료 표(국문 500원/영문 1,000원)"
+Q039,,,insufficient,,,"편입 모집요강이 다운로드 링크 페이지뿐, PDF 본문 미추출"
+Q040,,,insufficient,,,입시캘린더 페이지가 제목만 추출됨(JS 렌더링 추정)
