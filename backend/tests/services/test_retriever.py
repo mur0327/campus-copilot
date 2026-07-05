@@ -93,6 +93,9 @@ class FakeResult:
     def all(self):
         return self.rows
 
+    def first(self):
+        return self.rows[0] if self.rows else None
+
 
 class FakeChromaCollection:
     def __init__(self, *, chunk_ids=None, distances=None, metadatas=None):
@@ -767,6 +770,231 @@ async def test_retrieve_with_status_degrades_to_semantic_only_when_bm25_is_missi
     assert response.status.semantic_available is True
     assert response.status.bm25_available is False
     assert response.results[0].chunk_id == chunk_id
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_best_bet_trigger_inserts_pinned_document_at_rank_one(tmp_path: Path):
+    organic_id = uuid4()
+    pinned_id = uuid4()
+    pinned_document_id = uuid4()
+    organic_content = "휴학 신청 안내입니다. " * 8
+    pinned_content = "학사일정에서 계절학기와 개강일을 확인할 수 있습니다. " * 8
+
+    class BestBetSession:
+        def __init__(self):
+            self.execute_calls = 0
+
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            self.execute_calls += 1
+            if self.execute_calls == 1:
+                return FakeResult([make_row(organic_id, content=organic_content)])
+            return FakeResult(
+                [
+                    make_row(
+                        pinned_id,
+                        content=pinned_content,
+                        document_id=pinned_document_id,
+                        title="학사일정",
+                        url="https://www.honam.ac.kr/AcademicCalendar",
+                        page_kind="schedule",
+                    )
+                ]
+            )
+
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[organic_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        BestBetSession(),
+        question="방학 기간은 어디서 확인하나요?",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert response.results[0].url == "https://www.honam.ac.kr/AcademicCalendar"
+    assert response.results[0].chunk_id == pinned_id
+    assert response.results[0].relevance == 1.0
+    assert response.results[0].score > response.results[1].score
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_best_bet_moves_existing_result_without_duplication(tmp_path: Path):
+    other_id = uuid4()
+    pinned_id = uuid4()
+    pinned_document_id = uuid4()
+    other_content = "휴학 신청 안내입니다. " * 8
+    pinned_content = "학사일정에서 계절학기와 개강일을 확인할 수 있습니다. " * 8
+
+    class ExistingBestBetSession:
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            return FakeResult(
+                [
+                    make_row(other_id, content=other_content, url="https://www.honam.ac.kr/Other"),
+                    make_row(
+                        pinned_id,
+                        content=pinned_content,
+                        document_id=pinned_document_id,
+                        title="학사일정",
+                        url="https://www.honam.ac.kr/AcademicCalendar",
+                        page_kind="schedule",
+                    ),
+                ]
+            )
+
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[other_id, pinned_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        ExistingBestBetSession(),
+        question="방학 기간은 어디서 확인하나요?",
+        category="academic",
+        semantic_top_n=2,
+        bm25_top_n=1,
+    )
+
+    urls = [result.url for result in response.results]
+    assert urls[0] == "https://www.honam.ac.kr/AcademicCalendar"
+    assert urls.count("https://www.honam.ac.kr/AcademicCalendar") == 1
+    assert [result.chunk_id for result in response.results] == [pinned_id, other_id]
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_non_trigger_question_leaves_results_unchanged(tmp_path: Path):
+    chunk_id = uuid4()
+    content = "휴학 신청 안내입니다. " * 8
+
+    class NonTriggerSession:
+        def __init__(self):
+            self.execute_calls = 0
+
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            self.execute_calls += 1
+            return FakeResult([make_row(chunk_id, content=content)])
+
+    session = NonTriggerSession()
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[chunk_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        session,
+        question="휴학 신청은 어디서 하나요?",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert [result.chunk_id for result in response.results] == [chunk_id]
+    assert response.results[0].relevance != 1.0
+    assert session.execute_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_best_bet_disabled_leaves_trigger_results_unchanged(tmp_path: Path):
+    chunk_id = uuid4()
+    content = "휴학 신청 안내입니다. " * 8
+
+    class DisabledBestBetSession:
+        def __init__(self):
+            self.execute_calls = 0
+
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            self.execute_calls += 1
+            return FakeResult([make_row(chunk_id, content=content)])
+
+    session = DisabledBestBetSession()
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[chunk_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+        best_bets_enabled=False,
+    )
+
+    response = await retriever.retrieve_with_status(
+        session,
+        question="방학 기간은 어디서 확인하나요?",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert [result.chunk_id for result in response.results] == [chunk_id]
+    assert response.results[0].url != "https://www.honam.ac.kr/AcademicCalendar"
+    assert session.execute_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_best_bet_missing_document_silently_skips(tmp_path: Path):
+    chunk_id = uuid4()
+    content = "휴학 신청 안내입니다. " * 8
+
+    class MissingBestBetSession:
+        def __init__(self):
+            self.execute_calls = 0
+
+        async def scalar(self, statement):
+            return datetime(2026, 5, 1, tzinfo=UTC)
+
+        async def execute(self, statement):
+            self.execute_calls += 1
+            if self.execute_calls == 1:
+                return FakeResult([make_row(chunk_id, content=content)])
+            return FakeResult([])
+
+    session = MissingBestBetSession()
+    retriever = HybridRetriever(
+        collection=FakeChromaCollection(chunk_ids=[chunk_id]),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=0.3,
+        final_top_k=6,
+        bm25_cache_dir=tmp_path,
+    )
+
+    response = await retriever.retrieve_with_status(
+        session,
+        question="방학 기간은 어디서 확인하나요?",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+    )
+
+    assert [result.chunk_id for result in response.results] == [chunk_id]
+    assert response.results[0].url != "https://www.honam.ac.kr/AcademicCalendar"
+    assert session.execute_calls == 2
 
 
 @pytest.mark.asyncio

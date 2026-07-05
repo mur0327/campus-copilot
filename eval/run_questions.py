@@ -117,6 +117,15 @@ def parse_args() -> argparse.Namespace:
             "(.data/postgres, .data/chromadb, .data/bm25)."
         ),
     )
+    parser.add_argument(
+        "--best-bets",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Include the curated best-bets pin layer (production behavior). "
+            "Use --no-best-bets to measure pure retrieval quality."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -436,6 +445,7 @@ async def run() -> None:
         bm25_weight=settings.retriever_bm25_weight,
         final_top_k=settings.retriever_final_top_k,
         bm25_cache_dir=settings.retriever_bm25_cache_dir,
+        best_bets_enabled=args.best_bets,
     )
 
     summary_rows: list[dict[str, Any]] = []

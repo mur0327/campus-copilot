@@ -80,6 +80,12 @@ KOREAN_TOKEN_SUFFIXES = (
     "죠",
     "까",
 )
+# Best Bets: 검색이 못 푸는 게 증명된 질문만 등록하는 큐레이션 고정 답변.
+# 트리거가 질문에 부분 문자열로 나타나면 해당 문서를 최종 결과 top-1에 고정한다.
+# (방학: 달력 본문에 그 단어가 없어 유기적 검색 5단계 시도 전부 실패 — 2026-07-05)
+BEST_BETS: list[tuple[tuple[str, ...], str]] = [
+    (("방학", "여름방학", "겨울방학", "종강", "개학"), "https://www.honam.ac.kr/AcademicCalendar"),
+]
 
 
 class RetrievalResult(BaseModel):
@@ -512,6 +518,7 @@ class HybridRetriever:
         bm25_weight: float,
         final_top_k: int,
         bm25_cache_dir: str | Path | None = None,
+        best_bets_enabled: bool = True,
     ) -> None:
         self.collection = collection
         self.embedder = embedder
@@ -520,6 +527,7 @@ class HybridRetriever:
         self.final_top_k = final_top_k
         self.bm25_cache: dict[str | None, tuple[datetime | None, BM25Index]] = {}
         self.bm25_cache_dir = Path(bm25_cache_dir) if bm25_cache_dir else None
+        self.best_bets_enabled = best_bets_enabled
 
     async def ensure_bm25_index(self, session: AsyncSession, category: str | None = None) -> BM25Index:
         index, _available, _error = await self._ensure_bm25_index_status(session, category)
@@ -639,6 +647,7 @@ class HybridRetriever:
         results = await self.expand_detail_context(session, results, question=question, category=category)
         # 상세 컨텍스트 확장이 문서별로 같은 표를 다시 붙일 수 있어 최종 단계에서 한 번 더 중복을 제거한다.
         results = _dedup_ranked_results(results)
+        results = await self.apply_best_bets(session, question=question, results=results)
         return RetrievalResponse(
             results=results,
             status=RetrievalStatus(
@@ -776,6 +785,77 @@ class HybridRetriever:
             added_chunk_ids.add(expansion.chunk_id)
 
         return expanded_results[: self.final_top_k]
+
+    async def apply_best_bets(
+        self,
+        session: AsyncSession,
+        *,
+        question: str,
+        results: list[RetrievalResult],
+    ) -> list[RetrievalResult]:
+        if not self.best_bets_enabled:
+            return results
+
+        pinned_url = _best_bet_url_for_question(question)
+        if pinned_url is None:
+            return results
+
+        current_top_score = results[0].score if results else 0.0
+        promoted_score = current_top_score + 1.0
+        pinned_document_ids = _document_ids_for_url(results, pinned_url)
+        existing_index = next(
+            (
+                index
+                for index, result in enumerate(results)
+                if result.document_id in pinned_document_ids or _canonical_url(result.url) == _canonical_url(pinned_url)
+            ),
+            None,
+        )
+        if existing_index is not None:
+            existing = results[existing_index].model_copy(
+                update={"score": promoted_score, "relevance": 1.0}
+            )
+            return [existing, *results[:existing_index], *results[existing_index + 1 :]][: self.final_top_k]
+
+        pinned_result = await self._load_best_bet_result(session, pinned_url, promoted_score)
+        if pinned_result is None:
+            return results
+        return [pinned_result, *results][: self.final_top_k]
+
+    async def _load_best_bet_result(
+        self,
+        session: AsyncSession,
+        pinned_url: str,
+        score: float,
+    ) -> RetrievalResult | None:
+        statement = (
+            select(DocumentChunk, Document)
+            .join(Document, Document.id == DocumentChunk.document_id)
+            .where(
+                Document.url == pinned_url,
+                Document.is_active.is_(True),
+                DocumentChunk.content != "",
+            )
+            .order_by(DocumentChunk.chunk_index)
+            .limit(1)
+        )
+        result = await session.execute(statement)
+        row = result.first() if hasattr(result, "first") else next(iter(result.all()), None)
+        if row is None:
+            return None
+        return row_to_retrieval_result(row).model_copy(update={"score": score, "relevance": 1.0})
+
+
+def _best_bet_url_for_question(question: str) -> str | None:
+    for triggers, url in BEST_BETS:
+        if any(trigger in question for trigger in triggers):
+            return url
+    return None
+
+
+def _document_ids_for_url(results: list[RetrievalResult], pinned_url: str) -> set[UUID]:
+    canonical_pinned_url = _canonical_url(pinned_url)
+    return {result.document_id for result in results if _canonical_url(result.url) == canonical_pinned_url}
 
 
 def _first_vector(encoded) -> list[float]:

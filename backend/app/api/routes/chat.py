@@ -536,6 +536,7 @@ def _get_default_retriever() -> HybridRetriever:
             bm25_weight=settings.retriever_bm25_weight,
             final_top_k=settings.retriever_final_top_k,
             bm25_cache_dir=settings.retriever_bm25_cache_dir,
+            best_bets_enabled=settings.retriever_best_bets_enabled,
         )
     return _default_retriever
 
