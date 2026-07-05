@@ -18,6 +18,7 @@
 - [RAG 평가 방법과 정량 지표](./rag-evaluation-methods.md)
 - [문서 재배치·다이어그램·커밋 전략](./documentation-relocation-and-diagrams.md)
 - [GitHub 공개 준비와 시크릿 점검](./git-publication-and-secret-audit.md)
+- [검색 개선 여정: RRF 융합, 어휘 갭 실패 분석, Best Bets](./retrieval-rrf-vocabulary-gap-best-bets.md)
 
 ## 읽는 방법
 
