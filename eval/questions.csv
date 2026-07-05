@@ -19,3 +19,33 @@ Q017,학사일정,이번 학기 개강일은 어디서 확인하나요?,date,,,a
 Q018,학사일정,방학 기간은 어디서 확인하나요?,date,,,answerable,false,학사일정;방학,
 Q019,부서/문의처,휴학 관련 문의는 어느 부서에 해야 하나요?,contact,,,answerable,false,휴학;문의;교무;학사,
 Q020,부서/문의처,장학금 문의 전화번호는 어디서 확인하나요?,contact,,,answerable,false,장학금;문의;전화번호,
+Q021,졸업/학점,졸업학점을 채웠는지 어디서 확인하나요?,fact,,,answerable,false,졸업학점;확인,2026-07 설문 응답
+Q022,예비군,학생 예비군 훈련 신청은 어떻게 하나요?,procedure,,,answerable,true,예비군;훈련;신청,2026-07 설문 응답
+Q023,성적/시험,내 학점은 어디서 확인하나요?,fact,,,answerable,false,학점;확인;성적,2026-07 설문 응답
+Q024,예비군,예비군 훈련으로 수업을 빠지면 출석 처리는 어떻게 되나요?,policy,,,answerable,false,예비군;출석;공결,2026-07 설문 응답
+Q025,졸업/학점,졸업하려면 꼭 들어야 하는 필수 과목이 뭔가요?,fact,,,answerable,false,졸업;필수;교양;전공,2026-07 설문 응답
+Q026,시설/생활,5층 자판기에 음료수는 언제 채워지나요?,date,,,answerable,false,자판기;음료수,2026-07 설문 응답(거절 테스트 후보)
+Q027,휴학/복학,군대 가려면 휴학 어떻게 해요?,procedure,,,answerable,true,군휴학;입대;휴학,
+Q028,휴학/복학,휴학은 최대 몇 년까지 할 수 있나요?,policy,,,answerable,false,휴학;기간;최대,
+Q029,장학금,성적장학금은 몇 점부터 받을 수 있나요?,policy,,,answerable,false,성적장학금;기준;평점,
+Q030,장학금,국가근로장학금 신청은 어디서 하나요?,procedure,,,answerable,true,국가근로;장학;신청,
+Q031,등록금,등록금 분할 납부 되나요?,policy,,,answerable,false,등록금;분할;납부,
+Q032,등록금,등록금 고지서는 어디서 확인하나요?,fact,,,answerable,false,등록금;고지서;확인,
+Q033,수강신청,한 학기에 최대 몇 학점까지 들을 수 있나요?,policy,,,answerable,false,수강;학점;최대;신청,
+Q034,수강신청,수강 정정은 언제까지 할 수 있나요?,date,,,answerable,false,수강;정정;기간,
+Q035,성적/시험,성적 이의신청은 어떻게 하나요?,procedure,,,answerable,true,성적;이의신청;정정,
+Q036,성적/시험,F 받은 과목 재수강은 어떻게 하나요?,procedure,,,answerable,true,재수강;F;성적,
+Q037,증명서,졸업증명서 인터넷으로 뗄 수 있나요?,fact,,,answerable,false,졸업증명서;인터넷;발급,
+Q038,증명서,증명서 발급 수수료는 얼마예요?,fact,,,answerable,false,증명서;수수료;발급,
+Q039,입학/편입,편입 지원 자격이 어떻게 되나요?,policy,,,answerable,false,편입;자격;지원,
+Q040,입학/편입,수시 원서 접수는 언제부터인가요?,date,,,answerable,false,수시;원서;접수;기간,
+Q041,학사일정,계절학기 신청 기간은 언제인가요?,date,,,answerable,false,계절학기;신청;기간,
+Q042,학사일정,중간고사 기간이 언제예요?,date,,,answerable,false,중간고사;기간;시험,
+Q043,부서/문의처,장학 담당 부서 위치가 어디인가요?,contact,,,answerable,false,장학;부서;위치,
+Q044,부서/문의처,교무처 전화번호 알려주세요,contact,,,answerable,false,교무처;전화번호,
+Q045,시설/생활,도서관 운영시간이 어떻게 되나요?,fact,,,answerable,false,도서관;운영시간,
+Q046,시설/생활,학생식당 메뉴는 어디서 보나요?,fact,,,answerable,false,학생식당;메뉴;식단,
+Q047,시설/생활,통학버스 시간표 알려주세요,fact,,,answerable,false,통학버스;셔틀;시간표,
+Q048,시설/생활,기숙사 입사 신청은 어떻게 하나요?,procedure,,,answerable,true,기숙사;입사;신청,
+Q049,예비군,예비군 연기 신청은 어떻게 하나요?,procedure,,,answerable,true,예비군;연기;신청,
+Q050,기타,축제는 언제 하나요?,date,,,answerable,false,축제;대동제;일정,
