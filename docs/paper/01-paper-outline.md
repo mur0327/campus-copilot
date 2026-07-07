@@ -124,4 +124,6 @@ flowchart TD
 
 [단어 사전](04-glossary.md)
 
+[방향·포지셔닝 논의(확정/미결정)](05-scope-and-positioning.md)
+
 [미팅](99-meeting-notes.md)
