@@ -11,6 +11,9 @@
 [07-external-review-2026-07-08.md](07-external-review-2026-07-08.md)에 있다.
 핵심 수정은 거절을 성공이 아니라 한계로 프레이밍한 것(§3.1 EXP-02).
 
+방향 확정(§2.1) 이후 심사위원 관점에서 재점검한 약점 목록과 대응은
+[08-weaknesses-and-mitigations.md](08-weaknesses-and-mitigations.md)에 있다.
+
 ---
 
 ## 0. 한 줄 결론
