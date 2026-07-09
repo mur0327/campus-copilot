@@ -48,6 +48,20 @@
 | RQ2 | 출처·최신성 표시가 사용자의 신뢰도와 이해도를 높이는가? |
 | RQ3 | 절차형 안내가 행정 정보 탐색 시간을 줄이는가? |
 
+> ⚠️ 위 두 세트는 최신성·출처신뢰도·절차·충돌·사용자실험까지 넓은 원래안으로, 측정 근거가 없어 **폐기·축소**한다.
+>
+> 아래가 7/31 투고 현실에 맞게 좁힌 최신 세트다.
+>
+> (근거: [05-scope-and-positioning.md](05-scope-and-positioning.md) §2.2, [07-external-review-2026-07-08.md](07-external-review-2026-07-08.md) §4).
+
+| 번호 | 연구 문제 | 쉬운 의미 | 근거 |
+| --- | --- | --- | --- |
+| RQ1 | 코퍼스 정제·색인 개선·RRF·도메인 어휘 확장은 공식 문서 검색 성능을 얼마나 개선하는가? | 검색 성능 개선 폭 | 0.44→0.94 단계별 |
+| RQ2 | 남은 검색 실패는 corpus_missing/pool_miss/merge_loss/ranked_low 중 어떤 유형이며, 어휘 불일치는 어떤 구조적 문제를 만드는가? | 실패가 어느 단계에서 나나 | 방학·교양필수·기숙사 |
+| RQ3 | 정답 부재(insufficient) 질의는 어떤 커버리지 한계를 드러내며, evidence gate 거절은 어디서 실패하는가? | 거절의 어려움·한계 | 거절 2/18 |
+
+> RRF score와 evidence relevance 분리는 독립 RQ가 아니라 시스템·논의 절의 소절로 둔다.
+
 ### 차별점
 
 ---
@@ -127,5 +141,7 @@ flowchart TD
 [방향·포지셔닝 논의(확정/미결정)](05-scope-and-positioning.md)
 
 [실험 노트(누적 기록)](06-experiment-log.md)
+
+[외부 리뷰: 포지셔닝 재검증(GPT Pro)](07-external-review-2026-07-08.md)
 
 [미팅](99-meeting-notes.md)
