@@ -150,3 +150,60 @@
   "oracle 검색기 → 올바른 거절 0.68→0.93"과 정렬. evidence-충분성 거절 자체는
   2025 선행연구 존재 → 우리는 방법이 아니라 도메인 재현+얽힘 실측이 기여.
   상세: [02-related-work.md](02-related-work.md) 3축.
+
+---
+
+## EXP-04. 검색 기준선표 — BM25 only / Vector only / Hybrid + nDCG@5
+
+- **날짜**: 2026-07-10
+- **질문**: 하이브리드 융합이 단일 검색기 대비 실제로 무엇을 더 주는가.
+  KMMS 체크리스트가 요구하는 격리 기준선표와 nDCG@k를 채우는 실험.
+- **방법**: `eval/run_questions.py`에 `--retriever-mode {hybrid,bm25,semantic}`
+  추가(설계: [docs/plans/2026-07-10-baseline-table-ndcg-eval.md](../plans/2026-07-10-baseline-table-ndcg-eval.md),
+  구현: Codex 위임). 격리는 융합만 끄고 상세 확장·중복 제거·intent boost 등
+  후처리는 동일. 단일 모드는 활성 검색기 가중치 1.0. nDCG@5는 binary(단일
+  relevant, IDCG=1). 세 모드를 같은 코퍼스 스냅숏에서 연속 실행, best bets 없이
+  순수 검색. Freshness 행은 범위 제외(08 문서 W6).
+
+- **결과** (answerable 32 / insufficient 18):
+
+  | 모드 | Recall@5 | MRR | nDCG@5 | 미스 수 |
+  |---|---|---|---|---|
+  | BM25 only | 0.4375 | 0.3854 | 0.3988 | 18 |
+  | Vector only | 0.8750 | 0.8125 | 0.8289 | 4 |
+  | Hybrid (RRF) | 0.9375 | 0.7760 | 0.8181 | 2 |
+
+  하이브리드 수치는 EXP-01(0.94/0.78)과 일치 — 하네스 변경 후 회귀 없음 확인.
+
+- **사례 분석** (어느 질문이 어느 검색기에서만 잡히는가):
+  - BM25만 잡는 질문: Q003 국가장학금(rank 2), Q007 수강신청 기간(rank 1).
+    둘 다 질의 키워드가 문서에 그대로 있는 정합 질의. semantic은 pool_miss.
+  - Vector만 잡는 질문: BM25 미스 18개 중 16개를 semantic이 구제(Q018 포함,
+    rank 1). BM25 미스는 대부분 pool_miss — 어휘 불일치·형태 변형에 취약.
+  - 하이브리드는 semantic 미스 2건(Q003/Q007)을 BM25로 구제해 recall 최고.
+    대신 MRR 0.8125→0.7760, nDCG 0.8289→0.8181로 소폭 하락: 융합이 recall을
+    사고 top-rank 정밀도를 약간 지불하는 trade-off.
+  - 모든 모드가 놓치는 질문: Q025(교양필수), Q048(기숙사) — 전 모드 pool_miss.
+    검색기 선택으로 해결 안 되는 커버리지/어휘 갭 문제.
+
+- **해석 / 논문 함의**:
+  1. 기준선표 완성 — 체크리스트 §3.2/3.3 해소.
+  2. 하이브리드의 가치는 "전 지표 우위"가 아니라 **상보성**이다: recall은 최고지만
+     MRR/nDCG는 vector 단독이 근소 우위. 이 trade-off를 숨기지 않고 보고하는 것이
+     Best Bets 분리 보고와 같은 정직성 전략.
+  3. Q025/Q048이 전 모드 pool_miss인 것은 "실패는 랭킹이 아니라 그 이전 단계"
+     헤드라인(05 §2.3)의 직접 증거 — 검색기를 바꿔도 못 잡는 미스.
+  4. 어휘 갭의 양방향 확인: BM25는 의미 변형에, vector는 정확 키워드 정합 질의
+     (기간·고유명사)에 각각 취약.
+
+- **주의·한계**:
+  - N=32라 질문 1개 = Recall 0.031. 모드 간 차이(특히 hybrid vs vector의 recall
+    2문항)는 서술적 비교로만 보고하고 통계적 유의성은 주장하지 않는다(08 문서 W5).
+  - BM25-only 0.4375가 1차 보고(6/28)의 풀시스템 0.44와 수치가 우연히 비슷함 —
+    다른 측정이므로 혼동 주의.
+  - Q018은 flaky 이력(EXP-01) — 이번 실행에서 semantic/hybrid 모두 rank 1로 잡힘.
+
+- **상태**: 확정.
+- **재현**: `uv run --project backend python eval/run_questions.py
+  --retriever-mode {bm25,semantic,hybrid} --no-best-bets` 연속 3회.
+  결과: `eval/results/retrieval-{bm25-20260710-112650,semantic-20260710-112659,hybrid-20260710-112716}*`.
