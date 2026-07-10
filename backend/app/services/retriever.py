@@ -623,18 +623,26 @@ class HybridRetriever:
         semantic_top_n: int,
         bm25_top_n: int,
         include_pools: bool = False,
+        use_semantic: bool = True,
+        use_bm25: bool = True,
     ) -> RetrievalResponse:
-        bm25_index, bm25_available, bm25_error = await self._ensure_bm25_index_status(session, category)
-        bm25_results = bm25_index.search(question, bm25_top_n)
+        # 기준선 평가에서 의도적으로 끈 검색기는 장애가 아니므로 정상 상태를 기본값으로 둔다.
+        bm25_available = True
+        bm25_error = None
+        bm25_results = []
+        if use_bm25:
+            bm25_index, bm25_available, bm25_error = await self._ensure_bm25_index_status(session, category)
+            bm25_results = bm25_index.search(question, bm25_top_n)
 
         semantic_available = True
         semantic_error = None
-        try:
-            semantic_results = await self.search_chroma(session, question, category, semantic_top_n)
-        except Exception as exc:
-            semantic_available = False
-            semantic_error = type(exc).__name__
-            semantic_results = []
+        semantic_results = []
+        if use_semantic:
+            try:
+                semantic_results = await self.search_chroma(session, question, category, semantic_top_n)
+            except Exception as exc:
+                semantic_available = False
+                semantic_error = type(exc).__name__
 
         results = merge_ranked_results(
             semantic_results,
@@ -651,10 +659,11 @@ class HybridRetriever:
         return RetrievalResponse(
             results=results,
             status=RetrievalStatus(
+                # mode에는 실제로 켠 검색기만 반영하되, 아래 가용성 필드는 의도적 비활성화를 정상으로 표시한다.
                 mode=_retrieval_mode(
                     results=results,
-                    semantic_available=semantic_available,
-                    bm25_available=bm25_available,
+                    semantic_available=semantic_available and use_semantic,
+                    bm25_available=bm25_available and use_bm25,
                 ),
                 degraded=not semantic_available or not bm25_available,
                 semantic_available=semantic_available,

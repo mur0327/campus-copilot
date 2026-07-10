@@ -514,6 +514,19 @@ def test_intent_boost_is_skipped_without_question():
     ]
 
 
+def test_merge_ranked_results_preserves_bm25_order_when_semantic_is_empty():
+    first = make_result("휴학 신청 안내").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.8, "url": "https://example.test/1"}
+    )
+    second = make_result("복학 신청 안내").model_copy(
+        update={"chunk_id": uuid4(), "document_id": uuid4(), "score": 0.7, "url": "https://example.test/2"}
+    )
+
+    merged = merge_ranked_results([], [first, second], 0.0, 1.0, 6)
+
+    assert [result.chunk_id for result in merged] == [first.chunk_id, second.chunk_id]
+
+
 def test_rrf_surfaces_strong_single_list_hit_over_weighted_bias():
     # RRF는 순위로 융합하므로, 한쪽 리스트에서만 잡힌 상위 히트가 semantic 가중치(0.7)에
     # 눌려 사라지지 않는다. bm25 1위 문서가 semantic 3위 문서보다 위로 올라와야 한다.
@@ -770,6 +783,82 @@ async def test_retrieve_with_status_degrades_to_semantic_only_when_bm25_is_missi
     assert response.status.semantic_available is True
     assert response.status.bm25_available is False
     assert response.results[0].chunk_id == chunk_id
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_semantic_mode_skips_bm25_without_degrading():
+    semantic_result = make_result("휴학 신청은 포털에서 진행합니다.").model_copy(update={"score": 0.8})
+
+    class SemanticOnlyRetriever(HybridRetriever):
+        async def _ensure_bm25_index_status(self, session, category=None):
+            raise AssertionError("BM25 should be skipped when it is disabled")
+
+        async def search_chroma(self, session, question, category, semantic_top_n):
+            return [semantic_result]
+
+    retriever = SemanticOnlyRetriever(
+        collection=FakeChromaCollection(),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=1.0,
+        bm25_weight=0.3,
+        final_top_k=6,
+        best_bets_enabled=False,
+    )
+
+    response = await retriever.retrieve_with_status(
+        SimpleNamespace(),
+        question="휴학 신청",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+        use_bm25=False,
+    )
+
+    assert response.status.mode == "semantic_only"
+    assert response.status.semantic_available is True
+    assert response.status.bm25_available is True
+    assert response.status.semantic_error is None
+    assert response.status.bm25_error is None
+    assert response.status.degraded is False
+    assert [result.chunk_id for result in response.results] == [semantic_result.chunk_id]
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_status_bm25_mode_skips_semantic_without_degrading():
+    bm25_result = make_result("휴학 신청은 포털에서 진행합니다.")
+
+    class Bm25OnlyRetriever(HybridRetriever):
+        async def _ensure_bm25_index_status(self, session, category=None):
+            return BM25Index([bm25_result]), True, None
+
+        async def search_chroma(self, session, question, category, semantic_top_n):
+            raise AssertionError("semantic search should be skipped when it is disabled")
+
+    retriever = Bm25OnlyRetriever(
+        collection=FakeChromaCollection(),
+        embedder=FakeQueryEmbedder(),
+        semantic_weight=0.7,
+        bm25_weight=1.0,
+        final_top_k=6,
+        best_bets_enabled=False,
+    )
+
+    response = await retriever.retrieve_with_status(
+        SimpleNamespace(),
+        question="휴학 신청",
+        category="academic",
+        semantic_top_n=1,
+        bm25_top_n=1,
+        use_semantic=False,
+    )
+
+    assert response.status.mode == "keyword_only"
+    assert response.status.semantic_available is True
+    assert response.status.bm25_available is True
+    assert response.status.semantic_error is None
+    assert response.status.bm25_error is None
+    assert response.status.degraded is False
+    assert [result.chunk_id for result in response.results] == [bm25_result.chunk_id]
 
 
 @pytest.mark.asyncio

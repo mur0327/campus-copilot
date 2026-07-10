@@ -11,6 +11,7 @@ import asyncio
 import csv
 import hashlib
 import json
+import math
 import os
 import sys
 from collections.abc import Iterable
@@ -125,6 +126,12 @@ def parse_args() -> argparse.Namespace:
             "Include the curated best-bets pin layer (production behavior). "
             "Use --no-best-bets to measure pure retrieval quality."
         ),
+    )
+    parser.add_argument(
+        "--retriever-mode",
+        choices=("hybrid", "bm25", "semantic"),
+        default="hybrid",
+        help="Retriever baseline mode. Defaults to hybrid.",
     )
     return parser.parse_args()
 
@@ -333,6 +340,13 @@ def compute_metrics(records: list[dict[str, Any]], *, k: int = 5) -> dict[str, A
 
     recall = sum(1 for r in answerable if recalled(r["gold_rank"])) / n
     mrr = sum((1.0 / r["gold_rank"]) if r["gold_rank"] else 0.0 for r in answerable) / n
+    # 단일 relevant 문서만 보는 binary nDCG라 IDCG는 항상 1이다.
+    ndcg_at_5 = sum(
+        1.0 / math.log2(1 + rank)
+        if (rank := r["gold_rank"]) is not None and rank <= 5
+        else 0.0
+        for r in answerable
+    ) / n
     evidence_recall = (
         sum(1 for r in answerable if recalled(r["gold_rank_evidence"])) / n
     )
@@ -341,6 +355,7 @@ def compute_metrics(records: list[dict[str, Any]], *, k: int = 5) -> dict[str, A
         "n_insufficient": insufficient,
         f"recall@{k}": round(recall, 4),
         "mrr": round(mrr, 4),
+        "ndcg@5": round(ndcg_at_5, 4),
         f"evidence_recall@{k}": round(evidence_recall, 4),
         "misses": sorted(r["id"] for r in answerable if not recalled(r["gold_rank"])),
         # 미스별 원인 분류. 어느 단계(커버리지/색인/랭킹)를 고쳐야 하는지 바로 보여준다.
@@ -429,8 +444,13 @@ async def run() -> None:
     gold_sources_by_question = load_gold_sources(args.gold_sources)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     stamp = now_stamp()
-    jsonl_path = args.out_dir / f"retrieval-{stamp}.jsonl"
-    csv_path = args.out_dir / f"retrieval-{stamp}.csv"
+    jsonl_path = args.out_dir / f"retrieval-{args.retriever_mode}-{stamp}.jsonl"
+    csv_path = args.out_dir / f"retrieval-{args.retriever_mode}-{stamp}.csv"
+
+    use_semantic = args.retriever_mode != "bm25"
+    use_bm25 = args.retriever_mode != "semantic"
+    semantic_weight = 1.0 if args.retriever_mode == "semantic" else settings.retriever_semantic_weight
+    bm25_weight = 1.0 if args.retriever_mode == "bm25" else settings.retriever_bm25_weight
 
     # LLM은 호출하지 않는다.
     # 이 스크립트의 목적은 현재 .data 기준 retrieval 후보를 수집하는 것이다.
@@ -441,8 +461,8 @@ async def run() -> None:
             input_type="query",
             api_key=settings.voyage_api_key,
         ),
-        semantic_weight=settings.retriever_semantic_weight,
-        bm25_weight=settings.retriever_bm25_weight,
+        semantic_weight=semantic_weight,
+        bm25_weight=bm25_weight,
         final_top_k=settings.retriever_final_top_k,
         bm25_cache_dir=settings.retriever_bm25_cache_dir,
         best_bets_enabled=args.best_bets,
@@ -465,6 +485,8 @@ async def run() -> None:
                     semantic_top_n=semantic_top_n,
                     bm25_top_n=bm25_top_n,
                     include_pools=True,
+                    use_semantic=use_semantic,
+                    use_bm25=use_bm25,
                 )
 
                 # 부검용 풀 진단: gold가 각 후보 풀에 들어왔는지 기록한다.
@@ -599,13 +621,18 @@ async def run() -> None:
     await engine.dispose()
 
     # answerable 문항 기준 집계 지표를 계산해 별도 파일과 콘솔에 남긴다.
-    metrics = compute_metrics(metric_records)
-    metrics_path = args.out_dir / f"retrieval-{stamp}-metrics.json"
+    metrics = {
+        "retriever_mode": args.retriever_mode,
+        "best_bets": args.best_bets,
+        **compute_metrics(metric_records),
+    }
+    metrics_path = args.out_dir / f"retrieval-{args.retriever_mode}-{stamp}-metrics.json"
     with metrics_path.open("w", encoding="utf-8") as metrics_file:
         json.dump(metrics, metrics_file, ensure_ascii=False, indent=2)
 
     # 출력 경로만 알린다. API key나 환경변수 값은 출력하지 않는다.
     print(f"questions: {len(questions)}")
+    print(f"retriever mode: {args.retriever_mode}")
     print(f"jsonl: {jsonl_path.relative_to(REPO_ROOT)}")
     print(f"csv: {csv_path.relative_to(REPO_ROOT)}")
     print(f"metrics: {metrics_path.relative_to(REPO_ROOT)}")
