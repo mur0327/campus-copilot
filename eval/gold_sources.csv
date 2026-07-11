@@ -8,8 +8,12 @@ Q005,,,insufficient,,,등록금 납부 안내가 정적 페이지로 없음(개�
 Q006,,,insufficient,,,등록금 납부 안내가 정적 페이지로 없음
 Q007,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청기간 포함
 Q008,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청 정정 포함
-Q009,https://www.honam.ac.kr/GraduateGrades,졸업학점,primary,general_academic,academic,졸업학점 구성표
+Q009,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,졸업학점 2025,primary,general_academic,academic,"2026-07-11 재판정에서 primary로 조정. 입학년도별 졸업이수 학점표 본문(최신 연도, 결정4)"
+Q009,https://www.honam.ac.kr/GraduateGrades,졸업학점,secondary,general_academic,academic,"2026-07-11 secondary로 조정. PDF 뷰어 진입점 — 본문은 유의사항·입학년도 선택 기준뿐, 학점표 없음(사용자 확인)"
+Q009,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024,졸업학점 2024,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 옛 연도 표(결정4: 최신 기본·과거 secondary)
+Q009,https://www.honam.ac.kr/Graduate,졸업,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 졸업이수 학점(130~140) 명시
 Q010,https://www.honam.ac.kr/Early_Graduation,조기졸업,primary,general_academic,academic,조기졸업 조건/신청
+Q010,https://www.honam.ac.kr/Graduate,졸업,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 조기졸업 7학기 등록 등 요건 일부
 Q011,https://www.honam.ac.kr/ExamResult,시험/성적,primary,general_academic,academic,성적 이의신청 포함
 Q012,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,
 Q013,https://www.honam.ac.kr/ProofIssuanceGuide,증명발급안내,primary,general_academic,certificate,증명서 종류·유의사항·연락처(재학증명서 포함)
@@ -20,24 +24,33 @@ Q016,,,insufficient,,,입학 상담이 카카오톡 배너로 연결되어 문�
 Q017,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,개강일 포함
 Q018,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,방학 기간 포함
 Q019,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,휴학 키워드 없음→의미적 연결 필요(난이도 높음). 교무/학사 부서 연락처
+Q019,https://www.honam.ac.kr/General_Rest,일반휴학,secondary,general_academic,contact,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 신청처(단과대학 교학과) 포함
 Q020,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academic,contact,'장학/학자금 대출 문의' 연락처 포함
 Q021,,,insufficient,,,졸업학점 충족 여부 확인 위치 안내 문서 없음
 Q022,,,insufficient,,,"예비군 안내 문서 없음, 학과 공지에 그때그때 게시"
 Q023,,,insufficient,,,"학점 확인 위치 문서 없음, 학기마다 학과 공지에 게시"
 Q024,,,insufficient,,,"공결/출석 규정 문서 없음(대학규정 PDF 로그인 필요, 미수집)"
 Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,졸업학점 2025,primary,general_academic,academic,교양필수·전공필수 구성표
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024,졸업학점 2024,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 옛 연도 교양필수 표(결정4)
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2023,졸업학점 2023,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 옛 연도 교양필수 표(결정4)
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2022,졸업학점 2022,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 옛 연도 교양필수 표(결정4)
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2021,졸업학점 2021,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 옛 연도 교양필수 표(결정4)
 Q026,,,insufficient,,,자판기 운영 정보 없음 — 거절 테스트
 Q027,https://www.honam.ac.kr/military_Rest,입대휴학,primary,general_academic,academic,신청 시기·서류·기간
+Q027,https://www.honam.ac.kr/General_Rest,일반휴학,secondary,general_academic,academic,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 일반휴학→입대휴학 변경 절차 포함
 Q028,https://www.honam.ac.kr/General_Rest,일반휴학,primary,general_academic,academic,휴학기간 규정 포함
 Q029,https://www.honam.ac.kr/ScholarshipType,장학금 종류,primary,general_academic,academic,성적장학 기준 포함
 Q030,,,insufficient,,,"국가근로 안내 페이지 없음, 시한부 공지만 존재"
 Q031,,,insufficient,,,등록금 안내 페이지 없음(등록금심의위 회의록 게시글뿐)
 Q032,,,insufficient,,,등록금 안내 페이지 없음
 Q033,https://www.honam.ac.kr/ClassLessonApply,수강신청,primary,general_academic,academic,수강신청 최대 학점(일반 18학점) 명시
+Q033,https://www.honam.ac.kr/GradesRecognition,학점인정,secondary,general_academic,academic,"2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 학기당 취득기준학점(18/19, 성적우수 +3) 명시"
 Q034,https://www.honam.ac.kr/AcademicCalendar,학사일정,primary,general_academic,schedule,수강신청 확인 및 정정 일정 포함
 Q035,https://www.honam.ac.kr/ExamResult,시험/성적,primary,general_academic,academic,성적 이의신청 절 포함
 Q036,https://www.honam.ac.kr/ExamResult,시험/성적,primary,general_academic,academic,"재수강 절 포함(C+ 이하, B+까지 인정)"
-Q037,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,인터넷발급 절 포함
+Q037,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,"인터넷발급 절 포함. 2026-07-11 확인: 질문 초점(발급 방법)에 직접적이라 primary 유지, 종류·가능여부 표는 Guide(secondary)"
+Q037,https://www.honam.ac.kr/ProofIssuanceGuide,증명발급안내,secondary,general_academic,certificate,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 인터넷증명발급 가능 명시(Q013 gold와 일관)
+Q037,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/29,자주하는질문(증명서 발급),secondary,general_academic,certificate,2026-07-11 qrel 재판정(3모드 top-5 pooling) 추가. 상시 FAQ
 Q038,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,primary,general_academic,certificate,"수수료 표(국문 500원/영문 1,000원)"
 Q039,,,insufficient,,,"편입 모집요강이 다운로드 링크 페이지뿐, PDF 본문 미추출"
 Q040,,,insufficient,,,입시캘린더 페이지가 제목만 추출됨(JS 렌더링 추정)
@@ -49,6 +62,7 @@ Q044,https://www.honam.ac.kr/CamPhNum,교내전화번호,primary,general_academi
 Q045,,,insufficient,,,"도서관 별도 사이트(library.honam.ac.kr) 크롤 범위 밖 — 정답: library.honam.ac.kr/Cheetah/HOLIS/Guide/Guide02, 시드 확장 후보"
 Q046,https://www.honam.ac.kr/Cafeteria_Diet,교내식당/식단,primary,general_academic,academic,학생식당 식단표
 Q047,https://www.honam.ac.kr/SchbusGuideSchedule,통학버스/교통편 안내,primary,general_academic,academic,노선·출발시간 시간표
-Q048,https://dorm.honam.ac.kr/JG_JoinGuidance,입사안내,primary,general_academic,academic,"기숙사 시드 확장으로 수집(2026-07-05), insufficient→answerable 전환"
+Q048,https://dorm.honam.ac.kr/ApplicationPassageInquiry,입사신청/합격조회,primary,general_academic,academic,2026-07-11 qrel 재판정 추가·primary 지정. 입사신청 방법(신입생/재학생)을 직접 답하는 페이지
+Q048,https://dorm.honam.ac.kr/JG_JoinGuidance,입사안내,secondary,general_academic,academic,"기숙사 시드 확장으로 수집(2026-07-05), insufficient→answerable 전환. 2026-07-11 secondary로 조정 — 주의사항·제출서류 안내이고 신청 방법은 없음(사용자 확인)"
 Q049,,,insufficient,,,예비군 문서 없음(Q022·Q024와 동일 갭)
 Q050,,,insufficient,,,시한부 공지·학생 후기 게시글뿐 — 게시글 불인정 원칙
