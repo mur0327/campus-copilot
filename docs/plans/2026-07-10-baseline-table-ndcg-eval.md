@@ -4,7 +4,7 @@
 배경: KMMS 체크리스트가 요구하는 비교 기준선표와 nDCG@k가 미측정
 ([docs/paper/05-scope-and-positioning.md](../paper/05-scope-and-positioning.md) §3.2–3.3,
 [docs/paper/08-weaknesses-and-mitigations.md](../paper/08-weaknesses-and-mitigations.md) W5).
-설계는 문아(Claude), 구현은 Codex 위임.
+설계는 Claude, 구현은 Codex 위임.
 
 ## 확정된 설계 결정
 
@@ -53,7 +53,7 @@
 
 - `cd backend && uv run ruff check . && uv run pytest`
 - 실제 평가 실행(3모드)은 API 키·로컬 서비스가 필요하므로 구현 완료 후
-  문아/관리자가 수행한다. Codex는 eval을 실행하지 않는다.
+  Claude/관리자가 수행한다. Codex는 eval을 실행하지 않는다.
 
 ## 산출물 (구현 후)
 
