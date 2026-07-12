@@ -77,10 +77,6 @@ PAGE_CSS = """
     border-top: 3px solid #222; break-after: avoid;
   }
   .signature { margin: .6rem 0 1rem; font-size: .95rem; }
-  .signature .line {
-    display: inline-block; min-width: 11rem;
-    border-bottom: 1px solid #555; margin: 0 1.6rem 0 .4rem;
-  }
   .guide {
     border: 1.5px solid #444; border-radius: 8px;
     padding: .8rem 1rem; font-size: .92rem; background: #fafafa;
@@ -116,15 +112,75 @@ PAGE_CSS = """
     width: .95rem; height: .95rem; vertical-align: -2px; margin-right: .3rem;
   }
   label { margin-right: 1.2rem; white-space: nowrap; }
-  .blank {
-    display: inline-block; min-width: 9rem; border-bottom: 1px solid #777;
+  input[type="text"] {
+    border: none; border-bottom: 1px solid #777; background: transparent;
+    font: inherit; padding: 0 .2rem;
   }
+  .etc { min-width: 9rem; }
   .memo { margin-top: .5rem; font-size: .95rem; }
-  .memo .row { border-bottom: 1px solid #aaa; height: 1.55rem; }
+  .memo input { width: 100%; margin-top: .3rem; }
+  .signature input { min-width: 11rem; margin: 0 1.6rem 0 .4rem; }
+  .export-btn {
+    position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 10;
+    font: inherit; font-weight: 600; color: #fff; background: #1d3a5f;
+    border: none; border-radius: 8px; padding: .6rem 1rem; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  .export-btn:hover { background: #2c5288; }
   @media print {
     body { margin: 0 auto; max-width: none; }
     .guide { background: #fff; }
+    .export-btn { display: none; }
   }
+"""
+
+SHEET_JS = """
+document.addEventListener('change', (e) => {
+  const group = e.target.dataset ? e.target.dataset.group : null;
+  if (group && e.target.checked) {
+    document.querySelectorAll(`input[data-group="${group}"]`).forEach((el) => {
+      if (el !== e.target) el.checked = false;
+    });
+  }
+});
+
+function exportJudgments() {
+  const out = {
+    sheet: 'qrel-v3-blind-18',
+    judge: document.getElementById('judge-name').value || '',
+    date: document.getElementById('judge-date').value || '',
+    exported_at: new Date().toISOString(),
+    judgments: {},
+  };
+  const incomplete = [];
+  document.querySelectorAll('.judge').forEach((section) => {
+    const qid = section.dataset.qid;
+    const pick = (suffix) => {
+      const el = section.querySelector(`input[data-group="${qid}-${suffix}"]:checked`);
+      return el ? el.value : null;
+    };
+    const entry = {
+      corpus_support: pick('support'),
+      deployment: pick('deploy'),
+      reject_reasons: Array.from(section.querySelectorAll('input.reason:checked')).map((el) => el.value),
+      reject_reason_etc: section.querySelector('.etc').value || '',
+      memo: section.querySelector('.memo input').value || '',
+    };
+    if (!entry.corpus_support || !entry.deployment) incomplete.push(qid);
+    out.judgments[qid] = entry;
+  });
+  if (incomplete.length > 0) {
+    const go = confirm('아직 체크하지 않은 문항이 있습니다: ' + incomplete.join(', ')
+      + '\\n그래도 내보낼까요?');
+    if (!go) return;
+  }
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'qrel-v3-judgment-' + new Date().toISOString().slice(0, 10) + '.json';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
 """
 
 
@@ -229,24 +285,24 @@ def render_question(question: dict, docs: list[dict]) -> str:
     parts.extend(render_doc(i, doc) for i, doc in enumerate(docs, start=1))
     parts.append(
         f"""
-<div class="judge">
+<div class="judge" data-qid="{qid}">
   <div class="axis">① 이 문서들 안에 답이 있습니까?&nbsp;&nbsp;
-    <label><input type="checkbox" name="{qid}-support"> 있음</label>
-    <label><input type="checkbox" name="{qid}-support"> 일부만</label>
-    <label><input type="checkbox" name="{qid}-support"> 없음</label>
+    <label><input type="checkbox" data-group="{qid}-support" value="있음"> 있음</label>
+    <label><input type="checkbox" data-group="{qid}-support" value="일부만"> 일부만</label>
+    <label><input type="checkbox" data-group="{qid}-support" value="없음"> 없음</label>
   </div>
   <div class="axis">② 지금 키오스크 사용자에게 답해도 됩니까?&nbsp;&nbsp;
-    <label><input type="checkbox" name="{qid}-deploy"> 답변</label>
-    <label><input type="checkbox" name="{qid}-deploy"> 거절</label>
+    <label><input type="checkbox" data-group="{qid}-deploy" value="답변"> 답변</label>
+    <label><input type="checkbox" data-group="{qid}-deploy" value="거절"> 거절</label>
   </div>
   <div class="reason">거절 이유:
-    <label><input type="checkbox"> 답 없음</label>
-    <label><input type="checkbox"> 옛날 공지</label>
-    <label><input type="checkbox"> 특정 대상 전용</label>
-    <label><input type="checkbox"> 개인 로그인 정보 필요</label>
-    <label><input type="checkbox"> 기타 <span class="blank"></span></label>
+    <label><input type="checkbox" class="reason" value="답 없음"> 답 없음</label>
+    <label><input type="checkbox" class="reason" value="옛날 공지"> 옛날 공지</label>
+    <label><input type="checkbox" class="reason" value="특정 대상 전용"> 특정 대상 전용</label>
+    <label><input type="checkbox" class="reason" value="개인 로그인 정보 필요"> 개인 로그인 정보 필요</label>
+    <label>기타 <input type="text" class="etc"></label>
   </div>
-  <div class="memo">메모<div class="row"></div></div>
+  <div class="memo">메모<input type="text"></div>
 </div>"""
     )
     return "\n".join(parts)
@@ -284,7 +340,7 @@ def main() -> None:
 </head>
 <body>
 <h1>qrel v3 블라인드 판정 시트 (18문항)</h1>
-<div class="signature">판정자<span class="line"></span>판정일<span class="line"></span></div>
+<div class="signature">판정자<input type="text" id="judge-name">판정일<input type="text" id="judge-date"></div>
 <div class="guide">
   <strong>이 판정이 필요한 이유</strong> — 논문(캠퍼스 안내 RAG 평가)의 채점
   기준이 타당한지 검증하기 위한 절차입니다. 채점 기준을 저자 혼자 판정하면
@@ -313,8 +369,14 @@ def main() -> None:
   특히 ②(누구에게 답해도 되는가)를 판단하실 때 참고해 주세요.
   회색 상자의 본문은 시스템이 검색한 문서 조각의 전문입니다. 아주 긴 경우에만
   "(이하 생략)" 표시와 함께 잘려 있으며, 표시가 없다면 그 조각의 전부입니다.
+  <br><br>
+  종이로 인쇄해 체크하셔도 되고, 화면에서 직접 체크하셔도 됩니다. 화면에서
+  하셨다면 마치신 뒤 오른쪽 아래 "판정 결과 내보내기" 버튼을 눌러 저장된
+  JSON 파일을 회신해 주세요.
 </div>
 {body}
+<button type="button" class="export-btn" onclick="exportJudgments()">판정 결과 내보내기 (JSON)</button>
+<script>{SHEET_JS}</script>
 </body>
 </html>
 """
