@@ -8,6 +8,10 @@ EXP-06 근거의 합집합)를 제시하고, 독립 판정자(지도교수)가 �
 - 축 2 deployment_answerability: 지금 키오스크 사용자에게 답해도 되는가
   (답변/거절 + 이유)
 
+본문은 JSONL의 240자 preview가 아니라 로컬 DB에서 읽은 청크 전문을 싣는다
+(발췌 부족이 "없음" 오판정을 만들면 안 되므로). 따라서 docker compose의
+postgres(localhost:5432)가 떠 있어야 한다.
+
 발췌의 개인 연락처(휴대전화)와 이메일은 자동 마스킹한다. 다만 게시판 글의
 작성자 실명 등은 자동으로 걸러지지 않으므로, 출력 시트는 gitignore된
 eval/results/에만 쓴다 — 저장소에 커밋하지 말 것(재노출 방지).
@@ -16,11 +20,14 @@ eval/results/에만 쓴다 — 저장소에 커밋하지 말 것(재노출 방�
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import html
 import json
 import re
 from pathlib import Path
+
+import asyncpg
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 QUESTIONS = REPO_ROOT / "eval" / "questions.csv"
@@ -29,7 +36,8 @@ EXP06_JSONL = REPO_ROOT / "eval" / "results" / "final-response-20260711-101912.j
 OUT_PATH = REPO_ROOT / "eval" / "results" / "qrel-v3-blind-sheet.html"
 
 TOP_N = 5
-PREVIEW_CHARS = 220
+CONTENT_CHARS = 1500
+DB_DSN = "postgresql://campus:campus@localhost:5432/campus_copilot"
 
 PHONE_RE = re.compile(r"\b01[0-9][-.\s]?\d{3,4}[-.\s]?\d{4}\b")
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
@@ -96,6 +104,7 @@ PAGE_CSS = """
   .doc .preview {
     font-size: .85rem; color: #333; background: #f6f6f6;
     border-left: 3px solid #bbb; padding: .45rem .6rem; margin-top: .4rem;
+    white-space: pre-wrap; word-break: break-word;
   }
   .judge {
     border: 2px solid #222; border-radius: 8px;
@@ -142,6 +151,7 @@ def collect_docs(hybrid_row: dict | None, exp06_row: dict | None) -> list[dict]:
                     "title": item.get("title") or "(제목 없음)",
                     "url": item["url"],
                     "menu_path": item.get("menu_path") or "",
+                    "chunk_id": item.get("chunk_id"),
                     "preview": (item.get("content_preview") or "").strip(),
                 }
             )
@@ -155,10 +165,42 @@ def collect_docs(hybrid_row: dict | None, exp06_row: dict | None) -> list[dict]:
                     "title": item.get("title") or "(제목 없음)",
                     "url": item["url"],
                     "menu_path": "",
+                    "chunk_id": None,
                     "preview": "",
                 }
             )
     return docs
+
+
+async def fill_contents(question_docs: list[list[dict]]) -> None:
+    # 시스템이 검색한 단위(청크)의 전문을 판정 근거로 싣는다. chunk_id가 없는
+    # EXP-06 근거는 URL로 문서를 찾아 첫 청크를 대신 싣는다. 둘 다 없으면
+    # JSONL의 240자 preview로 폴백한다.
+    conn = await asyncpg.connect(DB_DSN)
+    try:
+        for docs in question_docs:
+            for doc in docs:
+                content = None
+                if doc["chunk_id"]:
+                    content = await conn.fetchval(
+                        "SELECT content FROM document_chunks WHERE id = $1::uuid",
+                        doc["chunk_id"],
+                    )
+                if content is None:
+                    content = await conn.fetchval(
+                        """
+                        SELECT c.content
+                        FROM document_chunks c
+                        JOIN documents d ON d.id = c.document_id
+                        WHERE d.url = $1 AND c.content != ''
+                        ORDER BY c.chunk_index
+                        LIMIT 1
+                        """,
+                        doc["url"],
+                    )
+                doc["preview"] = (content or doc["preview"] or "").strip()
+    finally:
+        await conn.close()
 
 
 def render_doc(index: int, doc: dict) -> str:
@@ -174,8 +216,8 @@ def render_doc(index: int, doc: dict) -> str:
         f'<div class="meta">{url}</div>',
     ]
     if doc["preview"]:
-        preview = html.escape(mask_pii(doc["preview"][:PREVIEW_CHARS]))
-        ellipsis = "…" if len(doc["preview"]) > PREVIEW_CHARS else ""
+        preview = html.escape(mask_pii(doc["preview"][:CONTENT_CHARS]))
+        ellipsis = " … (이하 생략 — 문서가 더 이어짐)" if len(doc["preview"]) > CONTENT_CHARS else ""
         parts.append(f'<div class="preview">{preview}{ellipsis}</div>')
     parts.append("</div>")
     return "\n".join(parts)
@@ -222,9 +264,14 @@ def main() -> None:
         if row.get("record_type") == "response"
     }
 
-    sections = [
-        render_question(q, collect_docs(hybrid_by_id.get(q["id"]), exp06_by_id.get(q["id"])))
+    docs_per_question = [
+        collect_docs(hybrid_by_id.get(q["id"]), exp06_by_id.get(q["id"]))
         for q in insufficient
+    ]
+    asyncio.run(fill_contents(docs_per_question))
+    sections = [
+        render_question(q, docs)
+        for q, docs in zip(insufficient, docs_per_question, strict=True)
     ]
     body = "\n".join(sections)
     document = f"""<!doctype html>
@@ -259,6 +306,8 @@ def main() -> None:
   주소 기준으로 자동 분류한 것입니다(예: 대학원 사이트, 특정 학과 사이트,
   대학 공식 사이트). 문서 제목만으로는 출처를 알기 어려워 함께 표기했으며,
   특히 ②(누구에게 답해도 되는가)를 판단하실 때 참고해 주세요.
+  회색 상자의 본문은 시스템이 검색한 문서 조각의 전문입니다. 아주 긴 경우에만
+  "(이하 생략)" 표시와 함께 잘려 있으며, 표시가 없다면 그 조각의 전부입니다.
 </div>
 {body}
 </body>
