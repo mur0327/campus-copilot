@@ -37,6 +37,8 @@ Campus Copilot을 응용/경험/성능분석/실패분석 논문으로 정리해
   (실패 분석, 논문 6절).
 - [13-rq3-abstention-final-response.md](13-rq3-abstention-final-response.md) —
   RQ3 서술 골격 (거절·최종 응답, 논문 7절). 거절 프레이밍·용어 표준의 정본.
+- [14-external-review-2026-07-11.md](14-external-review-2026-07-11.md) — 외부
+  리뷰 3 (Claude↔GPT 왕복 토론). RQ 체계 확정 경위와 잔여 공격 대비.
 - [99-meeting-notes.md](99-meeting-notes.md) — 지도교수 미팅 메모.
 - [guide/](guide/) — KMMS 투고 규정·체크리스트. 규정 전문과 양식 파일은
   gitignore된 로컬 참고용이며 저장소에는 요약·체크리스트만 커밋한다.
