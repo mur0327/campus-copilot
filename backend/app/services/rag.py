@@ -140,9 +140,22 @@ async def generate_answer_draft(
             raise LLMOutputValidationError("json_validation_failed") from exc
 
 
+def _strip_code_fence(raw_output: str) -> str:
+    # Gemini는 JSON 지시에도 비결정적으로 마크다운 코드펜스(```json ... ```)를
+    # 붙여 반환할 때가 있다. 검증 전에 감싼 펜스만 벗기고 내용은 건드리지 않는다.
+    text = raw_output.strip()
+    if not (text.startswith("```") and text.endswith("```") and len(text) >= 6):
+        return text
+    body = text[3:-3]
+    first_line, _, rest = body.partition("\n")
+    if first_line.strip().isalpha():
+        return rest.strip()
+    return body.strip()
+
+
 def parse_answer_draft(raw_output: str) -> AnswerDraft:
     try:
-        return AnswerDraft.model_validate_json(raw_output)
+        return AnswerDraft.model_validate_json(_strip_code_fence(raw_output))
     except (ValidationError, ValueError, json.JSONDecodeError) as exc:
         raise LLMOutputValidationError("json_validation_failed") from exc
 

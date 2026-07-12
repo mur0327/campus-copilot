@@ -209,6 +209,28 @@ def test_parse_answer_draft_keeps_structured_procedure_steps():
     assert draft.procedure_steps == ["포털에 로그인합니다.", "휴학 메뉴를 선택합니다."]
 
 
+def test_parse_answer_draft_strips_markdown_code_fence():
+    draft = parse_answer_draft(
+        '```json\n'
+        '{"answerability": "insufficient", "summary": "", "procedure_steps": [],'
+        ' "notes": [], "limitations": [], "used_source_numbers": []}\n'
+        '```'
+    )
+
+    assert draft.answerability == "insufficient"
+
+
+def test_parse_answer_draft_strips_unlabeled_code_fence():
+    draft = parse_answer_draft(
+        '```\n'
+        '{"answerability": "answerable", "summary": "요약", "procedure_steps": [],'
+        ' "notes": [], "limitations": [], "used_source_numbers": [1]}\n'
+        '```'
+    )
+
+    assert draft.answerability == "answerable"
+
+
 def test_assemble_answer_text_omits_empty_sections_and_strips_source_numbers():
     assert assemble_answer_text(
         summary="휴학 신청은 포털에서 신청합니다. [1]",
