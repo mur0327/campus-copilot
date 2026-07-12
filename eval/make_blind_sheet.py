@@ -1,8 +1,8 @@
-"""qrel v3 블라인드 판정 시트 생성기.
+"""qrel v3 블라인드 판정 시트 생성기 (단일 HTML).
 
 insufficient 18문항에 대해 시스템이 실제 검색·사용한 문서(hybrid top-5 +
 EXP-06 근거의 합집합)를 제시하고, 독립 판정자(지도교수)가 두 축을 체크하는
-시트를 만든다. v2 라벨·저자 판정은 어디에도 넣지 않는다(블라인드 유지).
+인쇄용 시트를 만든다. v2 라벨·저자 판정은 어디에도 넣지 않는다(블라인드 유지).
 
 - 축 1 corpus_support: 제시된 문서 안에 질문의 답이 있는가 (있음/일부/없음)
 - 축 2 deployment_answerability: 지금 키오스크 사용자에게 답해도 되는가
@@ -17,6 +17,7 @@ eval/results/에만 쓴다 — 저장소에 커밋하지 말 것(재노출 방�
 from __future__ import annotations
 
 import csv
+import html
 import json
 import re
 from pathlib import Path
@@ -25,13 +26,69 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 QUESTIONS = REPO_ROOT / "eval" / "questions.csv"
 HYBRID_JSONL = REPO_ROOT / "eval" / "results" / "retrieval-hybrid-20260712-061045.jsonl"
 EXP06_JSONL = REPO_ROOT / "eval" / "results" / "final-response-20260711-101912.jsonl"
-OUT_PATH = REPO_ROOT / "eval" / "results" / "qrel-v3-blind-sheet.md"
+OUT_PATH = REPO_ROOT / "eval" / "results" / "qrel-v3-blind-sheet.html"
 
 TOP_N = 5
 PREVIEW_CHARS = 220
 
 PHONE_RE = re.compile(r"\b01[0-9][-.\s]?\d{3,4}[-.\s]?\d{4}\b")
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
+
+PAGE_CSS = """
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    line-height: 1.55; color: #111; background: #fff;
+    max-width: 52rem; margin: 1.5rem auto; padding: 0 1.2rem;
+  }
+  h1 { font-size: 1.45rem; margin: 0 0 .3rem; }
+  h2 {
+    font-size: 1.05rem; margin: 1.8rem 0 .4rem; padding-top: .9rem;
+    border-top: 3px solid #222; break-after: avoid;
+  }
+  .signature { margin: .6rem 0 1rem; font-size: .95rem; }
+  .signature .line {
+    display: inline-block; min-width: 11rem;
+    border-bottom: 1px solid #555; margin: 0 1.6rem 0 .4rem;
+  }
+  .guide {
+    border: 1.5px solid #444; border-radius: 8px;
+    padding: .8rem 1rem; font-size: .92rem; background: #fafafa;
+  }
+  .guide ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+  .doc {
+    border: 1px solid #ccc; border-radius: 6px;
+    padding: .55rem .8rem; margin: .5rem 0; break-inside: avoid;
+  }
+  .doc .title { font-weight: 600; }
+  .doc .meta {
+    font-size: .78rem; color: #555; word-break: break-all;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+  .doc .preview {
+    font-size: .85rem; color: #333; background: #f6f6f6;
+    border-left: 3px solid #bbb; padding: .45rem .6rem; margin-top: .4rem;
+  }
+  .judge {
+    border: 2px solid #222; border-radius: 8px;
+    padding: .7rem .95rem; margin: .7rem 0 0; break-inside: avoid;
+  }
+  .judge .axis { margin: .3rem 0; }
+  .judge .reason { margin: .2rem 0 0 1.35rem; font-size: .95rem; }
+  input[type="checkbox"] {
+    width: .95rem; height: .95rem; vertical-align: -2px; margin-right: .3rem;
+  }
+  label { margin-right: 1.2rem; white-space: nowrap; }
+  .blank {
+    display: inline-block; min-width: 9rem; border-bottom: 1px solid #777;
+  }
+  .memo { margin-top: .5rem; font-size: .95rem; }
+  .memo .row { border-bottom: 1px solid #aaa; height: 1.55rem; }
+  @media print {
+    body { margin: 0 auto; max-width: none; }
+    .guide { background: #fff; }
+  }
+"""
 
 
 def mask_pii(text: str) -> str:
@@ -42,6 +99,86 @@ def mask_pii(text: str) -> str:
 def load_jsonl(path: Path) -> list[dict]:
     with path.open(encoding="utf-8") as f:
         return [json.loads(line) for line in f]
+
+
+def collect_docs(hybrid_row: dict | None, exp06_row: dict | None) -> list[dict]:
+    docs: list[dict] = []
+    seen_urls: set[str] = set()
+    if hybrid_row:
+        for item in hybrid_row["retrieved"][:TOP_N]:
+            if item["url"] in seen_urls:
+                continue
+            seen_urls.add(item["url"])
+            docs.append(
+                {
+                    "title": item.get("title") or "(제목 없음)",
+                    "url": item["url"],
+                    "menu_path": item.get("menu_path") or "",
+                    "preview": (item.get("content_preview") or "").strip(),
+                }
+            )
+    if exp06_row:
+        for item in exp06_row.get("evidence", []):
+            if item["url"] in seen_urls:
+                continue
+            seen_urls.add(item["url"])
+            docs.append(
+                {
+                    "title": item.get("title") or "(제목 없음)",
+                    "url": item["url"],
+                    "menu_path": "",
+                    "preview": "",
+                }
+            )
+    return docs
+
+
+def render_doc(index: int, doc: dict) -> str:
+    title = html.escape(mask_pii(doc["title"]))
+    menu = html.escape(doc["menu_path"])
+    url = html.escape(doc["url"])
+    parts = [
+        '<div class="doc">',
+        f'<div class="title">문서 {index}. {title}'
+        + (f' <span style="font-weight:400">· 메뉴: {menu}</span>' if menu else "")
+        + "</div>",
+        f'<div class="meta">{url}</div>',
+    ]
+    if doc["preview"]:
+        preview = html.escape(mask_pii(doc["preview"][:PREVIEW_CHARS]))
+        ellipsis = "…" if len(doc["preview"]) > PREVIEW_CHARS else ""
+        parts.append(f'<div class="preview">{preview}{ellipsis}</div>')
+    parts.append("</div>")
+    return "\n".join(parts)
+
+
+def render_question(question: dict, docs: list[dict]) -> str:
+    qid = question["id"]
+    parts = [f"<h2>{qid}. {html.escape(question['question'])}</h2>"]
+    parts.extend(render_doc(i, doc) for i, doc in enumerate(docs, start=1))
+    parts.append(
+        f"""
+<div class="judge">
+  <div class="axis">① 이 문서들 안에 답이 있습니까?&nbsp;&nbsp;
+    <label><input type="checkbox" name="{qid}-support"> 있음</label>
+    <label><input type="checkbox" name="{qid}-support"> 일부만</label>
+    <label><input type="checkbox" name="{qid}-support"> 없음</label>
+  </div>
+  <div class="axis">② 지금 키오스크 사용자에게 답해도 됩니까?&nbsp;&nbsp;
+    <label><input type="checkbox" name="{qid}-deploy"> 답변</label>
+    <label><input type="checkbox" name="{qid}-deploy"> 거절</label>
+  </div>
+  <div class="reason">거절 이유:
+    <label><input type="checkbox"> 답 없음</label>
+    <label><input type="checkbox"> 옛날 공지</label>
+    <label><input type="checkbox"> 특정 대상 전용</label>
+    <label><input type="checkbox"> 개인 로그인 정보 필요</label>
+    <label><input type="checkbox"> 기타 <span class="blank"></span></label>
+  </div>
+  <div class="memo">메모<div class="row"></div></div>
+</div>"""
+    )
+    return "\n".join(parts)
 
 
 def main() -> None:
@@ -56,88 +193,41 @@ def main() -> None:
         if row.get("record_type") == "response"
     }
 
-    lines: list[str] = []
-    lines.append("# qrel v3 블라인드 판정 시트 (18문항)")
-    lines.append("")
-    lines.append("판정자: ______________  판정일: ______________")
-    lines.append("")
-    lines.append("안내: 캠퍼스 안내 키오스크가 학생 질문에 답할 때 쓰는 문서들입니다.")
-    lines.append("각 문항마다 아래 문서 목록만 근거로 두 가지를 판정해 주세요.")
-    lines.append("문서 목록에 없는 지식(직접 아시는 학교 정보 포함)은 쓰지 말아 주세요.")
-    lines.append("")
-    lines.append("- ① 이 문서들 안에 질문의 답이 있습니까? — 있음 / 일부만 / 없음")
-    lines.append("- ② 이 문서들을 근거로, 지금 키오스크 앞의 일반 학생에게 답해 줘도")
-    lines.append("  됩니까? — 답변 / 거절. 거절이라면 이유에 표시해 주세요")
-    lines.append("  (예: 답이 아예 없음, 옛날 공지, 특정 대상 전용, 개인 로그인 정보")
-    lines.append("  필요, 기타).")
-    lines.append("")
-    lines.append("---")
-
-    for question in insufficient:
-        qid = question["id"]
-        lines.append("")
-        lines.append(f"## {qid}. {question['question']}")
-        lines.append("")
-
-        docs: list[dict] = []
-        seen_urls: set[str] = set()
-        hybrid_row = hybrid_by_id.get(qid)
-        if hybrid_row:
-            for item in hybrid_row["retrieved"][:TOP_N]:
-                if item["url"] in seen_urls:
-                    continue
-                seen_urls.add(item["url"])
-                docs.append(
-                    {
-                        "title": item.get("title") or "(제목 없음)",
-                        "url": item["url"],
-                        "menu_path": item.get("menu_path") or "",
-                        "preview": (item.get("content_preview") or "").strip(),
-                    }
-                )
-        exp06_row = exp06_by_id.get(qid)
-        if exp06_row:
-            for item in exp06_row.get("evidence", []):
-                if item["url"] in seen_urls:
-                    continue
-                seen_urls.add(item["url"])
-                docs.append(
-                    {
-                        "title": item.get("title") or "(제목 없음)",
-                        "url": item["url"],
-                        "menu_path": "",
-                        "preview": "",
-                    }
-                )
-
-        for index, doc in enumerate(docs, start=1):
-            path_note = f" · 메뉴: {doc['menu_path']}" if doc["menu_path"] else ""
-            lines.append(f"**문서 {index}. {mask_pii(doc['title'])}**{path_note}")
-            lines.append(f"<{doc['url']}>")
-            if doc["preview"]:
-                preview = mask_pii(doc["preview"][:PREVIEW_CHARS])
-                lines.append("")
-                lines.append(f"> {preview}{'…' if len(doc['preview']) > PREVIEW_CHARS else ''}")
-            lines.append("")
-
-        lines.append("① 답이 있습니까?  □ 있음  □ 일부만  □ 없음")
-        lines.append("")
-        lines.append("② 지금 답해도 됩니까?  □ 답변  □ 거절")
-        lines.append("")
-        lines.append("   거절 이유:  □ 답 없음  □ 옛날 공지  □ 특정 대상 전용")
-        lines.append("   □ 개인 로그인 정보 필요  □ 기타: ______________")
-        lines.append("")
-        lines.append("메모: ")
-        lines.append("")
-        lines.append("---")
-
-    content = "\n".join(lines) + "\n"
-    remaining = PHONE_RE.search(content)
+    sections = [
+        render_question(q, collect_docs(hybrid_by_id.get(q["id"]), exp06_by_id.get(q["id"])))
+        for q in insufficient
+    ]
+    body = "\n".join(sections)
+    document = f"""<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qrel v3 블라인드 판정 시트</title>
+<style>{PAGE_CSS}</style>
+</head>
+<body>
+<h1>qrel v3 블라인드 판정 시트 (18문항)</h1>
+<div class="signature">판정자<span class="line"></span>판정일<span class="line"></span></div>
+<div class="guide">
+  <strong>안내</strong> — 캠퍼스 안내 키오스크가 학생 질문에 답할 때 쓰는 문서들입니다.
+  각 문항마다 아래 문서 목록만 근거로 두 가지를 판정해 주세요.
+  문서 목록에 없는 지식(직접 아시는 학교 정보 포함)은 쓰지 말아 주세요.
+  <ul>
+    <li>① 이 문서들 안에 질문의 답이 있습니까? — 있음 / 일부만 / 없음</li>
+    <li>② 이 문서들을 근거로, 지금 키오스크 앞의 일반 학생에게 답해 줘도
+      됩니까? — 답변 / 거절. 거절이라면 이유에 표시해 주세요.</li>
+  </ul>
+</div>
+{body}
+</body>
+</html>
+"""
+    remaining = PHONE_RE.search(document)
     if remaining:
         raise SystemExit(f"unmasked phone number remains near: {remaining.group()[:4]}***")
-    OUT_PATH.write_text(content, encoding="utf-8")
-    doc_counts = f"questions={len(insufficient)}"
-    print(f"saved: {OUT_PATH} ({doc_counts})")
+    OUT_PATH.write_text(document, encoding="utf-8")
+    print(f"saved: {OUT_PATH} (questions={len(insufficient)})")
 
 
 if __name__ == "__main__":
