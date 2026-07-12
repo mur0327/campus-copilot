@@ -11,9 +11,9 @@
 > - **검증(실존·제목)**: ✓ 링크·제목 확인됨(저자 페이지/직접 대조/**사용자 확인 2026-07**)
 >   · ○ 저명·표준 ID라 정본 추정
 >
-> **현재 상태**: 링크와 제목은 사용자가 전수 확인함(2026-07). **남은 확인 대상은
-> "실존"이 아니라 "위상·정확한 서지"** — 게재처(학회/저널)·저자·연도의 정본 서지,
-> 그리고 ❓/📄 항목의 인용 적절성이다.
+> **현재 상태**: 링크와 제목은 사용자가 전수 확인함(2026-07). 위상·서지 정리와
+> 인용 여부 결정은 2026-07-12에 완료(§7 투고 전 체크 참조). 남은 것은 집필 시
+> 실제 인용 목록을 이 문서의 "인용 확정" 표시와 대조하는 것뿐이다.
 
 ---
 
@@ -28,7 +28,7 @@
 | 벡터 검색 | 📗·○ Karpukhin et al., *Dense Passage Retrieval (DPR)*, EMNLP 2020. [arXiv](https://arxiv.org/abs/2004.04906) | 의미 검색 근거 |
 | 검색 벤치마크 | 📗·○ Thakur et al., *BEIR*, NeurIPS D&B 2021. [arXiv](https://arxiv.org/abs/2104.08663) | Recall/nDCG 평가 관행 |
 | **순위 융합(RRF)** | 📗·✓ Cormack, Clarke & Büttcher, *Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods*, SIGIR 2009. [PDF](https://cormack.uwaterloo.ca/cormacksigir09-rrf.pdf) | **우리 병합의 원 논문. k=60 표준값 출처(튜닝 아님).** SIGIR 정통, 저자 페이지·dvi 메타데이터로 대조 |
-| 학습된 sparse | 📗·✓ Formal et al., *SPLADE*, SIGIR 2021. (아래 링크는 논문 아닌 [개념 설명 블로그](https://www.pinecone.io/learn/splade/)) | 용어 확장을 sparse에 내장 — 어휘갭 대안. **원 논문 링크로 교체 필요** |
+| 학습된 sparse | 📗·✓ Formal, Piwowarski & Clinchant, *SPLADE: Sparse Lexical and Expansion Model for First Stage Ranking*, SIGIR 2021 (short). [arXiv](https://arxiv.org/abs/2107.05720) | 용어 확장을 sparse에 내장 — 어휘갭 대안. 원 논문 링크로 교체 완료(2026-07-12) |
 
 ---
 
@@ -44,7 +44,7 @@
 | 질의·문서 양방향 확장 | 📄·✓ *TCDE: Topic-Centric Dual Expansion of Queries and Documents*, 2025. [arXiv](https://arxiv.org/abs/2512.17164) | 우리가 시도한 쿼리+문서 확장의 최신판 |
 | 문서 확장(질의 생성) | 📄·✓ Nogueira & Lin, *From doc2query to docTTTTTquery*, 2019. [PDF](https://cs.uwaterloo.ca/~jimmylin/publications/Nogueira_Lin_2019_docTTTTTquery-v2.pdf) | 우리 LLM 키워드 생성 시도(→롤백)의 원류. **널리 인용되나 심사 학회지 아닌 tech report** |
 | 문서 확장(토큰 주입) | 📄·✓ *Doc2Token: Bridging Vocabulary Gap by Predicting Missing Tokens*, 2024. [arXiv](https://arxiv.org/abs/2406.19647) | 누락 토큰 주입 — 우리 시도와 직접 대응 |
-| 생성 품질 필터 | 📘·✓ *Doc2Query--: When Less is More*, ECIR 2023(추정). [arXiv](https://arxiv.org/abs/2301.03266) | 환각 확장 걸러내기 — 우리 품질 필터 근거. 게재처 확인 필요 |
+| 생성 품질 필터 | 📘·✓ Gospodinov, MacAvaney & Macdonald, *Doc2Query--: When Less is More*, ECIR 2023. [arXiv](https://arxiv.org/abs/2301.03266) · [Springer](https://link.springer.com/chapter/10.1007/978-3-031-28238-6_31) | 환각 확장 걸러내기 — 우리 품질 필터 근거. 게재처 확인 완료(2026-07-12) |
 
 **우리 기여(부정적 결과)**: 쿼리 확장은 어휘가 문서에 *있으면* 통했고(전화번호→연락처,
 Q020 해결), *없으면*(방학) 엉뚱한 문서(계절학기 전용 페이지)를 밀어올려 실패.
@@ -60,18 +60,26 @@ Q020 해결), *없으면*(방학) 엉뚱한 문서(계절학기 전용 페이지
 
 | 주제 | 문헌 (위상·검증) | 우리와의 관계 |
 |---|---|---|
-| 미응답 평가·유형화 | 📗·✓ *Unanswerability Evaluation for RAG*, ACL 2025. [ACL](https://aclanthology.org/2025.acl-long.415/) | 미응답 6유형 + unanswered/acceptable ratio. **우리 insufficient 라벨링·거절 평가와 같은 문제의식.** ACL이라 위상 높으나 미대조 |
-| RAG 미응답 벤치마크 | 📄·✓ *Evaluating RAG on Unanswerable, Uncheatable...*, 2025. [arXiv](https://arxiv.org/abs/2510.11956) | 미응답을 1급 평가 차원으로 |
-| **evidence 충분성 보정** | ❓·✓ *Evidence-Calibrated RAG for Unanswerable QA (SQuAD 2.0)*, 2025. [저널](https://jtie.stekom.ac.id/index.php/jtie/article/view/536) | **우리가 하려는 거절(근거 점수 문턱)과 거의 동일. ⚠️저널 등급 낮음 — 개념 참조용, 인용 신중** |
-| 3-액션(답/거절/보류) | 📄·✓ *PassiveQA: Epistemically Calibrated QA*, 2026. [arXiv](https://arxiv.org/abs/2604.04565) | 거절을 세분화 |
-| 확신도 보정·거부 | 📄·✓ *NOVA: Noise-aware Verbal Confidence Calibration*, 2026. [arXiv](https://arxiv.org/abs/2601.11004) | confidence 게이팅 |
+| 미응답 평가·유형화 | 📗·✓ Peng, Choubey, Xiong & Wu, *UAEval4RAG: Unanswerability Evaluation for RAG*, ACL 2025. [ACL](https://aclanthology.org/2025.acl-long.415/) · [arXiv](https://arxiv.org/abs/2412.12300) | 미응답 6유형 + unanswered/acceptable ratio. **우리 insufficient 라벨링·거절 평가와 같은 문제의식.** 원문 대조 완료(2026-07-12) — **인용 확정** |
+| **불충분 근거에서의 생성 행동** | 📗·✓ Joren et al., *Sufficient Context: A New Lens on RAG Systems*, ICLR 2025. [arXiv](https://arxiv.org/abs/2411.06037) | 고성능 LLM은 근거가 불충분할 때 거절하는 대신 오답을 낸다 — **우리 EXP-06(충실한 오답)과 직접 정렬. 인용 확정** (2026-07-12 추가) |
+| RAG 미응답 벤치마크 | 📄·✓ *Evaluating RAG on Unanswerable, Uncheatable...*, 2025. [arXiv](https://arxiv.org/abs/2510.11956) | 미응답을 1급 평가 차원으로. 본문 인용은 선택(UAEval4RAG로 충분하면 생략) |
+| evidence 충분성 보정 | ❓·✓ *Evidence-Calibrated RAG for Unanswerable QA (SQuAD 2.0)*, 2025. [저널](https://jtie.stekom.ac.id/index.php/jtie/article/view/536) | 거절(근거 점수 문턱) 접근이 우리와 유사하나 저널 등급 낮음 — **인용 제외 확정**(2026-07-12), 개념은 UAEval4RAG·Sufficient Context로 커버 |
+| 3-액션(답/거절/보류) | 📄·✓ *PassiveQA: Epistemically Calibrated QA*, 2026. [arXiv](https://arxiv.org/abs/2604.04565) | 거절을 세분화. **본문 인용 제외**(미심사 preprint, 축 대표는 ACL·ICLR로) |
+| 확신도 보정·거부 | 📄·✓ *NOVA: Noise-aware Verbal Confidence Calibration*, 2026. [arXiv](https://arxiv.org/abs/2601.11004) | confidence 게이팅. **본문 인용 제외**(같은 이유) |
 
-**핵심 정렬 (우리 실측 ↔ 문헌 이론)**:
-> 한 연구는 "**oracle 검색기를 쓰면 올바른 거절이 0.68→0.93으로 상승**"을 보고 —
-> 즉 **검색 품질이 거절 성능의 상한을 정한다.** 이는 우리 EXP-03의 발견
-> ("검색 실패와 거절 실패가 어휘 갭이라는 한 뿌리로 얽힘")과 정확히 같은 결론이다.
-> 또 "confidence 신호 하나로는 불충분"도 우리의 "단일 문턱 분리 천장 0.78"과 일치.
-> (⚠️ 이 "0.68→0.93" 수치의 출처 논문을 특정·확인해야 인용 가능.)
+**핵심 정렬 (우리 실측 ↔ 문헌, 전부 원문 대조 완료)**:
+
+- UAEval4RAG: 거절은 "요청을 이행하면 안 된다는 진짜 이해"가 아니라 관련 문맥을
+  못 찾은 데서 오는 경우가 많고, 검색 구성이 거절 성능을 좌우한다(벡터 검색이
+  answerable 정확도 88.4%인데 unanswerable acceptable ratio는 49.0%인 구성 보고).
+  → 우리 EXP-02·03의 "검색 실패와 거절 실패가 어휘 갭이라는 한 뿌리로 얽힘"과 정렬.
+- Sufficient Context(ICLR 2025): 고성능 모델은 근거가 불충분할 때 거절 대신 오답을
+  내며, 충분성 신호 하나만으로는 거절 결정을 완결하지 못한다. → 우리 EXP-06의
+  "환각이 아니라 낡거나 대상이 다른 근거의 충실한 오답" 및 EXP-03의 "단일 문턱
+  분리 천장 0.78"과 정렬.
+- 이전 판의 "oracle 검색기로 올바른 거절 0.68→0.93" 인용은 출처를 특정하지 못해
+  삭제했다(2026-07-12, UAEval4RAG 원문에 해당 수치 없음 확인 — [09 §6](09-external-review-2026-07-10.md)의
+  "출처 미특정 수치 삭제" 결정 이행).
 
 **우리 기여**: evidence-충분성 거절은 이미 존재(2025) → **새 방법이 아니라**,
 한국 대학 행정이라는 실배포 도메인에서 이를 재현하고 **어휘 갭과의 얽힘을 실측**.
@@ -85,9 +93,9 @@ Q020 해결), *없으면*(방학) 엉뚱한 문서(계절학기 전용 페이지
 
 | 주제 | 문헌 (위상·검증) | 우리와의 관계 |
 |---|---|---|
-| 형태소 분석기(도구) | 📘·○ MeCab-ko / 은전한닢 등 사전 기반 형태소 분석기. | 복합명사 분해 — 우리 갭의 정석 도구. (도구라 인용 형식 확인) |
-| 형태소 인지 subword | 📄·✓ *Linguistically Informed Subword Tokenization & Sub-character Decomposition (Korean)*, 2023~. [arXiv](https://arxiv.org/abs/2311.03928) | 한국어 교착어·복합어 처리 |
-| 서브문자 표현 | 📄·✓ *SCRIPT: Subcharacter Compositional Representation (Korean PLM)*, 2026. [arXiv](https://arxiv.org/abs/2604.12377) | 한국어 형태음운 처리 |
+| 형태소 분석기(도구) | 📘·○ MeCab-ko / 은전한닢 등 사전 기반 형태소 분석기. | 복합명사 분해 — 우리 갭의 정석 도구. 인용 형식 확정(2026-07-12): 알고리즘은 Kudo, Yamamoto & Matsumoto, *Applying CRFs to Japanese Morphological Analysis*, EMNLP 2004를 인용하고, mecab-ko-dic(은전한닢)은 각주 URL로 표기 |
+| 형태소 인지 subword | 📄·✓ *Linguistically Informed Subword Tokenization & Sub-character Decomposition (Korean)*, 2023~. [arXiv](https://arxiv.org/abs/2311.03928) | 한국어 교착어·복합어 처리. future work 근거로 이 한 편이면 충분 |
+| 서브문자 표현 | 📄·✓ *SCRIPT: Subcharacter Compositional Representation (Korean PLM)*, 2026. [arXiv](https://arxiv.org/abs/2604.12377) | 한국어 형태음운 처리. **본문 인용 제외**(미심사 preprint, 위 항목으로 충분) |
 
 **우리 기여**: 형태소 분석 **필요성을 실증 3건**으로 규명(도입은 future work).
 국내 학회(KMMS)에 한국어 특화 어필 포인트.
@@ -115,7 +123,7 @@ Q020 해결), *없으면*(방학) 엉뚱한 문서(계절학기 전용 페이지
 | 주제 | 문헌 (위상·검증) | 처리 |
 |---|---|---|
 | 최신성 | 📄·○ Vu et al., *FreshLLMs*, 2023. [arXiv](https://arxiv.org/abs/2310.03214) | 구현만, 평가 없음 → future work |
-| 문서 충돌 | 📄·✓ Wang, Li, Liu & Shu, *ConflictRAG: Detecting and Resolving Knowledge Conflicts in RAG*, arXiv 2026. [arXiv](https://arxiv.org/abs/2605.17301) | 구현만 → future work. arXiv preprint(미심사), 실존 대조함 |
+| 문서 충돌 | 📄·✓ Wang, Li, Liu & Shu, *ConflictRAG: Detecting and Resolving Knowledge Conflicts in RAG*, arXiv 2026. [arXiv](https://arxiv.org/abs/2605.17301) | 구현만 → future work. arXiv preprint(미심사), 실존 대조함. 본문에서 conflict_scan을 한 문장 이상 다룰 때만 인용 |
 | 키오스크/공공 UX | — | 본문 최소 |
 
 ---
@@ -129,8 +137,16 @@ Q020 해결), *없으면*(방학) 엉뚱한 문서(계절학기 전용 페이지
 - **가장 강한 정렬**: 3축(미응답/거절)의 최신 이론이 우리 실측을 뒷받침.
 - **가장 정직한 차별**: 방법이 아니라 **도메인 + 부정적 결과 + 얽힘 발견**.
 
-> **투고 전 체크**(실존은 확인됨 → 위상·서지만 남음): ① ❓ evidence-calibrated의
-> 저널 신뢰도 판단(인용 여부 결정) ② 📄 2026 preprint(PassiveQA·NOVA·SCRIPT·
-> ConflictRAG)의 인용 적절성 ③ 3축 "0.68→0.93" 수치의 출처 논문 특정 ④ 📗/📘
-> 항목들의 정확한 게재처·연도 정본 서지(예: Doc2Query-- 게재처, SPLADE 원논문
-> 링크로 교체) ⑤ MeCab-ko 등 도구의 인용 형식.
+**투고 전 체크 — 전부 해소 (2026-07-12)**:
+
+1. ❓ evidence-calibrated 저널 → 인용 제외 확정. 개념은 UAEval4RAG·Sufficient
+   Context(신규 추가, ICLR 2025)로 커버.
+2. 📄 2026 preprint → PassiveQA·NOVA·SCRIPT는 본문 인용 제외(축 대표를 심사
+   통과 문헌으로), ConflictRAG는 conflict_scan을 실제로 다룰 때만 인용.
+3. "0.68→0.93" → 출처 특정 실패로 삭제, 검증된 정렬 문장으로 교체(3축 참조).
+4. 정본 서지 → Doc2Query--는 ECIR 2023(Springer DOI 확인), SPLADE는 원논문
+   arXiv 링크로 교체, UAEval4RAG는 저자·원문 대조 완료.
+5. MeCab-ko 인용 형식 → Kudo et al., EMNLP 2004 + 도구 각주 URL.
+
+집필 시 남은 일: 실제 참고문헌 목록을 만들 때 이 문서의 "인용 확정/제외" 표시와
+대조하고, KMMS 양식의 참고문헌 표기법에 맞춘다.
