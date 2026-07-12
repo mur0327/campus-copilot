@@ -34,6 +34,28 @@ PREVIEW_CHARS = 220
 PHONE_RE = re.compile(r"\b01[0-9][-.\s]?\d{3,4}[-.\s]?\d{4}\b")
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 
+# 판정자가 서브도메인 의미를 모르면 대상자 스코프 판정이 불가능하므로(정보
+# 비대칭), 호스트네임을 사람이 읽는 출처 유형으로 표기한다. 저자 판정이 아닌
+# 사실 메타데이터라 블라인드를 깨지 않는다. 학과명 오기 위험을 피해 유형
+# 수준까지만 표기한다.
+SITE_LABELS = {
+    "www.honam.ac.kr": "대학 공식 사이트(전교 공통)",
+    "enter.honam.ac.kr": "입학안내 사이트(입학처)",
+    "graduate.honam.ac.kr": "대학원 사이트",
+    "dorm.honam.ac.kr": "생활관(기숙사) 사이트",
+    "gyoyang.honam.ac.kr": "교양·융합전공 사이트",
+    "dreamlife.honam.ac.kr": "드림라이프대학(단과대학) 사이트",
+}
+
+
+def site_label(url: str) -> str:
+    hostname = re.sub(r"^https?://", "", url).split("/")[0].lower()
+    if hostname in SITE_LABELS:
+        return SITE_LABELS[hostname]
+    if hostname.endswith(".honam.ac.kr"):
+        return "특정 학과 사이트"
+    return hostname
+
 PAGE_CSS = """
   * { box-sizing: border-box; }
   body {
@@ -61,6 +83,12 @@ PAGE_CSS = """
     padding: .55rem .8rem; margin: .5rem 0; break-inside: avoid;
   }
   .doc .title { font-weight: 600; }
+  .scope {
+    display: inline-block; font-size: .74rem; font-weight: 600;
+    color: #1d3a5f; background: #e8eef7; border: 1px solid #9db4d0;
+    border-radius: 4px; padding: 0 .45rem; margin-right: .45rem;
+    vertical-align: 1px;
+  }
   .doc .meta {
     font-size: .78rem; color: #555; word-break: break-all;
     font-family: ui-monospace, Consolas, monospace;
@@ -137,9 +165,10 @@ def render_doc(index: int, doc: dict) -> str:
     title = html.escape(mask_pii(doc["title"]))
     menu = html.escape(doc["menu_path"])
     url = html.escape(doc["url"])
+    scope = html.escape(site_label(doc["url"]))
     parts = [
         '<div class="doc">',
-        f'<div class="title">문서 {index}. {title}'
+        f'<div class="title"><span class="scope">{scope}</span>문서 {index}. {title}'
         + (f' <span style="font-weight:400">· 메뉴: {menu}</span>' if menu else "")
         + "</div>",
         f'<div class="meta">{url}</div>',
@@ -225,6 +254,11 @@ def main() -> None:
     <li>② 이 문서들을 근거로, 지금 키오스크 앞의 일반 학생에게 답해 줘도
       됩니까? — 답변 / 거절. 거절이라면 이유에 표시해 주세요.</li>
   </ul>
+  <br>
+  각 문서 앞의 <span class="scope">출처 표기</span>는 문서가 속한 사이트를
+  주소 기준으로 자동 분류한 것입니다(예: 대학원 사이트, 특정 학과 사이트,
+  대학 공식 사이트). 문서 제목만으로는 출처를 알기 어려워 함께 표기했으며,
+  특히 ②(누구에게 답해도 되는가)를 판단하실 때 참고해 주세요.
 </div>
 {body}
 </body>
