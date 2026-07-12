@@ -29,6 +29,14 @@ Campus Copilot을 응용/경험/성능분석/실패분석 논문으로 정리해
   관점 약점(W1~)과 대응 현황.
 - [09-external-review-2026-07-10.md](09-external-review-2026-07-10.md) — 외부
   리뷰 2 (GPT, 저장소 열람). 실험 우선순위·qrel 재판정·헤드라인 교체 권고.
+- [10-research-questions.md](10-research-questions.md) — 확정된 RQ 3개와 전체
+  헤드라인. RQ↔실험↔문서 매핑.
+- [11-rq1-retriever-comparison.md](11-rq1-retriever-comparison.md) — RQ1 서술
+  골격 (검색기 비교, 논문 5절).
+- [12-rq2-failure-analysis.md](12-rq2-failure-analysis.md) — RQ2 서술 골격
+  (실패 분석, 논문 6절).
+- [13-rq3-abstention-final-response.md](13-rq3-abstention-final-response.md) —
+  RQ3 서술 골격 (거절·최종 응답, 논문 7절). 거절 프레이밍·용어 표준의 정본.
 - [99-meeting-notes.md](99-meeting-notes.md) — 지도교수 미팅 메모.
 - [guide/](guide/) — KMMS 투고 규정·체크리스트. 규정 전문과 양식 파일은
   gitignore된 로컬 참고용이며 저장소에는 요약·체크리스트만 커밋한다.
