@@ -1,0 +1,56 @@
+question_id,gold_url,gold_title,support_grade,temporal_validity,audience_scope,v2_relevance,notes
+Q001,https://www.honam.ac.kr/General_Rest,일반휴학,full,current,match,primary,
+Q001,https://www.honam.ac.kr/military_Rest,입대휴학,partial,current,match,secondary,
+Q002,https://www.honam.ac.kr/ComeBack,복학,full,current,match,primary,
+Q003,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5249,장학/학자금 — 2026-2학기 국가장학금 1차 신청 안내,full,current,match,,"신규. 신청처(kosaf) 명시, 전교 공통, 3모드 풀 1위 — v2는 시한부 공지 불인정 원칙으로 제외했던 문서"
+Q003,https://enter.honam.ac.kr/scholarship,장학제도,partial,current,mismatch,primary,"신청처(한국장학재단) 미기재, 신입생 장학제도 중심"
+Q004,https://www.honam.ac.kr/ScholarshipType,장학금 종류,full,current,match,primary,
+Q007,https://www.honam.ac.kr/ClassLessonApply,수강신청,full,current,match,primary,
+Q008,https://www.honam.ac.kr/ClassLessonApply,수강신청,full,current,match,primary,
+Q009,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,졸업학점 2025,full,current,match,primary,
+Q009,https://www.honam.ac.kr/Graduate,졸업,partial,current,match,secondary,
+Q009,https://www.honam.ac.kr/GraduateGrades,졸업학점,invalid,current,match,secondary,본문에 학점표 없음(PDF 뷰어 진입점)
+Q009,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024,졸업학점 2024,partial,current,match,secondary,해당 입학년도 한정
+Q010,https://www.honam.ac.kr/Early_Graduation,조기졸업,full,current,match,primary,
+Q010,https://www.honam.ac.kr/Graduate,졸업,partial,current,match,secondary,
+Q011,https://www.honam.ac.kr/ExamResult,시험/성적,full,current,match,primary,
+Q012,https://www.honam.ac.kr/AcademicCalendar,학사일정,full,current,match,primary,
+Q013,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,full,current,match,secondary,발급 방법·장소를 직접 답함(내용 기준 상향)
+Q013,https://www.honam.ac.kr/ProofIssuanceGuide,증명발급안내,full,current,match,primary,
+Q014,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,full,current,match,primary,
+Q015,https://enter.honam.ac.kr/transPDF,모집요강,full,current,match,,신규. 위치 질문 기준 full(§4 재분류)
+Q017,https://www.honam.ac.kr/AcademicCalendar,학사일정,full,current,match,primary,
+Q018,https://www.honam.ac.kr/AcademicCalendar,학사일정,full,current,match,primary,
+Q019,https://www.honam.ac.kr/CamPhNum,교내전화번호,full,current,match,primary,
+Q019,https://www.honam.ac.kr/General_Rest,일반휴학,full,current,match,secondary,신청처(단과대학 교학과)를 직접 답함(상향)
+Q020,https://www.honam.ac.kr/CamPhNum,교내전화번호,full,current,match,primary,
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,졸업학점 2025,full,current,match,primary,
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2021,졸업학점 2021,partial,current,match,secondary,해당 입학년도 한정
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2022,졸업학점 2022,partial,current,match,secondary,해당 입학년도 한정
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2023,졸업학점 2023,partial,current,match,secondary,해당 입학년도 한정
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024,졸업학점 2024,partial,current,match,secondary,해당 입학년도 한정
+Q027,https://www.honam.ac.kr/military_Rest,입대휴학,full,current,match,primary,
+Q027,https://www.honam.ac.kr/General_Rest,일반휴학,partial,current,match,secondary,
+Q028,https://www.honam.ac.kr/General_Rest,일반휴학,full,current,match,primary,
+Q029,https://www.honam.ac.kr/ScholarshipType,장학금 종류,full,current,match,primary,
+Q030,https://beauty.honam.ac.kr/DepartmentNotice/1/read/236,학과공지 — 2026학년도 2학기 국가근로장학금 1차 신청,full,current,match,,신규. 신청처(kosaf) 명시
+Q030,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5254,장학/학자금 — 2026년 2학기 1차 국가근로장학금 학생 신청기간 안내,partial,current,match,,"신규. 제목만 텍스트, 본문 이미지"
+Q032,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/19,자주하는질문 — 등록금은 어떻게 납부하나요,full,current,match,,신규. HUIS 고지서 조회 경로(상시 FAQ)
+Q032,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,학과공지 — 2025학년도 2학기 대학·대학원 등록금 납부 안내,full,stale,match,,신규. 경로 안내 완전하나 2025-2학기 공지
+Q033,https://www.honam.ac.kr/ClassLessonApply,수강신청,full,current,match,primary,
+Q033,https://www.honam.ac.kr/GradesRecognition,학점인정,partial,current,match,secondary,기준학점+우수 +3으로 상한 유추 가능하나 최대 명시 아님(유추 지지는 partial)
+Q034,https://www.honam.ac.kr/AcademicCalendar,학사일정,full,current,match,primary,
+Q035,https://www.honam.ac.kr/ExamResult,시험/성적,full,current,match,primary,
+Q036,https://www.honam.ac.kr/ExamResult,시험/성적,full,current,match,primary,
+Q037,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,full,current,match,primary,
+Q037,https://www.honam.ac.kr/ProofIssuanceGuide,증명발급안내,full,current,match,secondary,졸업증명서 행에 인터넷증명발급 가능 명시(상향)
+Q037,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/29,자주하는질문(증명서 발급),partial,current,match,secondary,홈페이지 발급 목록에 졸업증명서 없음 — 공식 안내와 충돌 사례
+Q038,https://www.honam.ac.kr/ProofIssuanceApply,증명발급신청,full,current,match,primary,
+Q041,https://www.honam.ac.kr/AcademicCalendar,학사일정,full,current,match,primary,
+Q041,https://www.honam.ac.kr/SeasonSemester,계절학기,partial,current,match,secondary,
+Q042,https://www.honam.ac.kr/AcademicCalendar,학사일정,full,current,match,primary,
+Q044,https://www.honam.ac.kr/CamPhNum,교내전화번호,full,current,match,primary,
+Q046,https://www.honam.ac.kr/Cafeteria_Diet,교내식당/식단,full,current,match,primary,
+Q047,https://www.honam.ac.kr/SchbusGuideSchedule,통학버스/교통편 안내,full,current,match,primary,
+Q048,https://dorm.honam.ac.kr/ApplicationPassageInquiry,입사신청/합격조회,full,current,match,primary,
+Q048,https://dorm.honam.ac.kr/JG_JoinGuidance,입사안내,partial,current,match,secondary,

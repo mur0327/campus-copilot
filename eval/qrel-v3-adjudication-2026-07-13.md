@@ -226,3 +226,77 @@ Claude 초벌 → 저자 확정 → 지도교수 블라인드 판정과 비교 �
 집계: ① full 4 / partial 6 / none 8. ② answer 3 / abstain 15.
 v2 대비 요지: v2가 "전부 거절 대상"으로 뭉쳤던 18건 중 3건(Q015·Q030·Q032)은 답변이 옳은 문항으로 재분류됐다.
 남은 작업: answerable 32건의 질문 수준 판정과 문서 수준 등급, CSV 발행(question_judgments_v3.csv, gold_sources_v3.csv).
+
+## 5. 문서 수준 등급 — answerable gold 전량 (확정)
+
+방법: v2 gold 49행(primary 32 + secondary 17)을 v3 스키마(support_grade / temporal_validity / audience_scope)로 재등급했다.
+근거는 v2 판정 노트를 기본으로 하고, 노트만으로 애매한 행은 DB에서 청크 본문을 확인했다(Q003, Q037, Q003 풀 후보 3건).
+support_grade는 v2의 primary/secondary 서열이 아니라 내용 기준이다: 질문 초점을 완전히 답하면 full, 일부·조건부면 partial, 답하지 못하면 invalid.
+표기: 별표(★)는 기계적 매핑(primary→full, secondary→partial, current, match)과 다르게 판정한 행이다.
+
+| 질문 | 문서 | v2 | v3 등급 | 비고 |
+|---|---|---|---|---|
+| Q001 | 일반휴학 | primary | full / current / match | |
+| Q001 | 입대휴학 | secondary | partial / current / match | 군휴학 한정 |
+| Q002 | 복학 | primary | full / current / match | |
+| Q003 | 장학제도(enter) | primary | ★ partial / current / mismatch | 신청처(한국장학재단) 미기재, 신입생 장학제도 중심 |
+| Q003 | 장학/학자금 5249 (신규) | — | ★ full / current / match | 2026-2학기 국가장학금 신청 안내(전교 공통), 신청처 명시. 3모드 풀 1위 — v2는 시한부 공지 불인정 원칙으로 gold에서 제외했던 문서 |
+| Q004 | 장학금 종류 | primary | full / current / match | |
+| Q007 | 수강신청 | primary | full / current / match | |
+| Q008 | 수강신청 | primary | full / current / match | |
+| Q009 | 졸업학점 2025 | primary | full / current / match | |
+| Q009 | 졸업학점(진입) | secondary | ★ invalid / current / match | 본문에 학점표 없음(리뷰 4 치명 2의 MRR 부풀림 행) |
+| Q009 | 졸업학점 2024 | secondary | partial / current / match | 해당 입학년도 한정 |
+| Q009 | 졸업 | secondary | partial / current / match | 130~140 학점 명시 |
+| Q010 | 조기졸업 | primary | full / current / match | |
+| Q010 | 졸업 | secondary | partial / current / match | 요건 일부 |
+| Q011 | 시험/성적 | primary | full / current / match | |
+| Q012 | 학사일정 | primary | full / current / match | |
+| Q013 | 증명발급안내 | primary | full / current / match | |
+| Q013 | 증명발급신청 | secondary | ★ full / current / match | 발급 방법·장소를 직접 답함(내용 기준 상향) |
+| Q014 | 증명발급신청 | primary | full / current / match | |
+| Q017 | 학사일정 | primary | full / current / match | |
+| Q018 | 학사일정 | primary | full / current / match | |
+| Q019 | 교내전화번호 | primary | full / current / match | 휴·복학 담당(단과대학 교학팀) 연락처 포함 |
+| Q019 | 일반휴학 | secondary | ★ full / current / match | 신청처(단과대학 교학과)를 직접 답함(상향) |
+| Q020 | 교내전화번호 | primary | full / current / match | |
+| Q025 | 졸업학점 2025 | primary | full / current / match | |
+| Q025 | 졸업학점 2024~2021 (4행) | secondary | ★ partial / current / match | 해당 입학년도 한정 |
+| Q027 | 입대휴학 | primary | full / current / match | |
+| Q027 | 일반휴학 | secondary | partial / current / match | 변경 절차만 |
+| Q028 | 일반휴학 | primary | full / current / match | |
+| Q029 | 장학금 종류 | primary | full / current / match | |
+| Q033 | 수강신청 | primary | full / current / match | |
+| Q033 | 학점인정 | secondary | partial / current / match | 기준학점(18/19)+성적우수 +3으로 상한(21/22)을 유추할 수 있으나 "최대" 명시는 아님. 유추가 필요한 지지는 partial(저자 지적으로 상향 철회, 2026-07-13 논의) |
+| Q034 | 학사일정 | primary | full / current / match | |
+| Q035 | 시험/성적 | primary | full / current / match | Q011과 동일 문항 |
+| Q036 | 시험/성적 | primary | full / current / match | |
+| Q037 | 증명발급신청 | primary | full / current / match | |
+| Q037 | 증명발급안내 | secondary | ★ full / current / match | 졸업증명서 행에 "인터넷증명발급 가능" 명시를 본문 확인(상향, Q033과 달리 초점 직접 답변) |
+| Q037 | 드림라이프 FAQ 29 | secondary | ★ partial / current / match | 홈페이지 발급 가능 목록에 졸업증명서 없음(재학·휴학·제적·성적만). 공식 안내와 어긋나는 문서 간 충돌 사례로 노트 |
+| Q038 | 증명발급신청 | primary | full / current / match | |
+| Q041 | 학사일정 | primary | full / current / match | |
+| Q041 | 계절학기 | secondary | partial / current / match | 제도·규정, 구체 일정 없음 |
+| Q042 | 학사일정 | primary | full / current / match | |
+| Q044 | 교내전화번호 | primary | full / current / match | |
+| Q046 | 교내식당/식단 | primary | full / current / match | |
+| Q047 | 통학버스 안내 | primary | full / current / match | |
+| Q048 | 입사신청/합격조회 | primary | full / current / match | |
+| Q048 | 입사안내 | secondary | partial / current / match | 주의사항·제출 서류 중심 |
+| Q015 | 모집요강(transPDF) (신규) | — | full / current / match | 위치 질문 기준(§4 재분류 반영) |
+| Q030 | 학과공지 beauty 236 (신규) | — | full / current / match | 신청처(kosaf) 명시, 2026-2학기 대상 |
+| Q030 | 장학/학자금 5254 (신규) | — | partial / current / match | 제목만 텍스트, 본문 이미지 |
+| Q032 | 드림라이프 FAQ 19 (신규) | — | full / current / match | HUIS 고지서 조회 경로(상시 FAQ) |
+| Q032 | 학과공지 inc 2369 (신규) | — | ★ full / stale / match | 경로 안내 완전하나 2025-2학기 공지 |
+
+집계(확정, 생성 스크립트로 교차 검증): 총 55행 = v2 재등급 49 + 신규 6(재분류 3문항의 gold 5행 + Q003 보강 1행).
+support_grade는 full 39 / partial 15 / invalid 1.
+저자 검토에서 조정 1건: Q033 학점인정 상향 철회(유추 지지는 partial — "명시된 지지 = full, 조립이 필요한 지지 = partial" 기준 확립).
+질문 수준(answerable 32건)은 전 문항 corpus_support full·deployment answer로 둔다. Q003은 full 근거가 신규 gold(5249)에서 나왔다.
+
+## 6. v3 발행 (2026-07-13)
+
+- `eval/question_judgments_v3.csv` — 질문 수준 판정 50건. support full 36 / partial 6 / none 8, deployment answer 35 / abstain 15.
+- `eval/gold_sources_v3.csv` — 문서 수준 등급 55행(위 §5 표와 일치, v2_relevance 열로 계보 보존).
+- v2 파일(gold_sources.csv, questions.csv의 answerability 열)은 불변 보존한다. v2의 insufficient 자리표시 18행은 문서가 아니므로 v3 gold 파일로 이관하지 않는다(질문 수준 파일이 대체).
+- 이로써 qrel v3 동결. 이후 변경은 v4 발행으로만 한다.
