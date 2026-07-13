@@ -10,6 +10,7 @@
 *.swp
 alembic/versions/*.pyc
 TODO.md
+NOTE.md
 eval/results/
 
 # Third-party journal submission guides/templates kept for local reference only.
