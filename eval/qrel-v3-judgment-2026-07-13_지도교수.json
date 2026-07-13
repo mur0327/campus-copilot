@@ -1,0 +1,152 @@
+{
+  "sheet": "qrel-v3-blind-18",
+  "judge": "지도교수",
+  "date": "2026-07-13",
+  "exported_at": "2026-07-13T00:21:31.495Z",
+  "judgments": {
+    "Q005": {
+      "corpus_support": "일부만",
+      "deployment": "거절",
+      "reject_reasons": [],
+      "reject_reason_etc": "정확하지 않음",
+      "memo": ""
+    },
+    "Q006": {
+      "corpus_support": "일부만",
+      "deployment": "답변",
+      "reject_reasons": [],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q015": {
+      "corpus_support": "일부만",
+      "deployment": "답변",
+      "reject_reasons": [],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q016": {
+      "corpus_support": "있음",
+      "deployment": "답변",
+      "reject_reasons": [],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q021": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q022": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q023": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q024": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q026": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q030": {
+      "corpus_support": "일부만",
+      "deployment": "답변",
+      "reject_reasons": [],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q031": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "내용이 없음",
+      "memo": ""
+    },
+    "Q032": {
+      "corpus_support": "일부만",
+      "deployment": "답변",
+      "reject_reasons": [],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q039": {
+      "corpus_support": "있음",
+      "deployment": "답변",
+      "reject_reasons": [],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q040": {
+      "corpus_support": "일부만",
+      "deployment": "거절",
+      "reject_reasons": [],
+      "reject_reason_etc": "최신성 부족",
+      "memo": ""
+    },
+    "Q043": {
+      "corpus_support": "있음",
+      "deployment": "답변",
+      "reject_reasons": [],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q045": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q049": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    },
+    "Q050": {
+      "corpus_support": "없음",
+      "deployment": "거절",
+      "reject_reasons": [
+        "답 없음"
+      ],
+      "reject_reason_etc": "",
+      "memo": ""
+    }
+  }
+}

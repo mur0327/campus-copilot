@@ -174,3 +174,55 @@ Claude 초벌 → 저자 확정 → 지도교수 블라인드 판정과 비교 �
 
 이유 구체화 2건(Q021 personalized, Q031 audience_mismatch)은 CSV 분류 정확성을 위한 것으로 저자 동의.
 저자 기입 원본은 `eval/qrel-v3-judgment-2026-07-13_저자.json`(수기 수정 이력 포함)이며, 이 표가 확정본이다.
+
+## 3. 지도교수 판정 개봉과 일치율 (2026-07-13)
+
+개봉 시점: §1(Claude 초벌)과 §2(저자 확정)가 커밋된 뒤.
+교수 판정 원본은 `eval/qrel-v3-judgment-2026-07-13_지도교수.json`(블라인드 시트로 단독 기입, 18/18 완료).
+
+일치율(§2 저자 확정 vs 교수, 논의 전 동결값):
+
+- ① 근거: 10/18 (55.6%), kappa 0.30
+- ② 배포: 13/18 (72.2%), kappa 0.33
+- 참고: Claude 초벌 vs 교수는 ② 14/18 (77.8%), kappa 0.53
+
+관찰:
+
+- 판정자별 ② 답변 수: 교수 7 / Claude 초벌 7 / 저자 2. 저자가 가장 엄격했고, 교수와 Claude가 독립적으로 비슷한 관대함을 보였다.
+- kappa가 원시 일치율보다 크게 낮은 것은 두 판정자의 거절 비율이 높아 우연 일치 기대치가 크기 때문이다. N=18이라 kappa는 참고 병기(원칙 9).
+- 원시 일치율 70%대 + 낮은 kappa 조합 자체가 "answerability 판정은 자명하지 않다"는 논문 주장의 실증이다.
+
+② 배포 불일치 5건의 해소(최종 결정권 저자, 원칙 9):
+
+- Q032 고지서 확인처: **답변으로 수정** (①도 일부만으로 조정, 최종 partial/answer). 3인 중 2인(교수·Claude)이 답변이었고, 교수는 원칙 논거를 모르는 채 재료만으로 같은 결론에 도달 — 상시 FAQ의 존재가 독립 판정자들에게 동일한 신호였다.
+- Q006 납부확인서: 거절 유지. 교수는 답변(일부만)이었으나, 명칭 등가성이 제시 재료 안에 없다는 원칙 13을 저자가 유지.
+- Q016 입학상담: 거절 유지. 교수는 답변이었으나 재료의 구체 연락처는 대학원 전용 — 대상 오류 위험(원칙 5).
+- Q039 편입 자격: 거절 유지. 교수는 있음/답변이었으나 근거가 2019년 학과 FAQ뿐이고 정본(모집요강)은 미수집(원칙 11 취지).
+- Q043 장학부서 위치: 거절 유지. 교수는 있음/답변 — 질문 초점(물리적 위치)이 재료에 없다는 저자 판단 유지. 교수도 초점을 부서·연락처로 읽었을 가능성을 논의에 기록.
+
+## 4. v3 질문 수준 확정 — insufficient 18건 (동결)
+
+| 질문 | corpus_support | deployment | reason |
+|---|---|---|---|
+| Q005 | partial | abstain | absent |
+| Q006 | partial | abstain | absent, stale |
+| Q015 | full | answer | |
+| Q016 | full | abstain | audience_mismatch |
+| Q021 | none | abstain | personalized |
+| Q022 | none | abstain | absent |
+| Q023 | partial | abstain | absent |
+| Q024 | none | abstain | absent |
+| Q026 | none | abstain | absent |
+| Q030 | full | answer | |
+| Q031 | partial | abstain | audience_mismatch |
+| Q032 | partial | answer | |
+| Q039 | partial | abstain | acquisition_failure |
+| Q040 | full | abstain | stale |
+| Q043 | none | abstain | absent |
+| Q045 | none | abstain | absent |
+| Q049 | none | abstain | absent |
+| Q050 | none | abstain | absent |
+
+집계: ① full 4 / partial 6 / none 8. ② answer 3 / abstain 15.
+v2 대비 요지: v2가 "전부 거절 대상"으로 뭉쳤던 18건 중 3건(Q015·Q030·Q032)은 답변이 옳은 문항으로 재분류됐다.
+남은 작업: answerable 32건의 질문 수준 판정과 문서 수준 등급, CSV 발행(question_judgments_v3.csv, gold_sources_v3.csv).
