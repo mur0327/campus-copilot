@@ -126,3 +126,51 @@ Claude 초벌 → 저자 확정 → 지도교수 블라인드 판정과 비교 �
 
 재료 밖 노트(라벨 미반영, 원칙 3): 없음.
 이번 초벌은 추가 탐색 없이 재료만으로 판정했다.
+
+## 2. 저자 확정 — insufficient 18건 (2026-07-13)
+
+절차: 저자가 초벌 문서를 다시 열지 않은 채 블라인드 시트(HTML)로 직접 기입했다.
+단, 직전 대화에서 Claude 초벌의 경계 6건 판정·이유가 노출된 상태였으므로 완전 독립 판정으로 세지 않는다(저자 확정 역할).
+기입 결과를 Claude 초벌과 대조해 갈린 8건을 논의했고, 논의에서 판정 원칙 11~13(시효는 문서 성격 / 제목 아닌 본문 / 명칭 등가성)이 추가됐다.
+
+논의 전 일치율(Claude 초벌 vs 저자 기입): ① 11/18, ② 12/18.
+저자가 Claude 초벌과 크게 갈린 것은 앵커링이 약했다는 방증으로 기록한다.
+
+확정 판정:
+
+| 질문 | ① 근거 | ② 배포 | 이유 |
+|---|---|---|---|
+| Q005 | partial | abstain | absent |
+| Q006 | partial | abstain | absent, stale |
+| Q015 | full | answer | |
+| Q016 | full | abstain | audience_mismatch |
+| Q021 | none | abstain | personalized |
+| Q022 | none | abstain | absent |
+| Q023 | partial | abstain | absent |
+| Q024 | none | abstain | absent |
+| Q026 | none | abstain | absent |
+| Q030 | full | answer | |
+| Q031 | partial | abstain | audience_mismatch |
+| Q032 | full | abstain | stale |
+| Q039 | partial | abstain | acquisition_failure |
+| Q040 | full | abstain | stale |
+| Q043 | none | abstain | absent |
+| Q045 | none | abstain | absent |
+| Q049 | none | abstain | absent |
+| Q050 | none | abstain | absent |
+
+집계: ① full 5 / partial 5 / none 8. ② answer 2 / abstain 16.
+
+갈린 8건의 해소 기록:
+
+- Q005: 저자 판정 채택(Claude 초벌이 경계로 표시했던 방향). 낡은 학기 공지 기반이라 확인 경로 답변도 보수적으로 거절.
+- Q006: 저자 판정 채택(원칙 13 신설 계기). 질문의 "납부확인서"와 재료의 "교육비납입증명서"가 재료 안에서 등가로 확인되지 않음. 노트: 코퍼스의 다른 청크에 등가 문장("납부 확인 | 교육비납입증명서 발급 안내")이 존재하나 검색이 가져오지 않아 재료 밖(원칙 3). 검색 실패의 미세 사례로 논문 후보.
+- Q016: 저자 판정 채택. ①은 대상 무관하게 내용 존재로 인정(축 분리를 저자가 더 순수하게 적용), 대상 문제는 ②에서 거절.
+- Q023: ①은 논의로 일부만 확정(원칙 12, 규정 본문의 "웹상 조회" 한 줄 지지), ②는 저자 판정(거절) 유지.
+- Q030: 논의로 답변 확정. 신청처(한국장학재단)는 국가 제도라 학과·학기 무관 상시 사실이라는 Claude 논거를 저자가 수용.
+- Q031: 저자 기입과 초벌 일치(partial/abstain), 이유만 audience_mismatch로 구체화.
+- Q032: 저자 최종 결정으로 abstain(stale). Claude 이견 병기: 원칙 11·12에 따르면 상시 FAQ 본문이 확인 경로를 지지하므로 answer. 저자는 거절을 유지했고 최종 결정권은 저자에게 있다(원칙 9).
+- Q039, Q043: 저자가 재검토로 수정(Q039 일부만·수집 실패, Q043 위치 질문 기준 없음).
+
+이유 구체화 2건(Q021 personalized, Q031 audience_mismatch)은 CSV 분류 정확성을 위한 것으로 저자 동의.
+저자 기입 원본은 `eval/qrel-v3-judgment-2026-07-13_저자.json`(수기 수정 이력 포함)이며, 이 표가 확정본이다.
