@@ -30,6 +30,14 @@ GOLD_PAGES_PATH = EVAL_DIR / "gold_pages_v4.csv"
 GOLD_EVIDENCE_PATH = EVAL_DIR / "gold_evidence_v4.csv"
 RUN_NAMES = ("bm25", "semantic", "hybrid")
 SUMMARY_FIELDS = ("variant", "retriever_mode", "metric", "value", "N")
+METRIC_QUESTION_SET_NAMES = {
+    "PageHit_full@5": "page_support",
+    "PageHit_any@5": "page_support",
+    "nDCG_support@5": "page_support",
+    "nDCG_deployable@5": "page_deployable",
+    "EvidenceHit_full@5": "text_evidence",
+    "EvidenceHit_any@5": "text_evidence",
+}
 PAGE_REQUIRED_FIELDS = (
     "question_id",
     "canonical_url",
@@ -187,6 +195,46 @@ def _metric(value: float, denominator: int) -> dict[str, int | float]:
     return {"value": round(value, 6), "N": denominator}
 
 
+def metric_question_sets(
+    page_rows: Sequence[Mapping[str, Any]],
+    evidence_rows: Sequence[Mapping[str, Any]],
+    *,
+    included_question_ids: set[str],
+) -> dict[str, set[str]]:
+    pages_by_question: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in page_rows:
+        pages_by_question[str(row["question_id"])].append(row)
+
+    support_questions = {
+        question_id
+        for question_id in included_question_ids
+        if any(support_gain(page) > 0 for page in pages_by_question.get(question_id, []))
+    }
+    deployable_questions = {
+        question_id
+        for question_id in included_question_ids
+        if any(deployable_gain(page) > 0 for page in pages_by_question.get(question_id, []))
+    }
+    navigation_questions = {
+        str(row["question_id"])
+        for row in evidence_rows
+        if row.get("evidence_type") == "page_navigation"
+        and row.get("evidence_grade") in {"full", "partial"}
+    }
+    text_evidence_questions = {
+        str(row["question_id"])
+        for row in evidence_rows
+        if row.get("evidence_type") == "text_chunk"
+        and row.get("evidence_grade") in {"full", "partial"}
+        and str(row["question_id"]) in included_question_ids
+    } - navigation_questions
+    return {
+        "page_support": support_questions,
+        "page_deployable": deployable_questions,
+        "text_evidence": text_evidence_questions,
+    }
+
+
 def score_retrieval_rows(
     retrieval_rows: Sequence[Mapping[str, Any]],
     page_rows: Sequence[Mapping[str, Any]],
@@ -207,28 +255,14 @@ def score_retrieval_rows(
     run_ids = set(rows_by_question)
     included = run_ids if included_question_ids is None else run_ids & included_question_ids
 
-    support_questions = {
-        question_id
-        for question_id in included
-        if any(support_gain(page) > 0 for page in pages_by_question.get(question_id, []))
-    }
-    deployable_questions = {
-        question_id
-        for question_id in included
-        if any(deployable_gain(page) > 0 for page in pages_by_question.get(question_id, []))
-    }
-    navigation_questions = {
-        str(row["question_id"])
-        for row in evidence_rows
-        if row.get("evidence_type") == "page_navigation" and row.get("evidence_grade") in {"full", "partial"}
-    }
-    text_evidence_questions = {
-        str(row["question_id"])
-        for row in evidence_rows
-        if row.get("evidence_type") == "text_chunk"
-        and row.get("evidence_grade") in {"full", "partial"}
-        and str(row["question_id"]) in included
-    } - navigation_questions
+    question_sets = metric_question_sets(
+        page_rows,
+        evidence_rows,
+        included_question_ids=included,
+    )
+    support_questions = question_sets["page_support"]
+    deployable_questions = question_sets["page_deployable"]
+    text_evidence_questions = question_sets["text_evidence"]
 
     full_hits: list[float] = []
     any_hits: list[float] = []

@@ -41,6 +41,7 @@ MANIFEST_PATHS = (
     EVAL_DIR / "build_v4_qrel.py",
     EVAL_DIR / "check_v4_invariants.py",
     EVAL_DIR / "score_v4.py",
+    EVAL_DIR / "compare_v4_audit.py",
 )
 
 

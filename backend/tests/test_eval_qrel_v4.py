@@ -19,6 +19,7 @@ from eval.check_v4_invariants import (  # noqa: E402
     ActualChunk,
     find_invariant_failures,
 )
+from eval.compare_v4_audit import build_audit_comparison  # noqa: E402
 from eval.make_v4_pool import (  # noqa: E402
     EXPECTED_ALL_PAIRS,
     EXPECTED_INSUFFICIENT_PAIRS,
@@ -764,3 +765,34 @@ def test_adjudication_applies_author_question_changes_to_page_and_evidence():
     assert questions["Q036"]["pool_support"] == "partial"
     assert questions["Q036"]["expected_behavior"] == "abstain"
     assert questions["Q036"]["primary_reason"] == "acquisition_failure"
+
+
+def test_audit_comparison_preserves_denominators_and_mode_rankings():
+    comparison = build_audit_comparison()
+
+    assert comparison["summary"]["any_metric_question_set_changed"] is False
+    assert comparison["summary"]["any_mode_ranking_changed"] is False
+    assert comparison["retrieval_qrel_changed_question_ids"] == [
+        "Q008",
+        "Q013",
+        "Q036",
+        "Q048",
+    ]
+    assert comparison["question_label_changed_question_ids"] == [
+        "Q008",
+        "Q030",
+        "Q036",
+    ]
+
+    all_50 = comparison["variants"]["all_50"]
+    assert all_50["max_absolute_delta"] == {
+        "variant": "all_50",
+        "metric": "EvidenceHit_full@5",
+        "retriever_mode": "semantic",
+        "delta": -0.052632,
+    }
+    assert all(
+        metric["question_set_changed"] is False
+        and metric["ranking_changed"] is False
+        for metric in all_50["metrics"].values()
+    )

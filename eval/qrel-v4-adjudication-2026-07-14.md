@@ -1,6 +1,6 @@
 # qrel v4 사람 감사 조정 기록
 
-작성일: 2026-07-14. 상태: 페이지·evidence와 질문 수준 조정 완료, qrel v4 발행 완료.
+작성일: 2026-07-14. 상태: 페이지·evidence와 질문 수준 조정, qrel v4 발행, 감사 전후 판정 민감도 확인 완료.
 
 이 문서는 qrel v4 초벌, B2 사람 감사, 전문 누락 보정 판정을 대조하고 최종 조정 결과를 기록한다.
 원본 판정 JSON은 수정하지 않으며, 승인된 결정은 별도의 `qrel-v4-adjudicated.json`에 반영한다.
@@ -74,6 +74,7 @@ Q013 증명발급신청과 Q048 입학 FAQ의 최종값은 2026-07-14 저자 확
 페이지·evidence 조정본을 바탕으로 50문항의 expected behavior와 reason을 저자가 전량 확인했다.
 초벌 제안 대비 expected behavior 변경은 Q008과 Q036 두 문항이다.
 Q003은 신청처의 지속성과 과거 공지의 시효가 갈리는 경계로 표시됐지만 최종 선택은 초벌과 같은 `abstain(stale)`이다.
+Q030은 expected behavior와 주된 사유를 유지하고, 일부 학과 자료의 대상 불일치는 최종 거절 사유가 아니므로 부차 사유에서 제외했다.
 
 | 대상 | 초벌 제안 | 저자 확정 | 연쇄 page·evidence 조정 | 근거 |
 | --- | --- | --- | --- | --- |
@@ -111,3 +112,33 @@ Q013은 표적 감사의 페이지·evidence 과소 판정 1묶음이다.
 | `target_sources_v4.csv` | 5 | `ae77faa28d0a4a71d4240bdf50b67caadca59f47e97e8fdfea8cfb35d0080aa4` |
 
 발행 직후 invariant 12종을 다시 실행해 페이지 424행, 근거 626행, 질문 50행 전부 통과했다.
+
+## 8. 감사 전후 판정 민감도
+
+이 비교의 목적은 사람 감사로 검색 시스템의 성능이 개선됐다고 주장하는 것이 아니라, LLM 초벌 판정을 최종 조정했을 때 검색 방식의 상대적 양상과 해석이 유지되는지 확인하는 것이다.
+감사 전 기준은 `qrel-v4-primary-initial.json`, 감사 후 기준은 `qrel-v4-adjudicated.json`이며 2026-07-12에 동결한 동일한 BM25·semantic·hybrid 검색 JSONL을 사용했다.
+검색은 다시 실행하지 않았다.
+
+감사 전후의 지표 대상 문항 집합은 page support 45문항, deployable page 39문항, text evidence 38문항으로 모두 같았다.
+따라서 별도의 공통 분모 보조 비교는 필요하지 않았다.
+
+| 지표 | BM25-only 전→후 (차이) | Semantic-only 전→후 (차이) | Hybrid 전→후 (차이) | 모드 순위 전·후 |
+| --- | ---: | ---: | ---: | --- |
+| PageHit full@5 (N=45) | 0.3556→0.3556 (0.0000) | 0.7556→0.7111 (-0.0444) | 0.7778→0.7333 (-0.0444) | Hybrid > Semantic > BM25 유지 |
+| PageHit any@5 (N=45) | 0.6000→0.6000 (0.0000) | 1.0000→1.0000 (0.0000) | 0.9778→0.9778 (0.0000) | Semantic > Hybrid > BM25 유지 |
+| nDCG support@5 (N=45) | 0.3104→0.3104 (0.0000) | 0.8208→0.8216 (+0.0008) | 0.7011→0.7023 (+0.0012) | Semantic > Hybrid > BM25 유지 |
+| nDCG deployable@5 (N=39) | 0.3138→0.3138 (0.0000) | 0.7255→0.7264 (+0.0009) | 0.6541→0.6560 (+0.0019) | Semantic > Hybrid > BM25 유지 |
+| EvidenceHit full@5 (N=38) | 0.2895→0.2895 (0.0000) | 0.7632→0.7105 (-0.0526) | 0.7895→0.7368 (-0.0526) | Hybrid > Semantic > BM25 유지 |
+| EvidenceHit any@5 (N=38) | 0.6316→0.6316 (0.0000) | 1.0000→1.0000 (0.0000) | 0.9737→0.9737 (0.0000) | Semantic > Hybrid > BM25 유지 |
+
+50문항 비교의 최대 절대 변화는 Semantic-only의 EvidenceHit full@5에서 0.052632였다.
+Q035를 제거한 49문항 비교에서도 모든 모드 순위가 유지됐고 최대 절대 변화는 같은 지표의 0.054054였다.
+감사로 직접 달라진 검색 qrel 문항은 Q008·Q013·Q036·Q048이며, Q005와 Q024의 대표 사례 판정은 바뀌지 않았다.
+
+BM25 수치는 모든 지표에서 같고, Semantic과 Hybrid는 Q008·Q036의 full→partial 조정으로 full hit가 같은 폭으로 낮아졌다.
+any hit는 전부 같고 두 nDCG의 변화는 0.0019 이하였다.
+모드 순위와 “Hybrid는 full hit, Semantic은 any hit와 nDCG에 강하다”는 해석이 유지됐으므로 B2 프로토콜의 확대 조건은 발생하지 않았다.
+이 변화는 동일한 검색 결과에 다른 판정 기준을 적용한 민감도 결과이며 시스템 성능의 향상이나 저하를 뜻하지 않는다.
+
+재현 명령은 `uv run --project backend python eval/compare_v4_audit.py`다.
+원시 산출물은 `eval/results/qrel-v4-audit-comparison-20260714-131635.json`과 `eval/results/qrel-v4-audit-comparison-20260714-131635.csv`이며 SHA-256은 각각 `b6be0458a827ed591f7cdd6b4712eb20c9c9147605ed7bb0601de4bc414141db`, `e2fa0f6dab4a6331ff72b1838126fdabc50a220055fcd51224861bc34dc62385`다.
