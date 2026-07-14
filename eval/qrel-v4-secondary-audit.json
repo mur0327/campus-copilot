@@ -1,0 +1,292 @@
+{
+  "schema_version": "qrel-v4-judgment-1",
+  "audit": true,
+  "judge": "저자",
+  "date": "2026-07-14",
+  "exported_at": "2026-07-14T08:04:08.549Z",
+  "pages": [
+    {
+      "row_id": "P|Q016|https://tourmgt.honam.ac.kr/AdmissionNotice/1/read/313",
+      "question_id": "Q016",
+      "canonical_url": "https://tourmgt.honam.ac.kr/AdmissionNotice/1/read/313",
+      "judged": true,
+      "support_grade": "invalid",
+      "temporal_validity": "stale",
+      "audience_scope": "mismatch",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q021|https://www.honam.ac.kr/GraduateGrades/pdfdownload/2023",
+      "question_id": "Q021",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2023",
+      "judged": true,
+      "support_grade": "partial",
+      "temporal_validity": "stale",
+      "audience_scope": "match",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q025|https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "judged": true,
+      "support_grade": "partial",
+      "temporal_validity": "stale",
+      "audience_scope": "match",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q029|https://enter.honam.ac.kr/scholarship",
+      "question_id": "Q029",
+      "canonical_url": "https://enter.honam.ac.kr/scholarship",
+      "judged": true,
+      "support_grade": "full",
+      "temporal_validity": "current",
+      "audience_scope": "match",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q030|https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219",
+      "question_id": "Q030",
+      "canonical_url": "https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219",
+      "judged": true,
+      "support_grade": "invalid",
+      "temporal_validity": "unknown",
+      "audience_scope": "unknown",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q033|https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/5",
+      "question_id": "Q033",
+      "canonical_url": "https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/5",
+      "judged": true,
+      "support_grade": "invalid",
+      "temporal_validity": "unknown",
+      "audience_scope": "mismatch",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q035|https://espo.honam.ac.kr/UniversitySchedule",
+      "question_id": "Q035",
+      "canonical_url": "https://espo.honam.ac.kr/UniversitySchedule",
+      "judged": true,
+      "support_grade": "invalid",
+      "temporal_validity": "unknown",
+      "audience_scope": "mismatch",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q040|https://enter.honam.ac.kr/dataroom/1/read/64",
+      "question_id": "Q040",
+      "canonical_url": "https://enter.honam.ac.kr/dataroom/1/read/64",
+      "judged": true,
+      "support_grade": "partial",
+      "temporal_validity": "stale",
+      "audience_scope": "match",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q042|https://dorm.honam.ac.kr/Notice/1/read/247",
+      "question_id": "Q042",
+      "canonical_url": "https://dorm.honam.ac.kr/Notice/1/read/247",
+      "judged": true,
+      "support_grade": "invalid",
+      "temporal_validity": "stale",
+      "audience_scope": "match",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q043|https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815",
+      "question_id": "Q043",
+      "canonical_url": "https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815",
+      "judged": true,
+      "support_grade": "invalid",
+      "temporal_validity": "current",
+      "audience_scope": "match",
+      "notes": ""
+    }
+  ],
+  "evidence": [
+    {
+      "row_id": "E|Q016|5ab088d0-6760-4215-b6e5-95cf4b08e205",
+      "question_id": "Q016",
+      "canonical_url": "https://tourmgt.honam.ac.kr/AdmissionNotice/1/read/313",
+      "chunk_id": "5ab088d0-6760-4215-b6e5-95cf4b08e205",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q021|d7badbf7-efe0-4f77-a206-cf90f2e02be4",
+      "question_id": "Q021",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2023",
+      "chunk_id": "d7badbf7-efe0-4f77-a206-cf90f2e02be4",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|2dbe7877-7e70-474c-91e7-3ec9ed964cdf",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "2dbe7877-7e70-474c-91e7-3ec9ed964cdf",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|87b77ca0-51c1-43e9-abd1-24f3524b8e8c",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "87b77ca0-51c1-43e9-abd1-24f3524b8e8c",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|b728539f-407b-4be7-a26d-ce9caeb7ee08",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "b728539f-407b-4be7-a26d-ce9caeb7ee08",
+      "judged": true,
+      "evidence_grade": "partial",
+      "evidence_type": "text_chunk",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|9fc3e7a9-56ec-434f-959e-f8cab864c3c2",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "9fc3e7a9-56ec-434f-959e-f8cab864c3c2",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|11fc7c91-a19a-4dfa-9a5a-f010c819016b",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "11fc7c91-a19a-4dfa-9a5a-f010c819016b",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|74b530d1-e332-40e2-9c79-bf3363a249a4",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "74b530d1-e332-40e2-9c79-bf3363a249a4",
+      "judged": true,
+      "evidence_grade": "partial",
+      "evidence_type": "text_chunk",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|6bb87111-3ed2-4ecd-b91c-5f325283c8d0",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "6bb87111-3ed2-4ecd-b91c-5f325283c8d0",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|c6fe21d3-3e01-4275-bf59-c25ebb6dc152",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "c6fe21d3-3e01-4275-bf59-c25ebb6dc152",
+      "judged": true,
+      "evidence_grade": "partial",
+      "evidence_type": "text_chunk",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q029|f68b9a3b-309c-4282-80fb-57846ca0cd0f",
+      "question_id": "Q029",
+      "canonical_url": "https://enter.honam.ac.kr/scholarship",
+      "chunk_id": "f68b9a3b-309c-4282-80fb-57846ca0cd0f",
+      "judged": true,
+      "evidence_grade": "full",
+      "evidence_type": "text_chunk",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q029|8683ac62-4393-4fe9-9025-21b77ab55a7b",
+      "question_id": "Q029",
+      "canonical_url": "https://enter.honam.ac.kr/scholarship",
+      "chunk_id": "8683ac62-4393-4fe9-9025-21b77ab55a7b",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q030|7981ab63-2662-4c2d-90a7-63ed02d43f03",
+      "question_id": "Q030",
+      "canonical_url": "https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219",
+      "chunk_id": "7981ab63-2662-4c2d-90a7-63ed02d43f03",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q033|73dba75d-8735-49ca-a953-4067e2b1b1d0",
+      "question_id": "Q033",
+      "canonical_url": "https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/5",
+      "chunk_id": "73dba75d-8735-49ca-a953-4067e2b1b1d0",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q035|3c70e8f4-8273-439f-9ba5-c7debb40fb97",
+      "question_id": "Q035",
+      "canonical_url": "https://espo.honam.ac.kr/UniversitySchedule",
+      "chunk_id": "3c70e8f4-8273-439f-9ba5-c7debb40fb97",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q040|40f8e5a6-4f7b-4040-8274-f4d38b740c8b",
+      "question_id": "Q040",
+      "canonical_url": "https://enter.honam.ac.kr/dataroom/1/read/64",
+      "chunk_id": "40f8e5a6-4f7b-4040-8274-f4d38b740c8b",
+      "judged": true,
+      "evidence_grade": "full",
+      "evidence_type": "text_chunk",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q042|a2edbaae-21d8-424b-a198-cc8e82943758",
+      "question_id": "Q042",
+      "canonical_url": "https://dorm.honam.ac.kr/Notice/1/read/247",
+      "chunk_id": "a2edbaae-21d8-424b-a198-cc8e82943758",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q043|f675f55d-f560-46ce-8ec9-4c5ad964722d",
+      "question_id": "Q043",
+      "canonical_url": "https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815",
+      "chunk_id": "f675f55d-f560-46ce-8ec9-4c5ad964722d",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    }
+  ],
+  "questions": []
+}

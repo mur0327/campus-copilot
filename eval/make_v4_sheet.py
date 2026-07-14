@@ -88,8 +88,11 @@ h3 { margin: 0; font-size: 1.05rem; }
 .bundle-timer { margin-top: .6rem; }
 .bundle-timer button { margin-right: .5rem; padding: .25rem .55rem; border: 1px solid #6d7890;
   border-radius: 5px; background: #fff; cursor: pointer; }
+.bundle-timer button:disabled { cursor: default; background: #eef2f7; }
 .timing-summary { margin-top: .8rem; padding: .65rem .8rem; border: 1px solid #9aa3b2;
   border-radius: 7px; background: #fff; }
+.context-card { border-style: dashed; background: #f7f8fa; }
+.context-note { margin-top: .55rem; color: #5b6472; font-weight: 700; }
 .axis { margin: .45rem 0; }
 .axis-title { display: inline-block; min-width: 9.5rem; font-weight: 700; }
 label { display: inline-block; margin: .15rem .9rem .15rem 0; }
@@ -116,39 +119,91 @@ function formatElapsed(seconds) {
   return `${minutes}분 ${String(remainder).padStart(2, '0')}초`;
 }
 
+function medianSeconds(values) {
+  if (!values.length) return null;
+  const ordered = values.slice().sort((a, b) => a - b);
+  const middle = Math.floor(ordered.length / 2);
+  return ordered.length % 2
+    ? ordered[middle]
+    : Math.round((ordered[middle - 1] + ordered[middle]) / 2);
+}
+
+function timingSnapshot() {
+  const cards = Array.from(document.querySelectorAll('.page-card[data-timed="true"]'));
+  const bundles = cards.map((card) => ({
+    page_row_id: card.dataset.pageRowId,
+    elapsed_seconds: Number(card.dataset.elapsedSeconds || 0) || null,
+  }));
+  const elapsed = bundles.map((bundle) => bundle.elapsed_seconds).filter(Boolean);
+  return {
+    bundle_count: bundles.length,
+    complete_bundle_count: elapsed.length,
+    median_seconds: medianSeconds(elapsed),
+    bundles,
+  };
+}
+
 function updateTimingSummary() {
   const summary = document.getElementById('timing-summary');
   if (!summary) return;
-  const cards = Array.from(document.querySelectorAll('.page-card[data-timed="true"]'));
-  const elapsed = cards.map((card) => Number(card.dataset.elapsedSeconds || 0)).filter(Boolean);
+  const timing = timingSnapshot();
+  const elapsed = timing.bundles.map((bundle) => bundle.elapsed_seconds).filter(Boolean);
   if (!elapsed.length) {
-    summary.textContent = `완료 0/${cards.length}묶음 · 각 묶음의 시작·완료 버튼으로 시간을 잽니다.`;
+    summary.textContent = `완료 0/${timing.bundle_count}묶음 · 판정 시작 버튼을 누르면 선택지가 열립니다.`;
     return;
   }
-  const ordered = elapsed.slice().sort((a, b) => a - b);
-  const middle = Math.floor(ordered.length / 2);
-  const median = ordered.length % 2
-    ? ordered[middle]
-    : Math.round((ordered[middle - 1] + ordered[middle]) / 2);
-  summary.textContent = `완료 ${elapsed.length}/${cards.length}묶음 · 중앙 ${formatElapsed(median)}`
+  summary.textContent = `완료 ${timing.complete_bundle_count}/${timing.bundle_count}묶음`
+    + ` · 중앙 ${formatElapsed(timing.median_seconds)}`
     + ` · 개별 ${elapsed.map(formatElapsed).join(', ')}`;
 }
 
-function toggleBundleTimer(button) {
+function setBundleControlsEnabled(card, enabled) {
+  card.querySelectorAll('.judgment-row input, .judgment-row select, .judgment-row textarea')
+    .forEach((control) => { control.disabled = !enabled; });
+}
+
+function bundleIsComplete(card) {
+  const page = card.querySelector('.judgment-row[data-kind="page"]');
+  if (!page || !picked(page, 'support_grade') || !picked(page, 'temporal_validity')
+      || !picked(page, 'audience_scope')) return false;
+  return Array.from(card.querySelectorAll('.judgment-row[data-kind="evidence"]'))
+    .every((section) => {
+      const grade = picked(section, 'evidence_grade');
+      return grade === 'none' || Boolean(grade && picked(section, 'evidence_type'));
+    });
+}
+
+function startBundleTimer(button) {
   const card = button.closest('.page-card');
   const output = card.querySelector('.bundle-time');
-  if (!card.dataset.timerStarted) {
-    card.dataset.timerStarted = String(Date.now());
-    button.textContent = '묶음 완료';
-    output.textContent = '측정 중';
-    return;
-  }
+  if (card.dataset.timerStarted) return;
+  card.dataset.timerStarted = String(Date.now());
+  button.textContent = '판정 중';
+  button.disabled = true;
+  output.textContent = '모든 항목을 고르면 자동 완료됩니다.';
+  setBundleControlsEnabled(card, true);
+}
+
+function finishBundleTimer(card) {
+  if (!card.dataset.timerStarted || card.dataset.elapsedSeconds) return;
   const elapsed = Math.max(1, Math.round((Date.now() - Number(card.dataset.timerStarted)) / 1000));
   card.dataset.elapsedSeconds = String(elapsed);
-  button.disabled = true;
+  const button = card.querySelector('.bundle-timer button');
+  const output = card.querySelector('.bundle-time');
+  button.textContent = '판정 완료';
   output.textContent = formatElapsed(elapsed);
   updateTimingSummary();
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.page-card[data-timed="true"]').forEach((card) => {
+    setBundleControlsEnabled(card, false);
+  });
+  document.addEventListener('change', (event) => {
+    const card = event.target.closest('.page-card[data-timed="true"]');
+    if (card && bundleIsComplete(card)) finishBundleTimer(card);
+  });
+});
 
 function picked(section, field) {
   const item = section.querySelector(`input[data-field="${field}"]:checked`);
@@ -172,6 +227,13 @@ function exportJudgments() {
     questions: [],
   };
   const incomplete = [];
+
+  if (result.audit) {
+    result.audit_timing = timingSnapshot();
+    result.audit_timing.bundles
+      .filter((bundle) => !bundle.elapsed_seconds)
+      .forEach((bundle) => incomplete.push(`TIMER|${bundle.page_row_id}`));
+  }
 
   document.querySelectorAll('.judgment-row[data-kind="page"]').forEach((section) => {
     const support = picked(section, 'support_grade');
@@ -239,16 +301,16 @@ function exportJudgments() {
     const proceed = confirm(
       '미완료 행이 있습니다: ' + incomplete.slice(0, 20).join(', ')
       + (incomplete.length > 20 ? ` 외 ${incomplete.length - 20}건` : '')
-      + '\n그래도 내보낼까요?'
+      + '\\n그래도 내보낼까요?'
     );
     if (!proceed) return;
   }
   const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = result.audit
+  link.download = document.body.dataset.exportName || (result.audit
     ? 'qrel-v4-secondary-audit.json'
-    : 'qrel-v4-primary-initial.json';
+    : 'qrel-v4-primary-initial.json');
   link.click();
   URL.revokeObjectURL(link.href);
 }
@@ -485,6 +547,7 @@ def render_page(
     page_index: int,
     evidence_counter: list[int],
     show_timer: bool = False,
+    context_only: bool = False,
 ) -> str:
     canonical_url = page["canonical_url"]
     first = chunks[0][1]
@@ -499,14 +562,19 @@ def render_page(
     timer = ""
     if show_timer and page_control:
         timer = """
-    <div class="bundle-timer"><button type="button" onclick="toggleBundleTimer(this)">묶음 시작</button>
+    <div class="bundle-timer"><button type="button" onclick="startBundleTimer(this)">판정 시작(필수)</button>
       <span class="bundle-time muted">미측정</span></div>"""
+    context_note = ""
+    if context_only:
+        context_note = '<div class="context-note">비교 문맥 · 이 페이지는 판정하지 않습니다.</div>'
     return f"""
-<section class="page-card"{' data-timed="true"' if timer else ""}>
+<section class="page-card{' context-card' if context_only else ''}"{' data-timed="true"' if timer else ""}
+ data-page-row-id="{_attr(page_row_id(page['question_id'], canonical_url))}">
   <div class="page-head">
     <h3><span class="chip">{_text(site_label(canonical_url))}</span>{_text(mask_pii(first.title))}</h3>
     <div class="url">{_text(mask_pii(canonical_url))}</div>
     {f'<div class="muted">메뉴: {_text(mask_pii(first.menu_path))}</div>' if first.menu_path else ""}
+    {context_note}
     {timer}
   </div>
   {"".join(rendered_chunks)}
@@ -580,7 +648,20 @@ def render_sheet(
     records: Mapping[str, ChunkRecord],
     *,
     audit_ids: set[str] | None = None,
+    export_filename: str | None = None,
 ) -> str:
+    control_audit_ids = audit_ids
+    context_page_control_ids: set[str] = set()
+    if audit_ids is not None:
+        context_page_control_ids = {
+            value.removeprefix("C|")
+            for value in audit_ids
+            if value.startswith("C|")
+        }
+        control_audit_ids = {
+            value for value in audit_ids if not value.startswith("C|")
+        }
+
     pages_by_question: dict[str, list[dict[str, str]]] = defaultdict(list)
     chunks_by_page: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
     for page in page_rows:
@@ -593,21 +674,38 @@ def render_sheet(
     valid_ids.update(page_row_id(row["question_id"], row["canonical_url"]) for row in page_rows)
     valid_ids.update(evidence_row_id(row["question_id"], row["chunk_id"]) for row in chunk_rows)
     if audit_ids is not None:
-        unknown = sorted(audit_ids - valid_ids)
+        unknown = sorted((control_audit_ids or set()) - valid_ids)
         if unknown:
             raise ValueError("pool에 없는 감사 행 ID:\n" + "\n".join(f"- {x}" for x in unknown))
+        unknown_context = sorted(context_page_control_ids - valid_ids)
+        if unknown_context:
+            raise ValueError(
+                "pool에 없는 비교 문맥 페이지 ID:\n"
+                + "\n".join(f"- {x}" for x in unknown_context)
+            )
+        invalid_context = sorted(
+            value for value in context_page_control_ids if not value.startswith("P|")
+        )
+        if invalid_context:
+            raise ValueError("비교 문맥은 페이지 ID만 허용합니다")
 
     sections: list[str] = []
     page_counter = 0
     question_counter = 0
     evidence_counter = [0]
     for question_id, question in sorted(questions.items()):
-        select_all = audit_ids is None or question_id in audit_ids
-        include_question_control = select_all or (audit_ids is not None and question_row_id(question_id) in audit_ids)
+        select_all = control_audit_ids is None or question_id in control_audit_ids
+        include_question_control = select_all or (
+            control_audit_ids is not None
+            and question_row_id(question_id) in control_audit_ids
+        )
         rendered_pages: list[str] = []
         for page in sorted(pages_by_question.get(question_id, []), key=lambda row: row["canonical_url"]):
             page_id = page_row_id(question_id, page["canonical_url"])
-            page_control = select_all or (audit_ids is not None and page_id in audit_ids)
+            page_control = select_all or (
+                control_audit_ids is not None and page_id in control_audit_ids
+            )
+            context_only = page_id in context_page_control_ids and not page_control
             page_chunks = sorted(
                 chunks_by_page[(question_id, normalize_url(page["canonical_url"]))],
                 key=lambda row: (records[row["chunk_id"]].chunk_index, row["chunk_id"]),
@@ -615,12 +713,22 @@ def render_sheet(
             selected_chunks = []
             for chunk in page_chunks:
                 evidence_id = evidence_row_id(question_id, chunk["chunk_id"])
-                evidence_control = select_all or (audit_ids is not None and evidence_id in audit_ids)
-                if audit_ids is None or select_all or page_control or evidence_control:
+                evidence_control = select_all or (
+                    control_audit_ids is not None
+                    and evidence_id in control_audit_ids
+                )
+                if (
+                    control_audit_ids is None
+                    or select_all
+                    or page_control
+                    or evidence_control
+                    or context_only
+                ):
                     selected_chunks.append((chunk, records[chunk["chunk_id"]], evidence_control))
             if not selected_chunks:
                 continue
-            page_counter += 1
+            if page_control:
+                page_counter += 1
             rendered_pages.append(
                 render_page(
                     page,
@@ -629,6 +737,7 @@ def render_sheet(
                     page_index=page_counter,
                     evidence_counter=evidence_counter,
                     show_timer=audit_ids is not None,
+                    context_only=context_only,
                 )
             )
 
@@ -651,11 +760,17 @@ def render_sheet(
   <strong>판정 원칙</strong>
   <ul>
     <li>제시된 페이지와 청크만 근거로 판정합니다.</li>
-    <li>페이지의 내용 지지, 시점, 대상 범위를 서로 분리해 표시합니다.</li>
-    <li>청크는 질문에 직접 필요한 근거인지 별도로 표시합니다.
-      위치 안내 질문은 페이지 위치 자체를 근거로 고를 수 있습니다.</li>
-    <li>질문 수준 support는 페이지 판정에서 자동 파생됩니다.
-      여러 페이지를 조합해야만 답이 완성될 때만 조합 예외를 씁니다.</li>
+    <li><strong>내용 지지</strong>: 시점과 대상을 무시하고 질문에 담긴 주장만 봅니다.
+      정확히 답하면 완전, 의미 있는 일부만 답하면 일부, 필요한 주장이 없으면 무관입니다.</li>
+    <li>지난 정보나 대상이 다른 정보도 내용 자체가 정확하면 완전 또는 일부일 수 있습니다.
+      예를 들어 담당 부서만 있고 위치가 없으면 위치 질문에 일부입니다.</li>
+    <li><strong>시점</strong>: 2026-07-14 기준입니다. 마감된 신청·행사 정보는 지난 정보입니다.
+      과거 연도가 보여도 해당 입학년도 학생에게 계속 적용되는 규정이면 현행일 수 있습니다.</li>
+    <li><strong>대상</strong>: 질문이 전제하는 사람과 문서 본문의 대상을 비교합니다.
+      학과 사이트는 불일치의 신호지만, 본문이 전교 공통임을 보여주면 일치입니다.</li>
+    <li><strong>청크 근거</strong>: 청크 자체가 질문에 필요한 주장을 지지하는지 봅니다.
+      양성 페이지 안에도 근거가 아닌 청크가 있을 수 있고, 무관 페이지의 청크는 근거 아님입니다.</li>
+    <li>위치 안내 질문은 페이지 도달 자체가 답일 때만 페이지 위치 자체를 근거로 고릅니다.</li>
     <li>이 시트에는 검색 방식·순위·점수가 표시되지 않습니다.</li>
   </ul>
 </div>"""
@@ -663,8 +778,11 @@ def render_sheet(
     if audit:
         timing_summary = (
             f'<div id="timing-summary" class="timing-summary">완료 0/{page_counter}묶음 · '
-            "각 묶음의 시작·완료 버튼으로 시간을 잽니다.</div>"
+            "판정 시작 버튼을 누르면 선택지가 열리고, 모든 항목을 고르면 시간이 자동 저장됩니다.</div>"
         )
+    resolved_export_filename = export_filename or (
+        "qrel-v4-secondary-audit.json" if audit else "qrel-v4-primary-initial.json"
+    )
     output = f"""<!doctype html>
 <html lang="ko">
 <head>
@@ -673,7 +791,8 @@ def render_sheet(
 <title>{title}</title>
 <style>{PAGE_CSS}</style>
 </head>
-<body data-audit="{"true" if audit else "false"}">
+<body data-audit="{"true" if audit else "false"}"
+ data-export-name="{_attr(resolved_export_filename)}">
 <h1>{title}</h1>
 <p>판정자 <input type="text" id="judge-name"> · 판정일 <input type="text" id="judge-date"></p>
 {guide}
@@ -712,6 +831,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="qrel v4 블라인드 판정 HTML을 생성합니다.")
     parser.add_argument("--audit", type=Path, help="감사할 행 ID를 한 줄씩 적은 파일")
     parser.add_argument("--out", type=Path, help="eval/results 안의 출력 HTML 경로")
+    parser.add_argument("--download-name", help="브라우저에서 내보낼 JSON 파일명")
     parser.add_argument("--db-dsn", default=DB_DSN)
     return parser.parse_args()
 
@@ -731,6 +851,7 @@ async def run() -> None:
         questions,
         records,
         audit_ids=audit_ids,
+        export_filename=args.download_name,
     )
     write_html_atomic(output_path, document)
     row_count = document.count('class="judge judgment-row"') + document.count(

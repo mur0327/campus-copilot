@@ -31,6 +31,8 @@ DEFAULT_OUT_PATH = REPO_ROOT / "tmp" / "qrel-v4" / "b2-pilot-ids.txt"
 
 PILOT_SEED = "qrel-v4-b2-20260714"
 PILOT_BUNDLE_COUNT = 10
+REPILOT_SUFFIX = "repilot-1"
+CONTEXT_TARGET_REASONS = frozenset({"conflict", "composition"})
 POSITIVE_GRADES = frozenset({"full", "partial"})
 BOUNDARY_PREFIX = "경계:"
 CONFLICT_TOKENS = ("충돌", "상충")
@@ -372,6 +374,36 @@ def select_stratified_bundles(
     )
 
 
+def repilot_seed(seed: str) -> str:
+    return f"{seed}|{REPILOT_SUFFIX}"
+
+
+def select_repilot_bundles(
+    bundles: list[AuditBundle],
+    count: int,
+    *,
+    seed: str = PILOT_SEED,
+) -> list[AuditBundle]:
+    initial = select_stratified_bundles(
+        bundles,
+        PILOT_BUNDLE_COUNT,
+        seed=seed,
+    )
+    excluded_keys = {
+        (bundle.question_id, bundle.canonical_url) for bundle in initial
+    }
+    remaining = [
+        bundle
+        for bundle in bundles
+        if (bundle.question_id, bundle.canonical_url) not in excluded_keys
+    ]
+    return select_stratified_bundles(
+        remaining,
+        count,
+        seed=repilot_seed(seed),
+    )
+
+
 def select_full_audit_bundles(
     bundles: list[AuditBundle],
     sample_count: int,
@@ -380,7 +412,21 @@ def select_full_audit_bundles(
 ) -> tuple[list[AuditBundle], int]:
     targeted = [bundle for bundle in bundles if bundle.target_reasons]
     targeted_keys = {(bundle.question_id, bundle.canonical_url) for bundle in targeted}
-    pilot = select_stratified_bundles(bundles, PILOT_BUNDLE_COUNT, seed=seed)
+    initial_pilot = select_stratified_bundles(
+        bundles,
+        PILOT_BUNDLE_COUNT,
+        seed=seed,
+    )
+    excluded_initial_keys = {
+        (bundle.question_id, bundle.canonical_url)
+        for bundle in initial_pilot
+        if not bundle.target_reasons
+    }
+    pilot = select_repilot_bundles(
+        bundles,
+        PILOT_BUNDLE_COUNT,
+        seed=seed,
+    )
     pilot_sampled = [
         bundle
         for bundle in pilot
@@ -399,6 +445,7 @@ def select_full_audit_bundles(
         for bundle in bundles
         if (bundle.question_id, bundle.canonical_url) not in targeted_keys
         and (bundle.question_id, bundle.canonical_url) not in pilot_sampled_keys
+        and (bundle.question_id, bundle.canonical_url) not in excluded_initial_keys
     ]
     additional_count = sample_count - len(pilot_sampled)
     if additional_count == 1:
@@ -427,16 +474,74 @@ def audit_row_ids(bundles: list[AuditBundle]) -> list[str]:
     return row_ids
 
 
+def context_page_ids(
+    selected: list[AuditBundle],
+    all_bundles: list[AuditBundle],
+) -> list[str]:
+    context_question_ids = {
+        bundle.question_id
+        for bundle in selected
+        if bundle.target_reasons & CONTEXT_TARGET_REASONS
+    }
+    controlled = {bundle.page_row_id for bundle in selected}
+    return sorted(
+        f"C|{bundle.page_row_id}"
+        for bundle in all_bundles
+        if bundle.question_id in context_question_ids
+        and bundle.page_row_id not in controlled
+    )
+
+
+def load_completed_row_ids(paths: list[Path]) -> set[str]:
+    row_ids: set[str] = set()
+    for path in paths:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        for section in ("pages", "evidence"):
+            rows = payload.get(section)
+            if not isinstance(rows, list):
+                raise ValueError(f"{path}: {section} 배열이 없습니다")
+            for row in rows:
+                if row.get("judged") is not True:
+                    raise ValueError(f"{path}: 미완료 감사 행이 있습니다")
+                row_ids.add(str(row.get("row_id") or ""))
+    return row_ids
+
+
+def exclude_completed_bundles(
+    bundles: list[AuditBundle],
+    completed_row_ids: set[str],
+) -> tuple[list[AuditBundle], int]:
+    remaining: list[AuditBundle] = []
+    completed_count = 0
+    for bundle in bundles:
+        if bundle.page_row_id not in completed_row_ids:
+            remaining.append(bundle)
+            continue
+        missing_evidence = set(bundle.evidence_row_ids) - completed_row_ids
+        if missing_evidence:
+            raise ValueError(
+                f"완료 묶음 {bundle.page_row_id}에 evidence 판정이 누락됐습니다"
+            )
+        completed_count += 1
+    return remaining, completed_count
+
+
 def render_ids_file(
     bundles: list[AuditBundle],
     *,
     phase: str,
     seed: str,
     targeted_count: int | None = None,
+    context_ids: list[str] | None = None,
+    selected_bundle_count: int | None = None,
+    completed_bundle_count: int = 0,
 ) -> str:
     row_ids = audit_row_ids(bundles)
+    context_ids = context_ids or []
     evidence_count = sum(len(bundle.evidence_row_ids) for bundle in bundles)
-    selection_hash = hashlib.sha256("\n".join(row_ids).encode()).hexdigest()
+    selection_hash = hashlib.sha256(
+        "\n".join([*row_ids, *context_ids]).encode()
+    ).hexdigest()
     comments = [
         "# qrel v4 B2 author-audit IDs",
         f"# phase={phase}",
@@ -445,7 +550,15 @@ def render_ids_file(
         f"# page_controls={len(bundles)}",
         f"# evidence_controls={evidence_count}",
         "# question_controls=0",
+        f"# context_pages={len(context_ids)}",
     ]
+    if selected_bundle_count is not None:
+        comments.extend(
+            [
+                f"# selected_bundle_count={selected_bundle_count}",
+                f"# completed_bundle_count={completed_bundle_count}",
+            ]
+        )
     if targeted_count is not None:
         comments.extend(
             [
@@ -454,14 +567,18 @@ def render_ids_file(
             ]
         )
     comments.append(f"# selection_sha256={selection_hash}")
-    return "\n".join([*comments, *row_ids, ""])
+    return "\n".join([*comments, *row_ids, *context_ids, ""])
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="qrel v4 B2 사람 감사 묶음을 선정합니다."
     )
-    parser.add_argument("--phase", choices=("pilot", "full"), default="pilot")
+    parser.add_argument(
+        "--phase",
+        choices=("initial-pilot", "pilot", "full"),
+        default="pilot",
+    )
     parser.add_argument(
         "--bundle-count",
         type=int,
@@ -470,27 +587,65 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--seed", default=PILOT_SEED)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_PATH)
+    parser.add_argument(
+        "--completed",
+        type=Path,
+        action="append",
+        default=[],
+        help="이미 완료한 감사 JSON. full 단계에서 해당 묶음을 출력에서 제외합니다.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     bundles = build_bundles(load_primary())
-    if args.phase == "pilot":
+    if args.phase == "initial-pilot":
         selected = select_stratified_bundles(bundles, args.bundle_count, seed=args.seed)
         targeted_count = None
+        selection_seed = args.seed
+    elif args.phase == "pilot":
+        selected = select_repilot_bundles(
+            bundles,
+            args.bundle_count,
+            seed=args.seed,
+        )
+        targeted_count = None
+        selection_seed = repilot_seed(args.seed)
     else:
         selected, targeted_count = select_full_audit_bundles(
             bundles,
             args.bundle_count,
             seed=args.seed,
         )
+        selection_seed = args.seed
+
+    selected_bundle_count = len(selected)
+    completed_bundle_count = 0
+    if args.completed:
+        if args.phase != "full":
+            raise ValueError("--completed는 full 단계에서만 사용할 수 있습니다")
+        selected, completed_bundle_count = exclude_completed_bundles(
+            selected,
+            load_completed_row_ids(args.completed),
+        )
+        targeted_count = sum(bool(bundle.target_reasons) for bundle in selected)
+    context_ids = (
+        context_page_ids(selected, bundles)
+        if args.phase == "full"
+        else []
+    )
 
     content = render_ids_file(
         selected,
         phase=args.phase,
-        seed=args.seed,
+        seed=selection_seed,
         targeted_count=targeted_count,
+        context_ids=context_ids,
+        selected_bundle_count=(
+            selected_bundle_count if args.completed else None
+        ),
+        completed_bundle_count=completed_bundle_count,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(content, encoding="utf-8")
@@ -500,7 +655,7 @@ def main() -> None:
         f"감사 묶음 {len(selected)}개 "
         f"(페이지 {len(selected)}행, evidence {evidence_count}행)"
     )
-    print(f"선정 시드: {args.seed}")
+    print(f"선정 시드: {selection_seed}")
 
 
 if __name__ == "__main__":

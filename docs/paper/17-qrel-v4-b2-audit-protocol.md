@@ -21,6 +21,8 @@
 
 페이지 묶음을 선택하면 그 페이지의 evidence candidate 판정 컨트롤을 모두 싣는다.
 같은 페이지를 page 행과 evidence 행 때문에 반복해서 읽지 않는다.
+충돌 또는 여러 문서 조합 사례에는 판단에 필요한 같은 질문의 관련 페이지를 라벨 없는 비교 문맥으로 함께 싣는다.
+비교 문맥에는 판정 컨트롤과 시간을 붙이지 않는다.
 
 ## 2. 표적 감사
 
@@ -56,14 +58,21 @@
 ## 4. 시간 파일럿
 
 최종 표본 수는 행 수만으로 정하지 않는다.
-고정 시드 `qrel-v4-b2-20260714`로 양성·음성 및 주요 층을 섞은 10개 묶음을 먼저 판정한다.
+기본 고정 시드 `qrel-v4-b2-20260714`로 양성·음성 및 주요 층을 섞은 10개 묶음을 먼저 선정한다.
 초기 라벨과 선정 사유는 공개하지 않고, 묶음별 판정 시간을 기록한다.
 불일치를 열기 전에 중앙 시간을 계산해 3~5시간 안에 들어오는 최종 표본 묶음 수를 동결한다.
-감사 시트의 묶음 시작·완료 버튼이 개별 시간과 현재 중앙 시간을 계산한다.
+감사 시트는 판정 시작 버튼을 누르기 전에는 선택지를 잠그고, 한 묶음의 필수 판정이 모두 채워지면 개별 시간과 현재 중앙 시간을 자동 저장한다.
 파일럿 10개는 최종 감사 표본에 포함한다.
 
 시간 측정 중에는 primary JSON이나 기존 483행 시트를 열지 않는다.
 파일럿은 작업량 보정용이며, 결과를 본 뒤 쉬운 묶음만 남기는 필터가 아니다.
+
+2026-07-14 첫 10묶음 시도에서는 시간 버튼이 사용되지 않았고, 시트 안내만으로 `partial`과 `invalid` 및 내용·시점·대상 축을 일관되게 적용하기 어렵다는 사용성 문제가 확인됐다.
+이 시도는 공식 시간 파일럿과 층화 표본 결과에서 제외하고 조정 참고 기록으로만 보존한다.
+일부 초벌 대조가 공개됐으므로 같은 묶음을 다시 블라인드 판정하지 않는다.
+공식 파일럿은 첫 10묶음을 제외한 모집단에서 파생 시드 `qrel-v4-b2-20260714|repilot-1`로 새 10묶음을 선정하며, 보강된 안내와 강제 시간 측정을 사용한다.
+공식 재파일럿의 묶음별 중앙 시간은 17초였고, 비표적 층화 표본은 20묶음으로 동결했다.
+따라서 최종 감사 범위는 표적 67묶음과 비표적 표본 20묶음으로 총 87묶음이다.
 
 ## 5. 질문 수준 검토
 
@@ -151,9 +160,34 @@ uv run --project backend python eval/select_v4_audit.py \
 ```bash
 uv run --project backend python eval/make_v4_sheet.py \
   --audit tmp/qrel-v4/b2-pilot-ids.txt \
+  --download-name qrel-v4-secondary-audit-repilot.json \
   --out eval/results/qrel-v4-audit-pilot.html
 ```
 
-최종 표본 묶음 수는 파일럿 중앙 시간을 기록한 뒤 `--phase full`의 `--bundle-count`로 고정한다.
-해당 값은 표적 감사 외에 포함할 층화 표본의 총 묶음 수이며, 파일럿 중 비표적 묶음도 이 수에 포함된다.
-선정 도구는 파일럿 10묶음이 표적 또는 표본 경로를 통해 최종 감사에 모두 남는지 검사한다.
+제외된 첫 사용성 시도는 `--phase initial-pilot`으로 재현할 수 있다.
+기본 `--phase pilot`은 첫 10묶음을 제외한 공식 재파일럿을 생성한다.
+
+본 감사의 전체 선정과 이미 완료한 묶음 제외는 다음 명령으로 고정한다.
+
+```bash
+uv run --project backend python eval/select_v4_audit.py \
+  --phase full --bundle-count 20 \
+  --completed eval/qrel-v4-secondary-audit.json \
+  --completed eval/qrel-v4-secondary-audit-repilot.json \
+  --out tmp/qrel-v4/b2-full-remaining-ids.txt
+```
+
+이 명령의 출력은 전체 선정 87묶음 중 완료 15묶음을 제외한 남은 72묶음과 필요한 비교 문맥 페이지를 담는다.
+
+남은 감사 시트는 다음 명령으로 생성한다.
+
+```bash
+uv run --project backend python eval/make_v4_sheet.py \
+  --audit tmp/qrel-v4/b2-full-remaining-ids.txt \
+  --download-name qrel-v4-secondary-audit-remaining.json \
+  --out eval/results/qrel-v4-audit-full-remaining.html
+```
+
+`--bundle-count 20`은 표적 감사 외에 포함하는 비표적 층화 표본의 총 묶음 수다.
+공식 파일럿의 비표적 묶음도 이 수에 포함된다.
+선정 도구는 공식 파일럿 10묶음이 표적 또는 표본 경로를 통해 최종 감사에 남고, 첫 사용성 점검의 비표적 묶음은 제외되는지 검사한다.

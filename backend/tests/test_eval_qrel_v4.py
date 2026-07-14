@@ -545,7 +545,7 @@ def test_sheet_masks_phone_and_email_and_stays_blind():
     assert all(word not in document.lower() for word in ("mode", "rank", "score"))
 
 
-def test_audit_sheet_adds_bundle_timers_without_changing_judgment_rows():
+def test_audit_sheet_adds_required_automatic_bundle_timers_without_changing_rows():
     pages = [page("Q001", "https://example.test/a", grade="invalid", judged="false")]
     chunks = [
         evidence(
@@ -573,10 +573,64 @@ def test_audit_sheet_adds_bundle_timers_without_changing_judgment_rows():
         "E|Q001|c1",
     }
 
-    document = render_sheet(pages, chunks, questions, records, audit_ids=audit_ids)
+    document = render_sheet(
+        pages,
+        chunks,
+        questions,
+        records,
+        audit_ids=audit_ids,
+        export_filename="qrel-v4-secondary-audit-repilot.json",
+    )
 
     assert 'data-timed="true"' in document
-    assert "묶음 시작" in document
+    assert "판정 시작(필수)" in document
+    assert "setBundleControlsEnabled(card, false)" in document
+    assert "finishBundleTimer(card)" in document
+    assert "audit_timing" in document
+    assert "시점과 대상을 무시하고 질문에 담긴 주장만 봅니다" in document
+    assert 'data-export-name="qrel-v4-secondary-audit-repilot.json"' in document
+    assert r"+ '\n그래도 내보낼까요?'" in document
     assert "완료 0/1묶음" in document
+    assert document.count('class="judge judgment-row" data-kind="page"') == 1
+    assert document.count('class="judge judgment-row" data-kind="evidence"') == 1
+
+
+def test_audit_sheet_shows_context_page_without_controls_or_timer():
+    pages = [
+        page("Q001", "https://example.test/a", grade="invalid", judged="false"),
+        page("Q001", "https://example.test/b", grade="full", judged="false"),
+    ]
+    chunks = [
+        evidence(
+            "Q001",
+            "https://example.test/a",
+            "c1",
+            content_hash="h1",
+            judged="false",
+        ),
+        evidence(
+            "Q001",
+            "https://example.test/b",
+            "c2",
+            content_hash="h2",
+            judged="false",
+        ),
+    ]
+    questions = {"Q001": {"id": "Q001", "question": "증명서를 발급할 수 있나요?"}}
+    records = {
+        "c1": ChunkRecord("c1", "https://example.test/a", "FAQ", "안내", 0, "일부 목록", "h1"),
+        "c2": ChunkRecord("c2", "https://example.test/b", "공식 안내", "안내", 0, "전체 목록", "h2"),
+    }
+    audit_ids = {
+        "P|Q001|https://example.test/a",
+        "E|Q001|c1",
+        "C|P|Q001|https://example.test/b",
+    }
+
+    document = render_sheet(pages, chunks, questions, records, audit_ids=audit_ids)
+
+    assert "비교 문맥 · 이 페이지는 판정하지 않습니다." in document
+    assert document.count('<section class="page-card" data-timed="true"') == 1
+    assert document.count('<section class="page-card context-card"') == 1
     assert document.count('class="judge judgment-row" data-kind="page"') == 1
     assert document.count('class="judge judgment-row" data-kind="evidence"') == 1
