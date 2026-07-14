@@ -421,3 +421,51 @@
   제작 가능.
 - **재현**: `uv run --project backend python eval/abstain_separation.py` →
   `eval/results/abstain-separation-20260712-083846.json`.
+
+---
+
+## EXP-05 추기 2. qrel v4 최종 오프라인 재채점
+
+- **날짜**: 2026-07-14
+- **질문**: page·evidence·배포 적합성을 분리한 qrel v4에서 BM25-only,
+  semantic-only, hybrid production mode의 top-5 성능은 어떻게 달라지는가.
+- **방법**: 2026-07-12에 동결한 세 retrieval JSONL을 재실행하지 않고 같은
+  `gold_pages_v4.csv`와 `gold_evidence_v4.csv`로 오프라인 재채점했다.
+  세 실행의 top-5 page와 chunk가 모두 judged인지 먼저 확인했으며, qrel v4
+  invariant 12종을 통과한 뒤 수행했다.
+  같은 URL의 두 번째 이후 청크는 page gain 0으로 처리했다.
+
+- **결과** (50문항, qrel v4):
+
+  | 모드 | PageHit full@5 (N=45) | PageHit any@5 (N=45) | nDCG support@5 (N=45) | nDCG deployable@5 (N=39) | EvidenceHit full@5 (N=38) | EvidenceHit any@5 (N=38) |
+  | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+  | BM25-only | 0.3556 | 0.6000 | 0.3104 | 0.3138 | 0.2895 | 0.6316 |
+  | Semantic-only | 0.7111 | **1.0000** | **0.8216** | **0.7264** | 0.7105 | **1.0000** |
+  | Hybrid | **0.7333** | 0.9778 | 0.7023 | 0.6560 | **0.7368** | 0.9737 |
+
+- **중복 민감도**: Q011과 같은 문항인 Q035를 한 건 제거한 49문항 분석에서도
+  모든 지표의 모드 순위가 유지됐다.
+  값의 절대 변화는 최대 0.0181이었다.
+
+- **해석**:
+  1. 모든 지표에서 우세한 단일 모드는 없다.
+     hybrid는 완전한 page·evidence를 하나라도 회수한 비율이 semantic보다 각각
+     1문항 높지만, any hit와 두 nDCG는 semantic이 높다.
+  2. hybrid만 full을 회수한 문항은 Q005다.
+     BM25가 찾은 등록금 납부 공지가 융합 결과 1위로 들어가 semantic의 partial
+     결과를 보완했다.
+  3. semantic만 any support를 회수한 문항은 Q024다.
+     semantic은 출석인정 규정 발췌 partial 페이지를 3~5위에 두었지만 hybrid는
+     BM25의 invalid 결과가 합쳐지면서 해당 페이지가 top-5 밖으로 밀렸다.
+     융합이 약한 관련 근거를 항상 보존하지는 않는 실증 사례다.
+  4. semantic의 nDCG_support@5 0.8216과 nDCG_deployable@5 0.7264는 hybrid의
+     0.7023과 0.6560보다 높다.
+     따라서 RQ1은 알고리즘 우월성이 아니라 완전 근거 회수와 전체 관련 근거의
+     순위 품질 사이 trade-off로 서술한다.
+  5. qrel v2의 Recall@5·MRR·binary first-hit nDCG와 v4 지표는 판정 범위,
+     분모와 gain 정의가 다르므로 수치 증감으로 직접 비교하지 않는다.
+
+- **재현**: `uv run --project backend python eval/score_v4.py` →
+  `eval/results/scores-v4-20260714-122235.json`,
+  `eval/results/scores-v4-20260714-122235-summary.csv`.
+- **상태**: qrel v4 발행본 기준 확정.
