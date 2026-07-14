@@ -150,7 +150,7 @@ JSONL 안의 `gold_rank`, `answerability` 등 v2 파생 필드는 **신뢰하지
 **6. eval/make_v4_manifest.py**
 
 - SHA-256 manifest(`eval/qrel-v4-manifest.sha256`)를 생성한다.
-- 대상: v4 코드북 문서, questions.csv, 세 retrieval JSONL, pool CSV 2개, 발행 CSV 3개, target_sources_v4.csv, 판정 JSON 3개, score_v4.py 소스.
+- 대상: v4 코드북 문서, questions.csv, 세 retrieval JSONL, EXP-06 seed 원천 2개(final-response-20260711-101912.jsonl, retrieval-20260705-094816.jsonl), pool CSV 2개, 발행 CSV 3개, target_sources_v4.csv, 판정 JSON 3개, score_v4.py 소스.
 
 ## 개발 규칙
 
