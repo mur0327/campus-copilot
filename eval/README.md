@@ -8,7 +8,68 @@
 - `gold_sources.csv`: 질문별 사람이 확인한 공식 정답 문서 목록이다.
 - `run_questions.py`: 현재 로컬 `.data`에 적재된 문서를 기준으로 질문별 retrieval 결과를 수집하는 스크립트다.
 - `analyze_retrieval_chunks.py`: retrieval JSONL을 chunk 단위 CSV로 펼쳐 파싱 품질과 evidence 후보를 점검하는 스크립트다.
-- `results/`: 스크립트 실행 결과가 저장되는 디렉터리다. 결과 파일은 재생성 가능한 산출물이므로 Git에 커밋하지 않는다.
+- `exp07-answer-rubric.md`: EXP-07 최종 응답의 행동·정확성·근거·배포 적합성 판정 기준이다.
+- `run_exp07.py`: 현재 production 검색·생성·후처리 경로를 50문항×3회 순차 실행하는 스크립트다.
+- `make_exp07_manifest.py`: 비공개 원본을 열기 전에 실행 계보와 완결성을 동결하는 스크립트다.
+- `make_exp07_primary_sheet.py`: 기대 행동과 반복 결과를 싣지 않은 2단계 블라인드 본판정 HTML을 만든다.
+- `make_exp07_reveal_sheet.py`: 본판정 잠금 뒤 기대 행동·반복 결과를 공개하고 조정 이력을 남기는 HTML을 만든다.
+- `publish_exp07.py`: 원시 출력과 evidence 전문을 제외한 공개 응답·판정·50/49 집계 파일을 만든다.
+- `results/`: Git에 커밋하지 않는 평가 원본과 비공개 판정 화면을 저장한다. EXP-07 원본은 재생성 가능한 캐시가 아니라 manifest hash로 계보를 고정하는 로컬 증거다.
+
+## EXP-07 실행 순서
+
+실행 전 `exp07-answer-rubric.md`, 논문 프로토콜, 실행기, 판정·발행 도구와 테스트를 한 커밋으로 동결한다.
+실행 중에는 크롤·파싱·재색인을 수행하지 않는다.
+
+계정에 실제로 적용되는 LLM과 embedding RPM 상한을 입력한다.
+실행기는 각 상한의 80%로 호출 시작 간격을 제한하며 질문을 병렬 실행하지 않는다.
+
+```bash
+LLM_RPM=실제_LLM_RPM_상한
+EMBEDDING_RPM=실제_embedding_RPM_상한
+
+uv run --project backend python eval/run_exp07.py \
+  --llm-rpm-limit "$LLM_RPM" \
+  --embedding-rpm-limit "$EMBEDDING_RPM"
+```
+
+완료 메시지에 표시된 비공개 실행 디렉터리를 지정해 안전 manifest를 만든다.
+manifest는 50문항×3회, 고정 순서, 원본 hash, 같은 한국 날짜와 코퍼스 전후 지문을 검증한다.
+
+```bash
+RUN_DIR=eval/results/exp07-YYYYMMDDTHHMMSSZ
+uv run --project backend python eval/make_exp07_manifest.py "$RUN_DIR"
+git add eval/exp07-run-manifest.json
+git commit
+```
+
+manifest 커밋이 끝난 뒤에만 본판정 화면을 만든다.
+본판정 화면의 1단계 행동 판정을 잠그면 같은 문항의 2단계 evidence와 라벨 없는 참조 묶음이 열린다.
+보류가 남아 있으면 중간 JSON은 저장할 수 있지만 잠금 JSON은 내보낼 수 없다.
+
+```bash
+uv run --project backend python eval/make_exp07_primary_sheet.py "$RUN_DIR"
+```
+
+전량 잠금 JSON을 입력해 공개·조정 화면을 만든다.
+이 단계에서만 기대 행동, 모델의 구조화 행동과 3회 반복 결과가 보인다.
+공개 후 값을 바꾸려면 조정 이유를 입력해야 하며 이전 값·새 값·시각이 기록된다.
+
+```bash
+uv run --project backend python eval/make_exp07_reveal_sheet.py \
+  "$RUN_DIR" /path/to/exp07-primary-judgments-locked.json
+```
+
+조정 판정 JSON으로 커밋 가능한 산출물을 발행한다.
+전화번호·이메일·주민등록번호·명시된 학번과 토큰 패턴은 마스킹되고 원시 출력과 주입 evidence 전문은 제외된다.
+
+```bash
+uv run --project backend python eval/publish_exp07.py \
+  "$RUN_DIR" /path/to/exp07-adjudicated-judgments.json
+```
+
+발행 결과는 `exp07-responses-public.json`, `exp07-judgments.json`, `exp07-results.json`, `exp07-results.csv`다.
+JSON 집계는 50문항 주 결과와 Q035를 제외한 49문항 민감도 결과를 모두 포함한다.
 
 ## questions.csv
 
