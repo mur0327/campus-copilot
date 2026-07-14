@@ -447,6 +447,16 @@
   모든 지표의 모드 순위가 유지됐다.
   값의 절대 변화는 최대 0.0181이었다.
 
+- **감사 전후 판정 민감도**: 동일한 검색 결과를 LLM 초벌 qrel과 최종 조정
+  qrel로 각각 채점했다.
+  지표 대상 문항 집합은 page support 45문항, deployable page 39문항,
+  text evidence 38문항으로 같았고 6개 지표 모두 모드 순위가 유지됐다.
+  50문항에서 최대 절대 변화는 Semantic-only의 EvidenceHit full@5
+  0.052632였으며, Q035 제거 49문항에서는 0.054054였다.
+  이는 판정 민감도 확인이며 검색 시스템의 성능 향상·저하를 뜻하지 않는다.
+  상세 비교는 `eval/qrel-v4-adjudication-2026-07-14.md` §8에 기록했다.
+  최종 논문에서 표의 위치와 분량은 집필 단계에서 결정한다.
+
 - **해석**:
   1. 모든 지표에서 우세한 단일 모드는 없다.
      hybrid는 완전한 page·evidence를 하나라도 회수한 비율이 semantic보다 각각
@@ -467,5 +477,8 @@
 
 - **재현**: `uv run --project backend python eval/score_v4.py` →
   `eval/results/scores-v4-20260714-122235.json`,
-  `eval/results/scores-v4-20260714-122235-summary.csv`.
+  `eval/results/scores-v4-20260714-122235-summary.csv`;
+  `uv run --project backend python eval/compare_v4_audit.py` →
+  `eval/results/qrel-v4-audit-comparison-20260714-131635.json`,
+  `eval/results/qrel-v4-audit-comparison-20260714-131635.csv`.
 - **상태**: qrel v4 발행본 기준 확정.
