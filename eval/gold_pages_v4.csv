@@ -1,0 +1,425 @@
+question_id,canonical_url,provenance,judged,support_grade,temporal_validity,audience_scope,notes
+Q001,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,mismatch,생활관 다림질 안내로 휴학 신청과 무관. 생활관 입사자 대상.
+Q001,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 이용 안내로 휴학 신청과 무관. 생활관 입사자 대상.
+Q001,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급상황 안내로 휴학 신청과 무관. 생활관 입사자 대상.
+Q001,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,mismatch,생활관 호실 청소·생활수칙으로 휴학 신청과 무관. 생활관 입사자 대상.
+Q001,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/22,top5,true,full,current,mismatch,휴학 신청 장소·휴학원 작성·신청기한·횟수와 신입생 제한을 직접 제시해 full. 다만 라이프디자인센터 방문을 안내하는 드림라이프대학 절차로 일반 학부생 질문과 mismatch. 상시 FAQ라 current.
+Q001,https://enter.honam.ac.kr/faq,top5,true,invalid,current,mismatch,수시 입시 FAQ 모음으로 휴학 신청 절차가 없음. 지원자 대상.
+Q001,https://www.honam.ac.kr/ComeBack,top5,true,invalid,current,match,복학·조기복학 절차로 휴학 신청 방법을 답하지 않음. 일반 재학생 대상 상시 안내.
+Q001,https://www.honam.ac.kr/Exit,top5,true,invalid,current,match,퇴학·자퇴 신청 절차로 휴학 신청과 다른 학적 절차.
+Q001,https://www.honam.ac.kr/General_Rest,top5|seed_v3,true,full,current,match,일반휴학 신청기간·오프라인 신청방법과 교학과 방문부터 휴학원 제출까지 절차를 완전하게 제시해 full. 전교 일반 재학생 대상 상시 학사 안내라 current+match.
+Q001,https://www.honam.ac.kr/military_Rest,top5|seed_v3,true,partial,current,match,입대휴학의 신청시기·오프라인 절차·증빙서류를 직접 제시하나 특수 유형만 다뤄 일반 휴학 질문에는 partial. 전교 재학생 대상 상시 안내.
+Q002,https://counsel.honam.ac.kr/PDS/1/read/4,top5,true,invalid,current,mismatch,청소년 연계전공 신청·취소 기간 안내로 복학 신청과 무관. 특정 연계전공 대상 반복 일정.
+Q002,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/22,top5,true,partial,current,mismatch,"일반 복학은 자동 처리되고 조기복학은 HUIS에서 신청한다고 안내하지만 조기복학 기간은 없음 → partial. 드림라이프대학 절차라 일반 학부생 질문과 mismatch, 상시 FAQ라 current."
+Q002,https://english.honam.ac.kr/PDS/1/read/7,top5,true,full,stale,match,2018학년도 2학기 복학기간과 조기복학 방법을 직접 제시해 full. 전교 복학대상자 절차라 match이나 과거 학기 공지로 stale.
+Q002,https://espo.honam.ac.kr/UniversitySchedule,top5,true,full,stale,match,학사일정에 휴학·복학 신청기간 1월 5~16일을 직접 제시해 full. 전교 공통 일정 미러라 match이나 판정일 기준 해당 상반기 기간이 종료되어 stale.
+Q002,https://sw.honam.ac.kr/UniversitySchedule,top5,true,full,stale,match,espo 학사일정과 동일한 휴학·복학 신청기간 미러. 해당 상반기 기간은 종료되어 stale.
+Q002,https://www.honam.ac.kr/ComeBack,top5|seed_v3,true,full,current,match,"일반 복학은 휴학기간 만료 다음 학기에 자동 처리되고, 조기복학은 매년 1월·7월 및 학기개시 후 4주 이내에 신청한다고 직접 설명해 full. 전교 재학생 대상 상시 안내라 current+match."
+Q003,https://beauty.honam.ac.kr/DepartmentNotice/1/read/239,top5,true,full,stale,unknown,국가장학금 신청방법을 한국장학재단 웹사이트와 모바일 앱으로 직접 제시해 full. 2026-2학기 1차 신청기간이 6.22 종료된 시한부 공지라 stale(원칙 6); 제시 청크에 신청대상 문구가 없어 학과 한정 여부는 unknown.
+Q003,https://beauty.honam.ac.kr/PDS/1/read/16,top5,true,partial,unknown,unknown,"한국장학재단 홈페이지·모바일 앱 주소와 문의처를 제공하지만 제시 청크에 국가장학금이라는 대상 claim과 회차·대상자 문구가 없어 partial, temporal/audience unknown."
+Q003,https://eced.honam.ac.kr/AdmissionNotice/1/read/313,top5,true,full,stale,mismatch,국가장학 신청방법을 한국장학재단 홈페이지로 직접 제시해 full. 2026-1학기 신청기한 3.17이 경과해 stale이며 신입생·편입생 한정 공지라 일반 재학생 질문과 mismatch.
+Q003,https://eced.honam.ac.kr/DepartmentNotice/1/read/492,top5,true,full,unknown,match,'모든 대학생'을 대상으로 한국장학재단 웹사이트·모바일 앱 신청을 직접 제시해 full+match. 다만 청크에 신청 회차·기간·작성일이 없어 시효는 unknown.
+Q003,https://enter.honam.ac.kr/scholarship,top5|seed_v3,true,partial,current,mismatch,"2027학년도 신입생 장학 페이지가 국가장학금 신청 필요와 한국장학재단 문의처를 안내하지만 실제 신청 웹·앱 경로는 없음 → partial. 신입생 대상이라 mismatch, 현행 2027 안내라 current."
+Q003,https://enter.honam.ac.kr/transScholarship,top5,true,partial,current,mismatch,"편입장학 페이지가 국가장학금 신청 필요와 한국장학재단 문의처만 제공하고 신청 경로는 없음 → partial. 편입생 대상이라 일반 재학생 질문과 mismatch, 상시 안내라 current."
+Q003,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219,top5,true,invalid,unknown,mismatch,서울독립유공자후손 장학금 선발 공고 제목 조각으로 국가장학금 신청 경로와 무관.
+Q003,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5248,top5,true,invalid,stale,match,"주거안정장학금 신청 안내로 별개 장학이며, 국가장학금은 기간이 동일하다는 참고만 있어 신청처 답으로 사용할 수 없음. 신청·서류 기간도 종료되어 stale."
+Q003,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5249,top5|seed_v3,true,full,stale,match,2026-2학기 국가장학금 신청방법을 한국장학재단 웹사이트와 모바일 앱으로 직접 제시해 full+match. 신청기간 5.22~6.22가 판정일 전에 종료된 시한부 공지라 stale(원칙 6).
+Q004,https://ae.honam.ac.kr/DepartmentNotice/1/read/60,top5,true,invalid,stale,match,국가근로장학금 시급·문의처 조각으로 교내 장학금 종류를 확인할 위치나 목록이 없음. 해당 신청 회차 공지라 stale.
+Q004,https://archi.honam.ac.kr/FrequentlyAskedQuestions/1/read/8,top5,true,partial,stale,mismatch,"입학안내 홈페이지의 장학제도·등록금안내를 참조하라는 경로는 주지만 신입생 장학에 한정되고 현재 링크도 구형 → partial, 2014년 자료라 stale, 신입생 대상 mismatch."
+Q004,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/20,top5,true,full,current,match,"장학금 구분과 여러 교내 장학금 예시를 제시하고 '호남대학교 홈페이지 학사안내 – 장학정보에서 확인' 경로를 직접 안내해 full. 확인 경로는 전교 공통이라 match, 상시 FAQ라 current."
+Q004,https://www.honam.ac.kr/ScholarshipType,top5|seed_v3,true,full,current,match,"교내장학금 종류를 확인하는 공식 '장학금 종류' 페이지 자체이므로 위치 질문을 완전히 지지(full, page_navigation). 전교 공통 상시 페이지라 current+match."
+Q004,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219,top5,true,invalid,unknown,mismatch,서울독립유공자후손 장학금 선발 공고 제목 조각으로 교내 장학 종류 확인 경로와 무관.
+Q004,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5231,top5,true,invalid,stale,mismatch,외부 학회 장학금 지원자 선발 공고로 교내 장학 종류 확인과 무관. 2026년 4월 시한부 선발 공지라 stale.
+Q004,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5234,top5,true,invalid,unknown,mismatch,화성시 재단 외부 장학금 신청 공고 제목 조각으로 교내 장학과 무관.
+Q004,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5287,top5,true,partial,stale,match,교내 가족장학금이라는 한 종류와 신청방법을 보여주지만 전체 종류 확인 경로는 없음 → partial. 전교 재학생 대상이나 신청기간 6.30~7.7이 경과해 stale.
+Q005,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/23,top5,true,invalid,current,match,등록금 납부 후 휴학 시 환불·이연 FAQ로 납부 기간 확인처와 무관. 상시 FAQ라 current.
+Q005,https://eced.honam.ac.kr/AdmissionNotice/1/read/311,top5|exp06,true,partial,stale,mismatch,"편입 합격자 등록 안내. '등록기간: 등록금 고지서에 명시된 시간까지', '합격통지서와 등록금고지서는 홈페이지에서 출력할 수 있습니다'로 확인 경로를 시사하나 2026 편입 등록 회차(2.20) 한정. 기간 경과로 stale. '호남대학교 합격을 진심으로 축하드립니다'(편입 합격자 대상)라 일반 재학생 질문과 mismatch."
+Q005,https://enter.honam.ac.kr/notice/1/read/311,top5|exp06,true,partial,stale,mismatch,eced/tkd와 동일 본문 미러(2026 편입생 등록 안내). 동일 근거로 partial·stale·mismatch.
+Q005,https://graduate.honam.ac.kr/Schedule,top5|exp06,true,invalid,unknown,mismatch,"경계: 전형일정 표 머리글 조각('서류제출: 등록금 납부')뿐, 기간 값·확인처 정보 없음. 대학원 지원자 대상 페이지."
+Q005,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815,top5|exp06,true,full,stale,match,"'2026학년도 1학기 대학 등록금 납부 안내', '등록금 납부기간: 2026. 2. 20.(금) ~ 2. 27.(금)', 고지서 조회·출력 시점 표 — 기간과 확인 경로를 직접 제공(full). 납부기간 경과로 stale. 학과 서브도메인이나 본문이 재학생(복학생)·학기초과자 대상 전교 공통 대학 등록금 안내라 match."
+Q005,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5,true,invalid,unknown,match,경계: 가상계좌 납부 방법 안내 조각(영수증·입금 규칙·은행별 납부가능시간)으로 납부 기간·확인처 정보 없음. 같은 공지 다른 부분에 기간이 있을 수 있으나 재료 청크 밖(원칙 3). 본문은 전교 공통 납부 방법 안내라 match.
+Q005,https://tkd.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,partial,stale,mismatch,eced/enter와 동일 본문 미러(2026 편입생 등록 안내). 동일 근거로 partial·stale·mismatch.
+Q006,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,match,"기숙사 식사 안내 FAQ, 납부확인서 발급과 무관. 상시 안내."
+Q006,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,match,"기숙사 위급상황 안내, 무관. 상시 안내."
+Q006,https://enter.honam.ac.kr/faq,top5|exp06,true,invalid,current,mismatch,수시 입시 FAQ 모음. 납부확인서 발급 정보 없음. 수험생·지원자 대상('수시모집 지원자는…')이라 재학생 질문과 mismatch.
+Q006,https://enter.honam.ac.kr/notice/1/read/311,top5,true,invalid,stale,mismatch,"2026 편입생 등록 안내. 고지서 출력 언급뿐 납부확인서 발급 정보 없음. 등록 회차(2.20) 경과, 편입 합격자 대상."
+Q006,https://enter.honam.ac.kr/tutionGuide,top5|exp06,true,invalid,current,mismatch,모집단위별 등록금 액수 표. 발급 절차 정보 없음. 입학안내 사이트의 지원자 대상 상시 안내.
+Q006,https://fb.honam.ac.kr/DepartmentCurriculumOutlineOld,top5,true,invalid,stale,mismatch,"축구학과 구 교과목개요(제목에 '2026년 이전'), 완전 무관."
+Q006,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815,top5,true,partial,stale,match,'납부 확인 | [교육비납입증명서 발급 안내] … HUIS 로그인 > 학생정보 > 등록정보 > 교육비납입증명서 출력'과 발급시기를 제공. 질문의 '납부확인서'와 명칭 등가 미확인이라 partial(원칙 10). 문서 지배 성격은 2026-1학기 시한부 납부 공지라 stale이나 발급 경로 부분은 지속 성격(원칙 6 구분). 본문이 대학·대학원 공통 안내라 match.
+Q006,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5|exp06,true,partial,unknown,match,"경계: 교육비납입증명서 발급 방법·시기 제공(명칭 등가 미확인으로 partial, 원칙 10). 본문 signature가 hufdesign 815(2026-1학기 시한부 공지)와 사실상 동일하나 재료 청크에 학기·날짜 표기가 없어 temporal은 unknown(원칙 11: temporal 복사 금지)."
+Q006,https://tf.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,invalid,stale,mismatch,2026 편입생 등록 안내 미러. 납부확인서 발급 정보 없음.
+Q006,https://www.honam.ac.kr/ProofIssuanceGuide,top5|exp06,true,partial,current,match,'교육비납입증명서 | 등록금 납입 후 다음날부터 발급 가능 ※출력방법: 종합정보시스템-로그인-학생정보-등록정보-교육비납입증명서 출력' — 발급 방법을 직접 제공하나 질문의 '납부확인서'와 명칭 등가 미확인이라 partial(원칙 10). 전교 대상 상시 증명발급안내라 current·match.
+Q007,https://beauty.honam.ac.kr/DepartmentNotice/1/read/237,top5,true,partial,stale,match,2026 하계 계절학기 수강신청 기간·방법을 직접 제시하지만 일반학기 질문에는 특수 회차라 partial. 본교 재학생 전반을 대상으로 하나 6.8~6.12 기간이 경과해 stale.
+Q007,https://ec.honam.ac.kr/DepartmentNotice/1/read/140,top5,true,partial,stale,match,2024 동계 계절학기 수강신청 기간·방법으로 일반학기 질문에는 partial. 전교 재학생 대상이나 과거 회차라 stale.
+Q007,https://graduate.honam.ac.kr/AcademicCalendar,top5,true,full,stale,mismatch,재학생 수강신청기간 2.23~2.27을 직접 제시해 내용 축은 full. 일반대학원 학사일정이라 학부생 질문과 mismatch이며 해당 기간 종료로 stale.
+Q007,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/816,top5,true,full,stale,mismatch,"2026학년도 신·편입생 수강신청 기간 3.4~3.5와 방법을 직접 제시해 full. 신·편입생 한정이라 일반 재학생 질문과 mismatch, 회차 종료로 stale."
+Q007,https://slp.honam.ac.kr/DepartmentNotice/1/read/372,top5,true,invalid,unknown,mismatch,응시원서 유의사항·양성교육 기간 문구로 수강신청 기간과 무관. 시점·일반 재학생 대상 여부 판단 불가.
+Q007,https://sports.honam.ac.kr/QualificationsSystemGuide,top5,true,invalid,current,mismatch,체육지도자 자격검정 일반사항으로 대학 수강신청 기간과 무관. 자격 취득자 대상 상시 안내.
+Q007,https://sw.honam.ac.kr/UniversitySchedule,top5,true,full,current,match,8.5~8.6 장바구니와 8.10~8.13 학년별·전체 수강신청 일정을 직접 제시해 full. 2025학년도 후기 학위수여식이 함께 있는 현행 2026 학사일정의 전교 공통 미러이며 판정일 기준 예정 일정이라 current+match.
+Q007,https://tkd.honam.ac.kr/DepartmentNotice/1/read/287,top5,true,partial,stale,match,2024 동계 계절학기 수강신청 기간으로 일반학기 질문에는 partial. 전교 재학생 대상 과거 회차라 stale.
+Q007,https://www.honam.ac.kr/BachelorNotice/1/read/5260,top5,true,partial,stale,match,2026 하계 계절학기 수강신청 기간·방법을 직접 제시하지만 일반학기 질문에는 partial. 6.8~6.12 신청기간 종료로 stale.
+Q007,https://www.honam.ac.kr/ClassLessonApply,top5|seed_v3,true,invalid,current,match,공식 수강신청 페이지이나 제시 본문은 제목과 최대 신청학점 표뿐이고 신청기간이 없어 질문을 지지하지 않음(원칙 8). 전교 상시 페이지.
+Q008,https://dental.honam.ac.kr/DepartmentNotice/1/read/382,top5,true,partial,stale,match,수강신청 시스템 웹·앱 이용방법과 2025-2 정정기간을 제시하지만 정정 조작 절차를 직접 설명하지는 않아 partial. 전교 재학생 대상이나 과거 학기라 stale.
+Q008,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,mismatch,생활관 다림질 안내로 수강신청 정정과 무관.
+Q008,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 안내로 수강신청 정정과 무관.
+Q008,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급상황 안내로 수강신청 정정과 무관.
+Q008,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,mismatch,생활관 호실 생활수칙으로 수강신청 정정과 무관.
+Q008,https://enter.honam.ac.kr/faq,top5,true,invalid,current,mismatch,수시 입시 FAQ 모음으로 수강신청 정정 정보가 없음. 지원자 대상.
+Q008,https://robotdrone.honam.ac.kr/DepartmentNotice/1/read/29,top5,true,partial,unknown,match,"모든 재적생이 기간 내 수강 내역을 확인하고 학교 홈페이지·학사공지의 세부 안내를 따르라고 하지만 실제 정정 절차는 없음 → partial. 대상은 전교 재적생이라 match, 청크에 학기·날짜가 없어 temporal unknown."
+Q008,https://www.honam.ac.kr/BachelorNotice/1/read/5111,top5,true,partial,stale,match,2026-1학기 정정기간·상담 문의처와 시간표 조회 경로를 주지만 정정 방법 자체는 없음 → partial. 전교 재학생 대상이나 3.6~3.11 회차 종료로 stale.
+Q008,https://www.honam.ac.kr/BachelorNotice/1/read/5144,top5,true,partial,stale,match,2026-1학기 정정기간과 문의처를 제공하지만 정정 방법은 없음 → partial. 회차 종료로 stale.
+Q008,https://www.honam.ac.kr/ClassLessonApply,top5|seed_v3,true,partial,current,match,"정정 허용 조건과 수강신청 절차 준용 원칙은 제시하지만, 질문이 요구하는 접속 경로와 실제 정정 조작 절차는 제공하지 않아 partial이다."
+Q009,https://www.honam.ac.kr/BachelorNotice/1/read/5098,top5,true,partial,current,match,원격강좌로 졸업학점의 최대 50%까지 수강 가능하다는 관계만 제시하고 총 졸업학점 수는 없음 → partial. 전교 재입학생 대상 현행 안내.
+Q009,https://www.honam.ac.kr/ClassLessonApply,top5,true,invalid,current,match,학년별 수강신청 최소학점과 재수강 학점 규정 조각으로 졸업 필요 총학점과 다른 값.
+Q009,https://www.honam.ac.kr/Early_Graduation,top5,true,partial,current,match,조기졸업도 졸업 필요학점 취득이 필요하다고 설명하지만 학점 수는 없음 → partial. 전교 공통 상시 규정.
+Q009,https://www.honam.ac.kr/GradesRecognition,top5,true,partial,current,match,타대학 취득학점은 졸업 필요학점의 1/2 범위에서 인정된다는 관계만 있고 총학점 수는 없음 → partial. 전교 공통 상시 규정.
+Q009,https://www.honam.ac.kr/Graduate,top5|seed_v3,true,partial,current,match,졸업에는 필요학점 외 논문·시험 요건도 있음을 설명하지만 학점 수는 없음 → partial. 전교 공통 상시 졸업 안내.
+Q009,https://www.honam.ac.kr/GraduateGrades,top5,true,invalid,current,match,'졸업학점' 제목만 있고 본문 학점표가 없어 숫자를 지지하지 못함(원칙 8).
+Q009,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024,top5|seed_v3,true,partial,current,match,2024 입학년도 학과별 졸업 이수학점(100·120·160 등)을 직접 제시하지만 해당 입학년도에 한정되어 generic 질문에는 partial. 코호트 규정은 해당 학생에게 계속 적용되어 current.
+Q009,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,top5|seed_v3,true,full,current,match,"현행에 가까운 2025 입학년도 학과별 졸업 이수학점(드림라이프 100, 일반 다수 120, 건축학부 160)을 직접 제시해 full. 전교 학생 대상 코호트별 규정이라 current+match."
+Q010,https://counsel.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,1월 조기졸업 신청 기간만 제시하고 신청 자격 조건은 없음 → partial. 해당 신청 기간은 기준일에 종료되어 stale.
+Q010,https://hotelconvention.honam.ac.kr/ServiceIndustry/1/read/80,top5,true,invalid,unknown,mismatch,호텔관광 산업 조사 내용으로 조기졸업 신청 조건과 무관함.
+Q010,https://sports.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,1월 조기졸업 신청 기간만 제시하고 신청 자격 조건은 없음 → partial. 해당 신청 기간은 기준일에 종료되어 stale.
+Q010,https://sw.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,1월과 6~7월 조기졸업 신청 기간을 제시하지만 신청 자격 조건은 없음 → partial. 가장 최근 신청 기간도 기준일 전에 종료되어 stale.
+Q010,https://www.honam.ac.kr/Early_Graduation,top5|seed_v3,true,full,current,match,"6학기 말까지의 취득학점, 평점평균 4.25 이상 등 조기졸업 신청 자격과 절차를 직접 제시하는 전교 공통 현행 규정."
+Q010,https://www.honam.ac.kr/Graduate,top5|seed_v3,true,partial,current,match,조기졸업자는 7학기 이상 등록해야 하고 일반 졸업 요건도 충족해야 함을 제시하지만 신청 자격의 핵심 학점·평점 기준은 없음 → partial.
+Q011,https://beauty.honam.ac.kr/DepartmentNotice/1/read/229,top5,true,invalid,stale,mismatch,뷰티미용학과의 과거 성적향상 증명서 제출 안내로 성적 이의신청 절차와 무관함.
+Q011,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,mismatch,생활관 다림질 안내로 성적 이의신청과 무관함.
+Q011,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 이용 안내로 성적 이의신청과 무관함.
+Q011,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급 상황 대응 안내로 성적 이의신청과 무관함.
+Q011,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,mismatch,생활관 호실 청소 안내로 성적 이의신청과 무관함.
+Q011,https://espo.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,성적열람 및 정정 기간만 제시하고 이의신청 대상·제출 경로는 없음 → partial. 해당 기간은 기준일에 종료되어 stale.
+Q011,https://www.honam.ac.kr/ExamResult,top5|seed_v3,true,full,current,match,정정기간 중 담당교수에게 신청하고 직접 신청할 수 없으면 학과장에게 성적정정원을 제출하는 절차를 직접 제시하는 현행 전교 규정.
+Q012,https://aibigdata.honam.ac.kr/NonsubjectRoadmap,top5,true,invalid,current,mismatch,AI·빅데이터학과 비교과 로드맵의 TOEIC 항목으로 정규시험 학사일정 위치와 무관함.
+Q012,https://beauty.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,학사일정에서 1학기 중간고사 항목을 확인할 수 있음을 보여주지만 한 시기만 제시 → partial. 해당 시험 기간은 기준일에 종료됨.
+Q012,https://elec.honam.ac.kr/NonsubjectRoadmap,top5,true,invalid,current,mismatch,전기공학과 비교과 로드맵의 TOEIC 항목으로 정규시험 학사일정 위치와 무관함.
+Q012,https://english.honam.ac.kr/DepartmentNotice/1/read/227,top5,true,partial,stale,mismatch,영어학과의 과거 시험 기간·운영 조각으로 시험 일정의 성격은 보이지만 현재 전교 학사일정 경로를 안내하지 못함 → partial.
+Q012,https://enter.honam.ac.kr/faq,top5,true,invalid,unknown,mismatch,입학 지원자용 FAQ로 재학생 정규시험 학사일정 위치와 무관함.
+Q012,https://graduate.honam.ac.kr/AcademicCalendar,top5,true,partial,stale,mismatch,대학원 학사일정의 중간고사·종합시험 항목을 제시하지만 학부생 generic 질문과 대상이 다르고 해당 기간도 종료됨 → partial.
+Q012,https://hotelconvention.honam.ac.kr/InformationForExaminees/1/read/12,top5,true,invalid,unknown,mismatch,호텔컨벤션학과 취업 소개 이미지로 시험 학사일정과 무관함.
+Q012,https://www.honam.ac.kr/AcademicCalendar,seed_v3,true,full,current,match,전교 공식 학사일정의 2026년 월별 항목에서 1·2학기 중간고사와 기말고사 기간을 직접 확인할 수 있는 목적지 페이지.
+Q013,https://counsel.honam.ac.kr/DepartmentNews/1/read/342,top5,true,invalid,unknown,mismatch,상담심리학과 청소년 활동 소식으로 재학증명서 발급과 무관함.
+Q013,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,생활관 환불계좌 변경을 묻는 개인 문의로 재학증명서 발급과 무관함.
+Q013,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/29,top5,true,full,current,match,"재학증명서를 학교 홈페이지 인터넷 발급, 복지관 1층 무인발급기, 정부24에서 발급할 수 있다고 직접 안내함."
+Q013,https://elec.honam.ac.kr/AdmissionNotice/1/read/313,top5,true,invalid,unknown,mismatch,입학 관련 가족관계증명서 제출 조건 조각으로 재학증명서 발급과 무관함.
+Q013,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5,true,invalid,unknown,match,교육비납입증명서 출력과 등록 처리 안내로 재학증명서 발급 경로가 아님.
+Q013,https://tf.honam.ac.kr/LectureMaterials/1/read/277,top5,true,invalid,unknown,mismatch,텍스트 구성 강의자료로 재학증명서 발급과 무관함.
+Q013,https://www.honam.ac.kr/ProofIssuanceApply,top5|seed_v3,true,full,current,match,공식 증명발급 페이지가 방문 발급 장소·시간·준비물을 직접 제시한다. 유효한 발급 경로 하나를 완전하게 답하므로 full이다.
+Q013,https://www.honam.ac.kr/ProofIssuanceGuide,top5|seed_v3,true,full,current,match,재학증명서가 인터넷증명발급 대상이며 회원가입 후 발급할 수 있고 바로가기까지 직접 제시하는 현행 전교 안내.
+Q014,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 음식 섭취 안내로 졸업증명서 발급과 무관함.
+Q014,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5422,top5,true,invalid,current,mismatch,생활관 잔류신청 변경을 묻는 개인 문의로 졸업증명서 발급과 무관함.
+Q014,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/25,top5,true,invalid,current,mismatch,드림라이프대학의 동아리·프로그램 참여 안내로 졸업증명서 발급과 무관함.
+Q014,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/29,top5,true,partial,current,match,증명서를 홈페이지에서 인터넷 발급할 수 있다고 안내하지만 열거된 대상에 졸업증명서가 없어 질문을 직접 확정하지는 못함 → partial.
+Q014,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5,true,invalid,unknown,match,교육비납입증명서 출력 안내로 졸업증명서 온라인 발급 가능 여부와 무관함.
+Q014,https://www.honam.ac.kr/BachelorNotice/1/read/5108,top5,true,partial,stale,match,증명서 인터넷 발급 경로를 안내하지만 졸업증명서를 특정하지 않음 → partial. 2026년 1월 집중휴가 기간용 공지라 기준일에는 stale.
+Q014,https://www.honam.ac.kr/ProofIssuanceApply,top5|seed_v3,true,partial,current,match,증명서를 인터넷으로 직접 출력하거나 이메일·팩스로 받을 수 있다고 안내하지만 졸업증명서 대상 여부를 특정하지 않음 → partial.
+Q014,https://www.honam.ac.kr/ProofIssuanceGuide,top5,true,full,current,match,졸업증명서는 졸업식 당일부터 인터넷증명발급이 가능하다고 직접 명시하는 현행 전교 안내.
+Q015,https://culinary.honam.ac.kr/AdmissionNotice/1/read/312,top5|exp06,true,partial,stale,match,2026 편입생 추가모집 안내 공지. '2026 편입 추가 모집요강 PDF' 첨부로 요강 확인 경로가 되나 추가모집 회차(2026.2.19) 한정 시한부 공지라 stale. 상시 확인처 안내는 아님이라 partial. 편입 지원자 대상 = 질문 전제 집단이라 match.
+Q015,https://dentech.honam.ac.kr/AdmissionNotice/1/read/312,top5,true,partial,stale,match,culinary 312와 동일 본문 미러(2026 편입 추가모집 안내). 동일 근거.
+Q015,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,기숙사 환불계좌 변경 개인 문의 게시글(2026-06). 편입 모집요강과 완전 무관.
+Q015,https://enter.honam.ac.kr/transPDF,top5|seed_v3|exp06,true,full,current,match,'모집요강 다운로드 — 2026학년도 편입학 모집요강입니다. 한글파일/PDF파일 다운로드' + 요강 목차. 질문 초점이 확인 위치라 이 페이지 도달 자체가 완전한 답(§7 위치 질문). 입학안내 사이트의 상시 메뉴 페이지라 current(게시 요강은 2026학년도판). 편입 지원자 대상 match.
+Q015,https://enter.honam.ac.kr/transRatio,top5|exp06,true,invalid,current,match,편입학 경쟁률 게시판 목록. 모집요강 확인 위치 정보 없음.
+Q015,https://enter.honam.ac.kr/transSchedule,top5,true,invalid,current,match,"전형일정 페이지 머리글 조각뿐, 모집요강 위치 정보 없음."
+Q015,https://enter.honam.ac.kr/transScholarship,top5,true,invalid,current,match,"편입생 장학제도 머리글 조각뿐, 모집요강 위치 정보 없음."
+Q015,https://enter.honam.ac.kr/transThrough,top5,true,invalid,current,match,합격자발표 게시판 목록. 모집요강 위치 정보 없음.
+Q015,https://tf.honam.ac.kr/AdmissionNotice/1/read/312,top5,true,partial,stale,match,culinary 312와 동일 본문 미러. 동일 근거.
+Q015,https://vcd.honam.ac.kr/AdmissionNotice/1/read/312,top5|exp06,true,partial,stale,match,culinary 312와 동일 본문 미러. 동일 근거.
+Q016,https://civileng.honam.ac.kr/FrequentlyAskedQuestions/1/read/3,top5,true,invalid,stale,mismatch,"경계: 2015년 토목환경공학과 취업률 FAQ. '입학상담 란의 담당교수에게 문의' 언급은 취업 문의 맥락이라 입학 상담 창구 안내로 보지 않음. 2015년 정보라 stale, 특정 학과 지원자 대상."
+Q016,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/23,top5,true,invalid,current,match,"등록금 환불 FAQ, 입학 상담 문의처와 무관."
+Q016,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/30,top5,true,partial,current,mismatch,경계: '기타 문의사항 → 라이프디자인센터 전화·카카오톡 채널·복지관 방문' — 문의 경로를 직접 제공하나 입학 상담 전용 창구가 아니고 드림라이프(성인학습자 과정) 맥락 한정이라 mismatch. 상시 FAQ라 current.
+Q016,https://enter.honam.ac.kr/faq,top5,true,partial,current,match,경계: '스마트폰으로 각종 입시정보 조회 가능 … 입학상담 … 입학안내 홈페이지: enter.honam.ac.kr' — 입학상담 접근 경로(입학안내 홈페이지)를 간접 안내하나 구체 문의 채널·연락처는 없음. 지원자 대상 상시 FAQ라 current·match.
+Q016,https://graduate.honam.ac.kr/AdmissionConsultation,top5|exp06,true,full,current,mismatch,'입학상담 — 원서접수 및 상담 062-940-5955' 문의처 직접 제공(full). 대학원 서브도메인이고 본문도 대학원 입학상담이라 일반 입학 질문과 mismatch(원칙 2 축 분리: support는 유지).
+Q016,https://graduate.honam.ac.kr/Location,top5|exp06,true,full,current,mismatch,'호남대학교 대학원 … 입학상담 062-940-5955' 연락처 명시(full). 대학원 대상이라 mismatch.
+Q016,https://hotelconvention.honam.ac.kr/InformationForExaminees/1/read/12,top5,true,invalid,unknown,mismatch,"본문이 취업 안내 첨부이미지뿐(원칙 8), 특정 학과 수험생 대상."
+Q016,https://inc.honam.ac.kr/G_AdmissionConsultation,top5|exp06,true,invalid,current,mismatch,경계: '대학원 입학상담' 빈 게시판 목록(전체 0건)으로 문의처 안내 내용 없음. 게시판 도달 자체를 상담 창구로 볼 여지가 있으나 재료 청크에 안내 문구가 없어 invalid. 대학원 대상.
+Q016,https://tourmgt.honam.ac.kr/AdmissionNotice/1/read/313,top5,true,invalid,unknown,unknown,증빙서류·학생지원팀 문의 조각(다른 공지 일부)으로 입학 상담 문의처 아님. 조각이라 시기·대상 불명.
+Q016,https://www.honam.ac.kr/CamPhNum,top5|exp06,true,partial,current,match,경계: 교내전화번호 페이지의 '입학관리처 / 입학관리처 연락처' 머리글 조각. 문의 부서(입학관리처)는 식별되나 연락처 값이 청크에 없음 → partial. 전교 공통 상시 전화번호부라 current·match.
+Q017,https://biz.honam.ac.kr/DepartmentCurriculum,top5,true,invalid,current,mismatch,경영학과 교과목 편성표로 학기 개강일 확인 경로와 무관함.
+Q017,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,생활관 환불계좌 변경을 묻는 개인 문의로 개강일과 무관함.
+Q017,https://espo.honam.ac.kr/DepartmentCurriculumOld,top5,true,invalid,stale,mismatch,e스포츠산업학과의 2026년 이전 교과과정으로 개강일 확인 경로와 무관함.
+Q017,https://espo.honam.ac.kr/UniversitySchedule,top5,true,full,current,match,학사일정에서 다가오는 2학기 개강일을 9월 1일로 직접 제시해 확인 위치와 날짜를 모두 답함.
+Q017,https://inc.honam.ac.kr/NonsubjectRoadmap,top5,true,invalid,current,mismatch,비교과 개인상담 로드맵으로 개강일 확인 경로와 무관함.
+Q017,https://tf.honam.ac.kr/DepartmentCurriculumOld,top5,true,invalid,stale,mismatch,미디어영상공연학과의 2026년 이전 교과과정으로 개강일 확인 경로와 무관함.
+Q017,https://www.honam.ac.kr/AcademicCalendar,seed_v3,true,full,current,match,전교 공식 학사일정의 2026년 월별 항목에서 1·2학기 개강일을 직접 확인할 수 있는 목적지 페이지.
+Q018,https://chinese.honam.ac.kr/DepartmentVision,top5,true,invalid,current,mismatch,중국어학과 방학 중 프로그램을 언급할 뿐 방학 기간 확인 경로는 제시하지 않음.
+Q018,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5420,top5,true,invalid,current,mismatch,생활관 방학 잔류 추가신청을 묻는 개인 문의로 학사 방학 기간을 제시하지 않음.
+Q018,https://dorm.honam.ac.kr/FacilityStatus,top5,true,invalid,current,mismatch,생활관 방학 중 일일 이용금액 안내로 학사 방학 기간과 무관함.
+Q018,https://dorm.honam.ac.kr/Format/1/read/6,top5,true,invalid,stale,mismatch,2016년 생활관 방학 잔류 신청서로 현재 학사 방학 기간과 무관함.
+Q018,https://dorm.honam.ac.kr/RestaurantGuide,top5,true,invalid,current,mismatch,생활관 식당의 방학 중 운영시간으로 학사 방학 기간과 무관함.
+Q018,https://espo.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,동계계절학기 등 방학 중 학사일정 일부만 제시하고 방학 경계는 없음 → partial. 제시 기간은 기준일에 종료됨.
+Q018,https://www.honam.ac.kr/AcademicCalendar,seed_v3,true,full,current,match,전교 공식 학사일정에서 종강일과 다음 학기 개강일을 월별로 확인해 방학 기간을 판단할 수 있는 목적지 페이지.
+Q019,https://com.honam.ac.kr/DepartmentNotice/1/read/374,top5,true,invalid,current,mismatch,2026년 장학사업 문의처로 휴학 담당 부서와 무관함.
+Q019,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 안내로 휴학 담당 부서와 무관함.
+Q019,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급 상황 연락처로 휴학 담당 부서와 무관함.
+Q019,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/30,top5,true,invalid,current,mismatch,드림라이프대학의 기타 문의 창구일 뿐 generic 학생의 휴학 담당 부서라고 특정하지 않음.
+Q019,https://hotelconvention.honam.ac.kr/InformationForExaminees/1/read/12,top5,true,invalid,unknown,mismatch,호텔컨벤션학과 취업 소개 이미지로 휴학 문의와 무관함.
+Q019,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815,top5,true,full,current,match,복학·휴학 문의를 소속 단과대학별 연락처로 직접 구분해 제시하는 현행 안내.
+Q019,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5,true,full,stale,match,복학·휴학 문의를 단과대학별로 직접 제시하지만 현재와 다른 과거 조직명·부서명이 포함되어 stale.
+Q019,https://www.honam.ac.kr/CamPhNum,top5|seed_v3,true,full,current,match,교내전화번호에서 휴·복학·자퇴 문의를 소속 단과대학별 연락처로 직접 안내함.
+Q019,https://www.honam.ac.kr/General_Rest,top5|seed_v3,true,full,current,match,일반휴학은 소속 단과대학 교학과를 방문해 신청·문의하는 절차라고 직접 제시하는 현행 전교 규정.
+Q019,https://www.honam.ac.kr/military_Rest,top5,true,full,current,match,입대휴학도 소속 단과대학 교학과 방문 신청이라고 직접 제시하는 현행 전교 규정.
+Q020,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,생활관 환불계좌 변경을 묻는 개인 문의로 장학금 문의처와 무관함.
+Q020,https://dreamlife.honam.ac.kr/ScholarshipSystem,top5,true,partial,current,mismatch,드림라이프대학 가족장학금의 문의번호를 제시하지만 generic 장학 문의 전체를 위한 안내는 아님 → partial.
+Q020,https://eced.honam.ac.kr/DepartmentNotice/1/read/487,top5,true,partial,unknown,mismatch,특정 장학 연계 활동의 시스템·운영 문의처만 제시해 일반 장학금 문의번호와 다름 → partial.
+Q020,https://enter.honam.ac.kr/scholarship,top5,true,partial,current,mismatch,입학 지원자용 장학 안내에서 가족장학금 문의번호를 제시하지만 재학생 generic 문의 전체를 위한 안내는 아님 → partial.
+Q020,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815,top5,true,full,current,match,장학금 문의 부서와 전화번호를 학생지원팀으로 직접 제시하는 현행 안내.
+Q020,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5,true,full,stale,match,장학금 문의 전화번호를 직접 제시하지만 현재와 다른 과거 부서명이 포함되어 stale.
+Q020,https://www.honam.ac.kr/CamPhNum,top5|seed_v3,true,full,current,match,공식 교내전화번호 페이지에서 장학·학자금 대출 문의번호를 직접 확인할 수 있음.
+Q020,https://www.honam.ac.kr/ProofIssuanceGuide,top5,true,full,current,match,장학금 문의 부서와 전화번호를 학생지원팀으로 직접 제시하는 현행 전교 안내.
+Q021,https://counsel.honam.ac.kr/DepartmentNews/1/read/342,top5,true,invalid,unknown,mismatch,"상담심리학과 청소년활동 소식 기사, 졸업학점 확인과 완전 무관."
+Q021,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,"기숙사 환불계좌 개인 문의 게시글, 무관."
+Q021,https://hotelconvention.honam.ac.kr/DepartmentNotice/1/read/146,top5,true,invalid,current,match,"복수전공·부전공 이수 요건 안내. '주전공 학과의 졸업학점을 충족하여야'라는 요건 언급뿐, 충족 여부 확인 위치 정보 없음."
+Q021,https://www.honam.ac.kr/BachelorNotice/1/read/5075,top5,true,invalid,stale,match,부전공 신청 안내(신청기간 2025.12.08~2026.01.09 종료). 졸업학점 확인 위치 정보 없음.
+Q021,https://www.honam.ac.kr/BachelorNotice/1/read/5265,top5,true,invalid,stale,match,"부전공 신청 안내(신청기간 2026.06.09~07.10, 판정 시점 직전 종료라 stale). 졸업학점 확인 위치 정보 없음."
+Q021,https://www.honam.ac.kr/GraduateGrades,top5|exp06,true,invalid,current,match,경계: 페이지 주제는 졸업학점 기준이나 재료 청크가 머리글('## 졸업학점')뿐이라 내용 지지 없음(원칙 8 유추). 상시 페이지.
+Q021,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2021,top5|exp06,true,partial,current,match,"2021학번 학과별 졸업이수학점 기준표. '채웠는지' 판단의 기준치는 제공하나 본인 이수 현황 확인 경로는 아님 → partial. 학번별 상시 기준이라 current, 전교 대상 match."
+Q021,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2023,exp06,true,invalid,current,match,경계: 재료 청크가 '구성표 - 계속' 머리글 조각뿐이라 내용 지지 없음. 페이지 성격은 /2021·/2024와 동일 기준표.
+Q021,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024,top5|exp06,true,partial,current,match,"2024학번 학과별 졸업이수학점 기준표. 기준치만 제공, 충족 여부 확인 경로 아님 → partial."
+Q022,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,match,"기숙사 다림질 FAQ, 예비군 훈련 신청과 완전 무관. 상시 안내."
+Q022,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,match,"기숙사 식사 FAQ, 무관."
+Q022,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,match,"기숙사 위급상황 FAQ, 무관."
+Q022,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,match,"기숙사 방청소 FAQ, 무관."
+Q022,https://eced.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,invalid,stale,mismatch,"2026 합격자 안내 공지 후반부(장학·기숙사·수강신청 안내, 2026.2.20). 예비군 정보 없음. 시한부 공지 기간 경과, 합격자(신입) 대상."
+Q022,https://enter.honam.ac.kr/faq,exp06,true,invalid,current,mismatch,수시 입시 FAQ 모음. 예비군 정보 없음. 수험생·지원자 대상.
+Q022,https://fb.honam.ac.kr/DepartmentCurriculumOutlineOld,top5,true,invalid,stale,mismatch,"축구학과 구 교과목개요, 완전 무관."
+Q023,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5415,top5,true,invalid,current,mismatch,"생활관 상벌점 개인 문의 게시글, 학점 확인과 무관."
+Q023,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,"기숙사 환불계좌 개인 문의 게시글, 무관."
+Q023,https://www.honam.ac.kr/ClassLessonApply,top5,true,invalid,current,match,"수강신청 학점 규정 조각(재수강·최소학점), 본인 학점 확인 위치 정보 없음."
+Q023,https://www.honam.ac.kr/Dormitory,top5,true,invalid,current,match,"기숙사 시설 현황 표, 완전 무관."
+Q023,https://www.honam.ac.kr/ExamResult,top5|exp06,true,partial,current,match,'당해 학기에 취득한 성적은 전산처리하여 학사DB에 등재 후 웹상에서 조회' — 웹 조회 가능 사실은 지지하나 구체 시스템명·메뉴 경로가 없어 partial. 상시 학사 안내라 current·match.
+Q023,https://www.honam.ac.kr/GradesRecognition,top5|exp06,true,invalid,current,match,"타대학·어학연수 학점인정 규정, 본인 학점 확인 위치와 무관."
+Q023,https://www.honam.ac.kr/GraduateGrades,top5|exp06,true,invalid,current,match,"재료 청크가 머리글('## 졸업학점')뿐, 내용 지지 없음(Q021과 동일 판단)."
+Q023,https://www.honam.ac.kr/ProofIssuanceGuide,top5,true,partial,current,match,'성적증명서 … 인터넷증명발급 가능' — 성적증명서 발급 경로로 학점을 간접 확인할 수 있어 partial(즉시 조회 위치 안내는 아님). 상시 안내.
+Q024,https://dental.honam.ac.kr/PDS/1/read/8,top5,true,partial,current,match,"출석인정(공결) 절차 자료: '결석사유서 작성 → 지도교수 확인 → 담당교수 제출' + 단과대학 교학과 문의처. 예비군 훈련 명시는 없음 → partial. 학과 자료실이나 내용은 전교 공통 학칙 절차라 match, 상시 규정 자료라 current."
+Q024,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/23,top5,true,invalid,current,match,"등록금 환불 FAQ, 무관."
+Q024,https://enter.honam.ac.kr/faq,top5,true,invalid,current,mismatch,"수시 입시 FAQ, 무관. 지원자 대상."
+Q024,https://graduate.honam.ac.kr/BachelorG,top5,true,invalid,current,mismatch,"일반대학원 성적평가 비율(출석 20%) 조각. 공결 처리 규정 아님, 대학원 대상."
+Q024,https://pt.honam.ac.kr/PDS/1/read/2,top5,true,partial,current,match,"학칙 출석인정 규정 발췌: 사유 목록('병사관계(신체검사 등): 3일간' 포함), 결석사유서 제출 시기·장소. 예비군 훈련이 명시 항목에 없어 partial(병사관계 포함 여부는 재료 밖 추론이라 단정 금지, 원칙 10 유추). 전교 공통 학칙 내용이라 match."
+Q024,https://slp.honam.ac.kr/PDS/1/read/21,top5,true,partial,current,match,학칙 출석인정 규정 발췌(사유 목록 확장판: 병사관계·공식행사·훈련 등). 예비군 훈련 명시 없음 → partial. 전교 공통 학칙이라 match.
+Q024,https://sports.honam.ac.kr/TrainingGuide,top5,true,invalid,current,mismatch,"연수과정 출석 요건(90%) 안내, 학사 공결 규정 아님."
+Q024,https://www.honam.ac.kr/ExamResult,top5,true,invalid,current,match,군입대로 기말고사 미응시 시 학점 인정 규정 — 예비군 훈련 결석 출석 처리와 다른 상황이라 invalid.
+Q024,https://www.honam.ac.kr/GradesRecognition,top5,true,invalid,current,match,"군복무 중 취득학점 인정 안내, 출석 처리와 무관."
+Q024,https://www.honam.ac.kr/SettleAnnounce,top5,true,invalid,current,match,"법인 결산공고·감사의견, 완전 무관."
+Q025,https://ec.honam.ac.kr/SubjectRoadmap6,top5,true,partial,current,mismatch,특정 학과의 기초교양 필수과목과 영역별 이수학점을 제시하지만 다른 학과·입학년도 학생에게 일반화할 수 없음 → partial.
+Q025,https://eced.honam.ac.kr/NonsubjectRoadmap,top5,true,invalid,current,mismatch,비교과 스터디그룹 참여 요건으로 졸업 필수 교과목이 아님.
+Q025,https://english.honam.ac.kr/DepartmentCurriculumOutline,top5,true,partial,current,mismatch,영어학과 교직과정의 필수 강좌 하나만 제시해 generic 학생의 전체 졸업 필수과목을 답하지 못함 → partial.
+Q025,https://nutrition.honam.ac.kr/StudentNotice/1/read/287,top5,true,invalid,stale,mismatch,2025-2학기 식품영양학과 시간표 수정 공지로 필수과목명이 본문에 없고 해당 학기도 종료됨.
+Q025,https://police.honam.ac.kr/SubjectRoadmap6,top5,true,partial,current,mismatch,경찰행정학과 선택·균형교양 필수학점만 제시하고 실제 과목명과 다른 학과 요건은 없음 → partial.
+Q025,https://slp.honam.ac.kr/PDS/1/read/10,top5,true,invalid,stale,mismatch,2012년 언어치료사 자격·진로 질의로 졸업 필수과목과 무관함.
+Q025,https://tkd.honam.ac.kr/SubjectRoadmap6,top5,true,partial,current,mismatch,태권도학과의 교양필수 분류와 교직 과목 일부만 제시해 generic 학생의 전체 필수과목을 답하지 못함 → partial.
+Q025,https://www.honam.ac.kr/ExamResult,top5,true,invalid,current,match,재수강 가능 성적과 처리 규정으로 졸업 필수과목 목록과 무관함.
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2021,top5|seed_v3,true,partial,current,match,2021 입학년도 중국어학과 2+2 복수학위 대상 교양필수 과목만 제시해 generic 질문에는 partial. 코호트 규정은 해당 학생에게 계속 적용됨.
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2022,top5|seed_v3,true,partial,current,match,2022 입학년도 교양필수 과목과 선택필수 영역을 구체적으로 제시하지만 해당 코호트에 한정되어 generic 질문에는 partial.
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2023,top5|seed_v3,true,partial,current,match,2023 입학년도 교양필수 과목과 선택필수 영역을 구체적으로 제시하지만 해당 코호트에 한정되어 generic 질문에는 partial.
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2024,top5|seed_v3,true,partial,current,match,2024 입학년도 중국어학과 2+2 복수학위 대상 교양필수 과목만 제시해 generic 질문에는 partial.
+Q025,https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025,seed_v3,true,partial,current,match,2025 입학년도 학과별 필수 이수영역·학점과 선택필수 규칙은 제시하지만 핵심교양의 실제 필수 과목명이 수집된 본문에 없음 → partial.
+Q026,https://airline.honam.ac.kr/PDS/1/read/14,top5,true,invalid,unknown,mismatch,"항공기 기내 습도 관련 읽을거리, 완전 무관."
+Q026,https://dentech.honam.ac.kr/DepartmentLocation,top5,true,invalid,current,mismatch,"치기공학과 위치 안내('5층' 어휘 일치뿐), 자판기와 무관."
+Q026,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,match,"기숙사 냉장고·정수기 FAQ, 자판기 보충 시기 무관."
+Q026,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,match,"기숙사 우편·택배 FAQ, 무관."
+Q026,https://dorm.honam.ac.kr/RestaurantGuide,top5,true,invalid,current,match,"기숙사 식당 이용안내, 무관."
+Q026,https://slp.honam.ac.kr/LTCIntroduce,top5,true,invalid,current,mismatch,"언어치료센터 이용안내('5층' 어휘 일치뿐), 무관."
+Q026,https://tf.honam.ac.kr/DepartmentNotice/1/read/50,top5,true,invalid,unknown,mismatch,"외부 행사 장소 조각, 완전 무관."
+Q026,https://www.honam.ac.kr/ConvFacility,top5|exp06,true,invalid,current,match,자판기 대수·위치 안내는 있으나 질문 초점인 보충 시기 정보가 전혀 없음(원칙 1: 질문 초점 기준) → invalid.
+Q026,https://www.honam.ac.kr/SchbusGuideSchedule,top5,true,invalid,current,match,"통학버스 시간표, 무관."
+Q027,https://biz.honam.ac.kr/DepartmentCurriculumOutline,top5,true,invalid,stale,mismatch,2026년 이전 경영학과 교과목 개요로 입대휴학과 무관함.
+Q027,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 안내로 입대휴학과 무관함.
+Q027,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급 상황 안내로 입대휴학과 무관함.
+Q027,https://enter.honam.ac.kr/faq,top5,true,invalid,unknown,mismatch,입학 지원자용 FAQ 혼합 조각으로 입대휴학 절차가 없음.
+Q027,https://fb.honam.ac.kr/DepartmentCurriculumOutlineOld,top5,true,invalid,stale,mismatch,2026년 이전 축구학과 교과목 개요로 입대휴학과 무관함.
+Q027,https://www.honam.ac.kr/ComeBack,top5,true,invalid,current,match,휴학 후 복학 절차만 안내하며 입대휴학 신청 방법은 없음.
+Q027,https://www.honam.ac.kr/Exit,top5,true,invalid,current,match,자퇴 절차와 휴학 시 등록금 이월만 안내하며 입대휴학 신청 방법은 없음.
+Q027,https://www.honam.ac.kr/General_Rest,top5|seed_v3,true,partial,current,match,일반휴학 중 입영통지서를 학과 조교실에 제출해 입대휴학으로 바꾸는 경우만 안내함 → partial.
+Q027,https://www.honam.ac.kr/GradesRecognition,top5,true,invalid,current,match,군복무 중 취득학점 인정 절차로 입대휴학 신청과 무관함.
+Q027,https://www.honam.ac.kr/military_Rest,top5|seed_v3,true,full,current,match,"입영 시점별 신청기간, 단과대학 교학과 방문 절차, 제출 가능한 증빙서류를 직접 제시하는 현행 전교 규정."
+Q028,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 냉장고 안내로 휴학 가능 기간과 무관함.
+Q028,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 고민상담 안내로 휴학 가능 기간과 무관함.
+Q028,https://graduate.honam.ac.kr/BachelorE,top5,true,full,current,mismatch,교육대학원 일반휴학은 통산 4학기까지라고 직접 답하지만 학부생 generic 질문과 대상이 다름.
+Q028,https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/5,top5,true,invalid,stale,mismatch,2019년 패션디자인학과 교직이수 FAQ로 휴학 가능 기간과 무관함.
+Q028,https://www.honam.ac.kr/BachelorNotice/1/read/5262,top5,true,invalid,current,match,학사학위취득유예의 최대 기간으로 일반휴학과 다른 제도임.
+Q028,https://www.honam.ac.kr/ClassLessonApply,top5,true,invalid,current,match,수강신청 최대학점 표로 휴학 가능 기간과 무관함.
+Q028,https://www.honam.ac.kr/ComeBack,top5,true,invalid,current,match,휴학 만료 후 복학 절차만 안내하며 최대 휴학기간은 제시하지 않음.
+Q028,https://www.honam.ac.kr/General_Rest,top5|seed_v3,true,full,current,match,"일반휴학은 최대 3회, 회당 1년 이내라고 명시해 통산 최대 3년임을 결정적으로 도출할 수 있는 현행 전교 규정."
+Q028,https://www.honam.ac.kr/GraduateGrades,top5,true,invalid,current,match,휴학자의 졸업학점표 입학년도 선택 기준으로 최대 휴학기간은 없음.
+Q028,https://www.honam.ac.kr/military_Rest,top5,true,partial,current,match,입대휴학은 복무 유형별 최대 24·36·60개월이라고 제시하지만 일반휴학 최대기간과 별도인 특수 경우 → partial.
+Q029,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 벌점 불이익 안내로 성적장학금 기준과 무관함.
+Q029,https://dreamlife.honam.ac.kr/ScholarshipSystem,top5,true,partial,current,mismatch,드림라이프 계속장학의 평점 유지조건 2.5를 제시하지만 일반 성적장학금 선발 기준은 아님 → partial.
+Q029,https://enter.honam.ac.kr/scholarship,top5,true,partial,current,mismatch,신입생 특별장학의 수능 기준과 계속장학 평점 2.5를 제시하지만 재학생 generic 성적장학금 기준은 아님 → partial.
+Q029,https://enter.honam.ac.kr/transScholarship,top5,true,partial,current,mismatch,편입생 계속장학·정부장학의 유지 성적을 제시하지만 재학생 generic 성적장학금 선발 기준은 아님 → partial.
+Q029,https://www.honam.ac.kr/ProofIssuanceGuide,top5,true,invalid,current,match,장학금 수혜증명서 발급·문의 안내로 성적장학금 선발 점수는 없음.
+Q029,https://www.honam.ac.kr/ScholarshipType,top5|seed_v3,true,partial,current,match,경계: 학업장려장학금의 백분위 75점 조건은 제시하지만 질문의 '성적장학금'과 같은 제도라는 재료 내 근거가 없어 일반 선발 기준으로 확정할 수 없음 → partial.
+Q029,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219,top5,true,invalid,unknown,mismatch,특정 외부 장학금 선발 공고 제목만 있고 성적장학금 기준은 없음.
+Q029,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5251,top5,true,invalid,unknown,mismatch,2026년 특정 외부 희망장학금 안내로 성적장학금 선발 점수와 무관하며 본문에 신청기한도 없음.
+Q030,https://ae.honam.ac.kr/DepartmentNotice/1/read/60,top5|exp06,true,full,stale,match,2026년 1학기 2차 국가근로장학금 신청 공지. '신청 방법: 한국장학재단 누리집(홈페이지) 및 모바일 웹에서 신청. www.kosaf.go.kr' — 신청처를 직접 답함(full). 신청기간 2026.2.3~3.17 경과로 stale. 대상이 '대한민국 국적 재학생'(전교 공통 문구)이라 match(원칙 5).
+Q030,https://beauty.honam.ac.kr/DepartmentNotice/1/read/236,top5|seed_v3|exp06,true,full,stale,mismatch,"§9 시험 사례. 2026-2학기 국가근로장학금 1차 신청 공지, 신청방법 kosaf.go.kr 직접 제공(full). 본문 발췌 '신청대상: 뷰티미용학과 재학생' — 전교 공통 문구가 없고 학과 한정 명시라 mismatch(원칙 5). 신청기간 2026.5.22~6.22 경과로 stale(원칙 6)."
+Q030,https://beauty.honam.ac.kr/PDS/1/read/20,top5|exp06,true,full,stale,mismatch,"beauty 236과 동일 본문 미러(자료실 사본). '신청대상: 뷰티미용학과 재학생' 동일 → mismatch, 기간 경과 → stale."
+Q030,https://dental.honam.ac.kr/DepartmentNotice/1/read/385,top5,true,full,stale,match,"ae 60과 동일한 1학기 2차 신청 공지 본문(후반부). 신청방법 kosaf 직접 제공(full), '대한민국 국적 재학생' 전교 공통이라 match. 본문에 '2026년 1학기 학생 신청 기간' 명시 — 회차 종료로 stale."
+Q030,https://enter.honam.ac.kr/notice/1/read/313,top5,true,invalid,stale,mismatch,"신입생·편입생 '국가장학'·가족장학금 신청 안내 — 국가근로장학금과 별개 제도라 invalid(명칭 등가 단정 금지, 원칙 10). 신청기간 2026.3월 경과, 신·편입생 대상."
+Q030,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219,top5,true,invalid,unknown,mismatch,"서울독립유공자후손 장학금 공고 제목 조각, 별개 장학금."
+Q030,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5234,top5,true,invalid,unknown,mismatch,"화성시 꿈드림 장학금 안내 제목 조각, 별개 장학금·지역 한정."
+Q030,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5247,top5,true,invalid,unknown,mismatch,"거창군 지역출신 등록금 지원 안내 제목 조각, 별개 제도·지역 한정."
+Q030,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5254,top5|seed_v3|exp06,true,invalid,unknown,unknown,§9 시험 사례. '2026년 2학기 1차 국가근로장학금 학생 신청기간 안내' — 제목은 정답처럼 보이나 본문이 첨부이미지뿐(원칙 8) → invalid. 기간·대상 문구를 본문에서 확인 불가라 unknown(동일 회차 beauty 236 기준으론 종료 추정이나 본문 미확인).
+Q030,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5255,top5,true,invalid,unknown,mismatch,"청년창업농장학금 선발 안내, 별개 장학금."
+Q031,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/19,top5,true,invalid,current,match,등록금 납부 방법 FAQ(고지서 확인·납부 은행). 분할 납부 가능 여부 정보 없음.
+Q031,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/23,top5|exp06,true,invalid,current,match,"등록금 환불·이연 FAQ, 분할 납부와 무관."
+Q031,https://enter.honam.ac.kr/faq,top5,true,invalid,current,mismatch,"수시 입시 FAQ, 분할 납부 정보 없음. 지원자 대상."
+Q031,https://graduate.honam.ac.kr/AcademicCalendar,top5|exp06,true,full,current,mismatch,"학사일정에 '02-11 ~ 02-13 분할납부 신청기간' 명시 — 분할납부 제도의 존재와 신청 시기를 직접 지지(full, 원칙 2 축 분리). 연간 학사일정 상시 페이지라 current. 대학원 서브도메인 학사일정이라 일반 학부생 질문과 mismatch."
+Q031,https://graduate.honam.ac.kr/Schedule,top5,true,invalid,unknown,mismatch,"전형일정 표 머리글 조각('등록금 납부'), 분할 납부 정보 없음. 대학원 지원자 대상."
+Q031,https://hufdesign.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,invalid,stale,mismatch,"2026 편입생 등록 안내 미러. 분할 납부 정보 없음. 등록 회차 경과, 편입 합격자 대상."
+Q031,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815,top5|exp06,true,invalid,stale,match,"경계: '가상계좌 납부시 … 일시 납부해야 합니다(이체한도로 인해 분할 입금은 불가함)' — 이체(입금) 층위의 제약이지 분할납부 제도 가능 여부가 아니며, 이를 근거로 '분할 납부 불가'라 답하면 대학원 학사일정의 분할납부 신청기간과 모순되는 오답 위험 → 양의 게인 금지(§9 Q037 유형 준용)로 invalid. 2026-1학기 시한부 납부 공지라 stale."
+Q031,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5|exp06,true,invalid,unknown,match,경계: hufdesign 815와 동일한 '분할 입금 불가' 문구 조각 — 동일 논리로 invalid. 청크에 학기·날짜 없어 temporal unknown.
+Q032,https://airline.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,partial,stale,mismatch,"2026 편입생 등록 안내 미러. '등록금고지서는 홈페이지에서 출력' — 확인 경로를 주나 편입 합격 회차 한정·경로 불특정이라 partial. 회차 경과 stale, 편입 합격자 대상 mismatch."
+Q032,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,"기숙사 환불계좌 개인 문의, 무관."
+Q032,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/19,top5|seed_v3|exp06,true,full,current,match,"§9 확정 행. 상시 FAQ가 'HUIS 로그인 > 학생정보 > 등록정보 > 등록금고지서 출력' 확인 경로를 직접 지지 → full. 카테고리 '대학'이고 경로가 전교 공통 안내(inc 2369)와 동일 문구라 match(원칙 5), 상시 FAQ라 current."
+Q032,https://eced.honam.ac.kr/AdmissionNotice/1/read/310,top5,true,partial,stale,mismatch,2026 신입생 추가모집 등록 안내. '등록금 고지서는 합격자조회에서 출력' — 신입 합격자 회차 한정 partial. 등록기간 2026.2월 경과 stale.
+Q032,https://eced.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,partial,stale,mismatch,2026 편입생 등록 안내. airline 311과 동일 본문.
+Q032,https://enter.honam.ac.kr/notice/1/read/310,top5,true,partial,stale,mismatch,2026 신입생 추가모집 등록 안내 미러.
+Q032,https://enter.honam.ac.kr/notice/1/read/311,top5|exp06,true,partial,stale,mismatch,2026 편입생 등록 안내 미러.
+Q032,https://espo.honam.ac.kr/AdmissionNotice/1/read/310,top5,true,partial,stale,mismatch,2026 신입생 추가모집 등록 안내 미러.
+Q032,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/813,top5|exp06,true,partial,stale,mismatch,2026 정시 신입생 등록 안내. '고지서는 합격자조회에서 출력' + 장학 내역 고지서 확인 — 합격자 회차 한정 partial. 등록기간 2026.2.3~5 경과 stale.
+Q032,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5|seed_v3|exp06,true,full,unknown,match,"경계: '등록금 고지서 확인 | HUIS 로그인 > 학생정보 > 등록정보 > 등록금고지서 출력 + 호남대 앱 모바일 조회' — 확인 경로를 완전 제공(full), 대학·대학원 공통이라 match. 문서 지배 성격은 학기별 납부 공지로 추정되나 재료 청크에 학기·날짜 표기가 없어 temporal unknown(Q006과 동일 판단)."
+Q033,https://airline.honam.ac.kr/PDS/1/read/9,top5,true,invalid,unknown,mismatch,항공기 최대 비행시간 자료로 학기당 수강학점과 무관함.
+Q033,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 냉장고 안내로 수강학점과 무관함.
+Q033,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 고민상담 안내로 수강학점과 무관함.
+Q033,https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/5,top5,true,invalid,stale,mismatch,2019년 패션디자인학과 교직이수 FAQ로 학기당 최대 수강학점과 무관함.
+Q033,https://www.honam.ac.kr/ClassLessonApply,top5|seed_v3,true,full,current,match,졸업학점 체계와 학생 유형별 한 학기 최대 수강학점을 18·19학점 또는 21·22학점으로 직접 제시하는 현행 전교 규정.
+Q033,https://www.honam.ac.kr/ExamResult,top5,true,invalid,current,match,재수강 가능 성적과 성적 처리 규정으로 학기당 최대 수강학점은 없음.
+Q033,https://www.honam.ac.kr/GradesRecognition,top5|seed_v3,true,full,current,match,기준 18·19학점과 특정 학생의 3학점 추가를 명시해 최대 21·22학점을 결정적으로 도출할 수 있음(원칙 9).
+Q033,https://www.honam.ac.kr/OSExStuPro,top5,true,partial,current,mismatch,교환학생 학점인정이 입학년도별 학기당 최대 범위 안이라고만 제시하고 숫자가 없으며 특정 대상에 한정됨 → partial.
+Q033,https://www.honam.ac.kr/SeasonSemester,top5,true,partial,current,match,계절학기는 최대 6학점이고 직전 정규학기 포함 24학점 범위라고 제시하지만 일반 정규학기 질문에는 특수 경우 → partial.
+Q034,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 냉장고 안내로 수강신청 정정기한과 무관함.
+Q034,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 고민상담 안내로 수강신청 정정기한과 무관함.
+Q034,https://dorm.honam.ac.kr/PracticalLifePractices,top5,true,invalid,current,mismatch,생활관 외박신고 정정기한으로 수강신청 정정과 다른 절차임.
+Q034,https://espo.honam.ac.kr/UniversitySchedule,top5,true,full,current,match,다가오는 2026년 2학기 수강신청 확인·정정 기간을 9월 2일부터 9일까지로 직접 제시함.
+Q034,https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/5,top5,true,invalid,stale,mismatch,2019년 패션디자인학과 교직이수 FAQ로 수강신청 정정기한과 무관함.
+Q034,https://inc.honam.ac.kr/DepartmentNotice/1/read/2368,top5,true,full,stale,match,2025-2학기 정정 마감일과 시각을 직접 제시하지만 해당 학기가 종료되어 stale.
+Q034,https://robotdrone.honam.ac.kr/DepartmentNotice/1/read/29,top5,true,partial,unknown,match,모든 재적생 대상 정정기간 준수와 공식 확인 경로를 안내하지만 실제 날짜가 본문에 없음 → partial. 시점도 확인 불가.
+Q034,https://www.honam.ac.kr/AcademicCalendar,seed_v3,true,full,current,match,공식 2026년 학사일정이 다가오는 2학기 수강신청 확인·정정 기간을 9월 2일부터 9일까지로 직접 제시함.
+Q035,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,mismatch,생활관 다림질 안내로 성적 이의신청과 무관함.
+Q035,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 이용 안내로 성적 이의신청과 무관함.
+Q035,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급 상황 대응 안내로 성적 이의신청과 무관함.
+Q035,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,mismatch,생활관 호실 청소 안내로 성적 이의신청과 무관함.
+Q035,https://espo.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,성적열람 및 정정 기간만 제시하고 이의신청 대상·제출 경로는 없음 → partial. 해당 기간은 기준일에 종료되어 stale.
+Q035,https://www.honam.ac.kr/ExamResult,top5|seed_v3,true,full,current,match,정정기간 중 담당교수에게 신청하고 직접 신청할 수 없으면 학과장에게 성적정정원을 제출하는 절차를 직접 제시하는 현행 전교 규정.
+Q036,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,mismatch,생활관 다림질 안내로 과목 재수강과 무관함.
+Q036,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 안내로 과목 재수강과 무관함.
+Q036,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급 상황 안내로 과목 재수강과 무관함.
+Q036,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,mismatch,생활관 호실 청소 안내로 과목 재수강과 무관함.
+Q036,https://english.honam.ac.kr/TeachingCourse,top5,true,invalid,stale,mismatch,2021 입학자까지의 교직 선발에서 F학점자를 예외 선발하는 규정으로 F 과목 재수강 절차가 아님.
+Q036,https://enter.honam.ac.kr/faq,top5,true,invalid,unknown,mismatch,입학 지원자용 FAQ 혼합 조각으로 재수강 절차가 없음.
+Q036,https://www.honam.ac.kr/ClassLessonAb,top5,true,invalid,current,match,수강포기라는 제목만 있고 본문 규정이 없어 재수강을 지지하지 못함(원칙 8).
+Q036,https://www.honam.ac.kr/ClassLessonApply,top5,true,partial,current,match,저학년 미수과목을 당해 학기 수강신청에서 우선 재수강하라고 안내하지만 F 과목의 자격·성적 처리 전체는 없음 → partial.
+Q036,https://www.honam.ac.kr/ExamResult,top5|seed_v3,true,partial,current,match,"F를 포함한 C+ 이하 과목의 재수강 자격·시기·성적 처리는 제시하지만, 질문이 요구하는 신청 경로와 실제 조작 절차는 없어 partial이다."
+Q036,https://www.honam.ac.kr/Readmission,top5,true,invalid,current,match,제적자의 재입학 절차로 F 과목 재수강과 다른 제도임.
+Q037,https://chinese.honam.ac.kr/DepartmentNotice/1/read/327,top5,true,invalid,unknown,mismatch,중국어학과 유학·진로 질의 조각으로 졸업증명서 발급과 무관함.
+Q037,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 냉장고 안내로 졸업증명서 발급과 무관함.
+Q037,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 고민상담 안내로 졸업증명서 발급과 무관함.
+Q037,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/29,top5|seed_v3,true,invalid,current,mismatch,충돌: 인터넷 발급 가능 증명서 목록에 졸업증명서를 제외해 공식 증명발급안내의 명시적 가능 판정과 모순됨. 잘못된 양의 게인을 막기 위해 invalid.
+Q037,https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/5,top5,true,invalid,stale,mismatch,2019년 패션디자인학과 교직이수 FAQ로 졸업증명서 발급과 무관함.
+Q037,https://nursing.honam.ac.kr/GraduationSystem,top5,true,invalid,current,mismatch,간호학과 졸업인증 필수항목으로 졸업증명서 발급과 무관함.
+Q037,https://www.honam.ac.kr/BachelorNotice/1/read/5108,top5,true,partial,stale,match,증명서 인터넷 발급 경로를 안내하지만 졸업증명서를 특정하지 않음 → partial. 2026년 1월 집중휴가 기간용 공지라 기준일에는 stale.
+Q037,https://www.honam.ac.kr/ProofIssuanceApply,top5|seed_v3,true,partial,current,match,증명서를 인터넷으로 직접 출력하거나 이메일·팩스로 받을 수 있다고 안내하지만 졸업증명서 대상 여부를 특정하지 않음 → partial.
+Q037,https://www.honam.ac.kr/ProofIssuanceGuide,top5|seed_v3,true,full,current,match,졸업증명서는 졸업식 당일부터 인터넷증명발급이 가능하다고 직접 명시하는 현행 전교 안내.
+Q038,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/29,top5,true,partial,current,mismatch,드림라이프대학 증명서 발급 경로는 안내하지만 수수료 금액이 없음 → partial.
+Q038,https://tkd.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,invalid,current,mismatch,2026년 장학금 제출 증명서 목록으로 증명서 발급 수수료와 무관함.
+Q038,https://www.honam.ac.kr/ProofIssuanceApply,top5|seed_v3,true,full,current,match,재학생·휴학생·수료생·제적생·졸업생의 국문·영문 증명서 수수료와 인터넷 대행·전송·우편요금을 직접 제시하는 현행 전교 안내.
+Q038,https://www.honam.ac.kr/ProofIssuanceGuide,top5,true,invalid,current,match,증명서 종류별 발급 가능 여부와 문의처만 있고 수수료 금액은 없음.
+Q038,https://www.honam.ac.kr/StuIdIssuLink,top5,true,invalid,current,match,학생증 재발급 수수료로 일반 증명서 발급 수수료와 다른 대상임.
+Q039,https://civileng.honam.ac.kr/FrequentlyAskedQuestions/1/read/3,top5,true,invalid,stale,mismatch,2015년 토목환경공학과 취업률·입학상담 안내로 편입 지원 자격과 무관. 과거 학과별 정보이고 일반 편입 지원자 대상이 아님.
+Q039,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/23,top5,true,invalid,current,mismatch,등록금 납부 후 휴학 시 환불·이연 FAQ로 편입 지원 자격과 무관. 재학생 대상 상시 안내.
+Q039,https://enter.honam.ac.kr/faq,top5,true,invalid,current,mismatch,수시모집 FAQ 모음이며 편입 지원 자격 문구가 없음. 제시 본문은 수시 지원자 대상.
+Q039,https://enter.honam.ac.kr/transPDF,top5,true,invalid,current,match,"2026학년도 편입학 모집요강 다운로드 페이지로 대상과 시점은 맞지만, 본문은 목차와 다운로드 링크만 제공하고 실제 지원 자격 claim은 없음(원칙 8)."
+Q039,https://fb.honam.ac.kr/DepartmentCurriculumOutlineOld,top5,true,invalid,stale,mismatch,2026년 이전 축구학과 교과목 개요 조각으로 편입 지원 자격과 무관.
+Q039,https://hotelconvention.honam.ac.kr/InformationForExaminees/1/read/12,top5,true,invalid,unknown,mismatch,호텔컨벤션학과 취업 안내 이미지 링크뿐이며 편입 지원 자격 정보가 없음. 시효를 본문에서 판단할 수 없고 특정 학과 수험생 자료임.
+Q039,https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/3,top5,true,full,stale,match,"2020학년도 편입 FAQ가 '4년제 대학 2학년 수료 또는 전문대학 졸업', 학점은행제 학사과정 66학점 이수를 지원 자격으로 직접 제시해 full. 편입 지원자 대상이라 match이나 2019년 작성·2020학년도 회차 기준이라 stale."
+Q039,https://inc.honam.ac.kr/AdmissionNotice/1/read/312,top5|exp06,true,partial,unknown,match,일반편입·학사편입·의료인력 관련 학과 전문학사학위 소지자 편입 유형을 열거해 자격 범주의 일부만 지지(partial). 편입 지원자 대상이나 청크에 학년도·날짜와 세부 요건이 없음.
+Q039,https://nursing.honam.ac.kr/AdmissionNotice/1/read/312,top5,true,partial,unknown,match,inc 312와 동일한 편입 유형 표 머리글 미러. 전문학사학위 소지자 편입 등 자격 범주의 일부만 지지하며 세부 요건·시점은 확인 불가.
+Q040,https://archi.honam.ac.kr/DepartmentNotice/1/read/155,top5,true,full,stale,match,수시 원서접수가 9월 9일부터 13일 18시까지라고 직접 제시해 full. '수시 원서접수'와 고3 지원자를 명시해 질문 대상과 match하나 2024년 작성된 과거 모집 회차라 stale.
+Q040,https://enter.honam.ac.kr/dataroom/1/read/64,top5,true,invalid,stale,mismatch,2024년 1월 원서접수·면접·등록 일정으로 제시 본문에 수시모집이라는 근거가 없어 질문 초점과 다른 모집 회차. 기간도 경과.
+Q040,https://enter.honam.ac.kr/enterThrough,top5,true,invalid,stale,match,수시 합격자·면접 대상자 발표 목록으로 수시 지원자 대상은 맞지만 원서접수 시작일 정보가 없음. 나열된 2026학년도 발표 회차도 판정일 전에 종료.
+Q040,https://graduate.honam.ac.kr/Schedule,top5|exp06,true,full,stale,mismatch,"원서접수 시작일(2026.6.9)과 종료 시각을 직접 제시해 내용 축은 full. 그러나 일반대학원 전형일정으로 학부 수시 지원자와 mismatch이며, 접수기간도 6.24 종료로 stale."
+Q040,https://korean.honam.ac.kr/AdmissionInformation,top5,true,invalid,unknown,match,한국어학과 수시·정시 모집·지원·경쟁률 표 조각이나 원서접수 시작일은 없음. 수시 지원자 대상은 맞지만 학년도·시점은 청크에서 판단 불가.
+Q040,https://korean.honam.ac.kr/PDS/1/read/3,top5,true,invalid,stale,mismatch,2020년 TOPIK 원서 접수 방법 이미지로 대학 수시 원서접수와 무관하고 과거 자료.
+Q040,https://tf.honam.ac.kr/DepartmentNotice/1/read/60,top5|exp06,true,full,stale,match,2024학년도 수시 원서접수가 9월 11일부터 시작된다고 직접 제시해 full. 수시 지원자 대상이라 match하나 해당 모집 회차는 경과해 stale.
+Q040,https://tf.honam.ac.kr/DepartmentNotice/1/read/61,top5|exp06,true,full,stale,match,2025학년도 수시 원서접수가 9월 9일부터 시작된다고 직접 제시해 full. 수시 지원자 대상이라 match하나 해당 모집 회차는 경과해 stale.
+Q041,https://counsel.honam.ac.kr/PDS/1/read/3,top5,true,partial,stale,mismatch,2024년 특정 학과 계절학기 과목에서 여름 신청기간에 신청하라고만 안내하고 실제 신청 날짜는 없음 → partial.
+Q041,https://counsel.honam.ac.kr/PDS/1/read/4,top5,true,invalid,current,mismatch,청소년 연계전공 신청·취소 기간으로 계절학기 신청과 다른 절차임.
+Q041,https://espo.honam.ac.kr/UniversitySchedule,top5,true,partial,stale,match,동계계절학기 운영 기간만 제시하고 신청 기간은 없음 → partial. 제시된 회차는 기준일에 종료됨.
+Q041,https://gyoyang.honam.ac.kr/SpecialScore,top5,true,invalid,current,match,특별학점은 계절학기 중 신청할 수 없다는 규정으로 계절학기 수강 신청기간과 무관함.
+Q041,https://slp.honam.ac.kr/DepartmentNotice/1/read/372,top5,true,invalid,unknown,mismatch,응시원서와 양성교육 유의사항 조각으로 계절학기 신청과 무관함.
+Q041,https://www.honam.ac.kr/AcademicCalendar,seed_v3,true,partial,current,match,2026년 하계·동계 계절학기 운영 기간은 제시하지만 신청 기간은 없음 → partial. 향후 동계 회차를 포함한 현행 학사일정.
+Q041,https://www.honam.ac.kr/SeasonSemester,top5|seed_v3,true,partial,current,match,계절학기 상시 안내 목적지이지만 수집된 본문에는 구체적인 신청 기간이 없어 partial 유지(코드북 §9 예시 고정).
+Q042,https://beauty.honam.ac.kr/DepartmentNotice/1/read/232,top5,true,full,stale,mismatch,뷰티미용학과 공지에서 2026년 1학기 중간고사 기간을 직접 제시하지만 기준일에 종료되었고 학과 대상 자료임.
+Q042,https://beauty.honam.ac.kr/UniversitySchedule,top5,true,full,stale,mismatch,뷰티미용학과 학사일정에서 2026년 1학기 중간고사 기간을 직접 제시하지만 기준일에 종료되었고 학과 서브도메인 자료임.
+Q042,https://dorm.honam.ac.kr/Notice/1/read/247,top5,true,partial,stale,mismatch,생활관 독서실 운영 종료일로 1학기 중간고사 종료일을 일부 확인할 수 있지만 시작일은 없고 기간도 종료됨 → partial.
+Q042,https://ec.honam.ac.kr/DepartmentNotice/1/read/145,top5,true,invalid,stale,mismatch,2024-2학기 중간고사 대비 프로그램의 과거 상품 수령 안내로 시험 기간 날짜가 없음.
+Q042,https://inc.honam.ac.kr/UniversitySchedule,top5,true,full,stale,mismatch,컴퓨터공학과 학사일정에서 2026년 1학기 중간고사 기간을 직접 제시하지만 기준일에 종료되었고 학과 서브도메인 자료임.
+Q042,https://pt.honam.ac.kr/DepartmentNotice/1/read/215,top5,true,invalid,stale,mismatch,2023년 물리치료사 채용 공고로 중간고사 기간과 무관함.
+Q042,https://sw.honam.ac.kr/UniversitySchedule,top5,true,full,stale,mismatch,소프트웨어학과 학사일정에서 2026년 1학기 중간고사 기간을 직접 제시하지만 기준일에 종료되었고 학과 서브도메인 자료임.
+Q042,https://www.honam.ac.kr/AcademicCalendar,seed_v3,true,full,current,match,공식 2026년 학사일정이 1학기와 다가오는 2학기 중간고사 기간을 모두 직접 제시하는 현행 전교 자료.
+Q043,https://dreamlife.honam.ac.kr/ScholarshipSystem,top5,true,partial,current,match,가족장학금 신청 담당을 '학생과'로 명시하고 문의처를 제공하지만 사무실 위치는 없음 → partial. 입학 후 학생 대상 상시 장학 안내라 match/current.
+Q043,https://enter.honam.ac.kr/scholarship,top5,true,partial,current,match,"가족장학금 신청 담당을 '학생지원팀'으로 명시하고 문의처를 제공하지만 위치는 없음 → partial. 입학 후 장학 안내로 질문 대상과 match, 상시 페이지라 current."
+Q043,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/815,top5|exp06,true,partial,stale,match,장학금 문의 부서를 학생지원팀으로 직접 제시하지만 위치는 없음 → partial. 문의 표는 전교 공통 대상이라 match. 2026-1학기 등록 공지의 일부로 해당 회차가 끝나 stale.
+Q043,https://inc.honam.ac.kr/DepartmentNotice/1/read/2369,top5|exp06,true,partial,unknown,match,장학금 문의 부서를 학생과로 제시하지만 위치는 없음 → partial. 전교 공통 문의 표라 match이나 청크에 학기·날짜가 없어 temporal unknown.
+Q043,https://www.honam.ac.kr/CamPhNum,top5|exp06,true,partial,current,match,교내전화번호가 장학·학자금 대출 문의처를 제공해 담당 창구 식별을 일부 돕지만 부서명·사무실 위치는 없음 → partial. 전교 공통 상시 안내.
+Q043,https://www.honam.ac.kr/CampusMap,top5,true,invalid,current,match,"상지관(3호관)에 학생처가 있다고 안내하나, 판정 재료 안에서 학생처와 장학 담당 학생지원팀의 등가·소속 관계가 확인되지 않아 위치 답으로 사용할 수 없음(원칙 10)."
+Q043,https://www.honam.ac.kr/ProofIssuanceGuide,top5|exp06,true,partial,current,match,장학금 수혜증명서 문의 담당을 학생지원팀으로 명시하고 문의처를 제공하지만 사무실 위치는 없음 → partial. 전교 공통 상시 안내.
+Q043,https://www.honam.ac.kr/Scholarship_SchFees/1/read/5219,top5,true,invalid,unknown,mismatch,서울독립유공자후손 장학금 선발 공고 제목 조각으로 교내 장학 담당 부서 위치와 무관. 시점은 본문에서 판단 불가하고 특정 장학 대상 자료.
+Q044,https://dental.honam.ac.kr/DepartmentNotice/1/read/382,top5,true,partial,unknown,match,교무학사과의 업무별 전화번호 여러 개를 제시하지만 교무처 대표번호 하나를 특정하지는 않음 → partial. 공지 시점은 본문에서 확인 불가.
+Q044,https://inc.honam.ac.kr/DepartmentNotice/1/read/2368,top5,true,partial,stale,match,교무학사과의 업무별 전화번호 여러 개를 제시하지만 교무처 대표번호 하나를 특정하지는 않음 → partial. 2025-2학기 공지라 stale.
+Q044,https://robotdrone.honam.ac.kr/DepartmentProfessor,top5,true,invalid,current,mismatch,교무처장 개인 교수실 연락처로 교무처 사무실 문의번호가 아님.
+Q044,https://slp.honam.ac.kr/IndustryAcademiaPartners,top5,true,invalid,unknown,mismatch,언어치료학과 산학협력기관 전화번호 목록으로 교무처와 무관함.
+Q044,https://www.honam.ac.kr/CamPhNum,top5|seed_v3,true,invalid,current,match,본문에 '교무처 연락처' 표제만 있고 실제 전화번호가 없어 질문을 지지하지 못함(원칙 8).
+Q044,https://www.honam.ac.kr/CampusMap,top5,true,invalid,current,match,교무처가 있는 건물과 산하 센터만 제시하고 전화번호는 없음.
+Q044,https://www.honam.ac.kr/ProofIssuanceApply,top5,true,full,current,match,교무처 교무학사팀 문의번호를 직접 제시하는 현행 전교 증명발급 안내.
+Q044,https://www.honam.ac.kr/ProofIssuanceGuide,top5,true,full,current,match,교무처 학사지원팀 문의번호를 직접 제시하는 현행 전교 안내.
+Q045,https://admin.honam.ac.kr/NonsubjectRoadmap,top5,true,invalid,current,mismatch,행정학과 비교과 로드맵의 '도서관 이용 교육' 항목으로 도서관 운영시간 정보가 없음. 특정 학과 교육과정 대상.
+Q045,https://aibigdata.honam.ac.kr/DepartmentNews/1/read/4,top5|exp06,true,invalid,stale,match,2022년 도서관 이용교육 실시와 3층 전자관 위치만 안내하며 운영시간은 없음. 도서관 이용자 대상 내용이나 과거 행사.
+Q045,https://civileng.honam.ac.kr/FrequentlyAskedQuestions/1/read/3,top5,true,invalid,stale,mismatch,2015년 토목환경공학과 취업률 FAQ로 도서관 운영시간과 무관.
+Q045,https://dreamlife.honam.ac.kr/FrequentlyQuestions/1/read/23,top5,true,invalid,current,match,등록금 납부 후 휴학 시 환불·이연 FAQ로 도서관 운영시간과 무관. 일반 재학생 대상 상시 안내.
+Q045,https://enter.honam.ac.kr/faq,top5,true,invalid,current,mismatch,수시 입시 FAQ 모음으로 도서관 운영시간 정보가 없음. 지원자 대상.
+Q045,https://www.honam.ac.kr/CampusPanorama/1/read/28,top5,true,invalid,current,match,학교 도서관 사진·전경 안내뿐이며 운영시간은 없음. 전교 구성원 대상 시설 페이지.
+Q045,https://www.honam.ac.kr/Classroom,top5|exp06,true,invalid,current,match,강의실 이용시간이며 도서관 운영시간이 아님. 다른 시설 시간을 답으로 쓰면 오답이라 invalid.
+Q045,https://www.honam.ac.kr/ConvFacility,top5|exp06,true,invalid,current,match,교내 서점 운영시간으로 도서관과 다른 시설.
+Q045,https://www.honam.ac.kr/FSeminarRoom,top5,true,invalid,current,match,4호관 강당 이용시간으로 도서관과 다른 시설.
+Q045,https://www.honam.ac.kr/MedAsCenter,top5,true,invalid,current,match,의료지원센터 운영시간으로 도서관과 다른 시설.
+Q045,https://www.honam.ac.kr/StuConCenter,top5|exp06,true,invalid,current,match,학생상담센터 운영시간으로 도서관과 다른 시설.
+Q046,https://culinary.honam.ac.kr/PracticeAlbum/1/read/110,top5,true,invalid,stale,mismatch,2025년 외식조리학과 스터디 조리 메뉴로 학생식당 식단과 무관함.
+Q046,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 위치와 시설 확인 경로만 안내하고 학생식당 메뉴 확인 위치는 없음.
+Q046,https://dorm.honam.ac.kr/DormitoryInquiry/1/read/5424,top5,true,invalid,current,mismatch,생활관 환불계좌 변경을 묻는 개인 문의로 학생식당 메뉴와 무관함.
+Q046,https://dorm.honam.ac.kr/RestaurantGuide,top5,true,partial,current,mismatch,생활관 식당 운영시간만 제시하고 메뉴는 없으며 main 학생식당 질문과 대상도 다름 → partial.
+Q046,https://dorm.honam.ac.kr/TodayDiet,top5,true,full,current,mismatch,생활관 금주의식단을 확인하는 목적지 페이지지만 판정 시점에는 등록된 식단이 없고 main 학생식당과 대상이 다름.
+Q046,https://www.honam.ac.kr/Cafeteria_Diet,top5|seed_v3,true,full,current,match,공식 교내식당·식단 목적지 페이지가 학생식당 메뉴를 확인할 위치 질문에 직접 답함.
+Q046,https://www.honam.ac.kr/CampusMap,top5,true,invalid,current,match,학생식당의 건물 위치만 제시하고 메뉴 확인 경로는 없음.
+Q046,https://www.honam.ac.kr/ConvFacility,top5,true,invalid,current,match,학생식당 위치·운영시간·전화번호만 제시하고 메뉴 확인 경로는 없음.
+Q047,https://airline.honam.ac.kr/PDS/1/read/20,top5,true,invalid,stale,mismatch,2024-1학기 항공서비스학과 수업 시간표로 통학버스와 무관함.
+Q047,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/819,top5,true,partial,unknown,match,통학버스 7호차의 일부 출발·경유 시각을 직접 제시하지만 전체 노선 시간표는 아님 → partial. 공지 시점은 본문에서 확인 불가.
+Q047,https://nutrition.honam.ac.kr/StudentNotice/1/read/289,top5,true,invalid,stale,mismatch,종료된 2026-1학기 식품영양학과 수업 시간표로 통학버스와 무관함.
+Q047,https://sw.honam.ac.kr/DepartmentNotice/1/read/29,top5,true,invalid,stale,mismatch,2020-2학기 소프트웨어학과 수업 시간표로 통학버스와 무관함.
+Q047,https://www.honam.ac.kr/CamShuttlebus,top5,true,invalid,current,match,교내 건물 사이를 운행하는 셔틀버스 시간표로 교외 통학버스와 다른 서비스임.
+Q047,https://www.honam.ac.kr/SchbusGuideSchedule,top5|seed_v3,true,full,current,match,공식 통학버스 안내가 호차별 출발장소·출발시각·경유지와 경유시각을 전체 노선에 걸쳐 직접 제시함.
+Q048,https://chinese.honam.ac.kr/DepartmentNotice/1/read/329,top5,true,partial,stale,match,2018학년도 신입생은 1월 중 생활관 홈페이지에서 신청한다고 안내하지만 재학생·복학생 경로는 없고 과거 회차임 → partial.
+Q048,https://chinese.honam.ac.kr/DepartmentNotice/1/read/331,top5,true,partial,stale,match,2018학년도 신입생 기숙사 신청기간만 제시하고 신청 경로는 없으며 과거 회차임 → partial.
+Q048,https://dorm.honam.ac.kr/ApplicationPassageInquiry,top5|seed_v3,true,full,current,match,"신입생은 생활관 홈페이지 입사신청 메뉴, 재학생·복학생은 종합정보시스템 생활관 정보에서 신청하는 경로를 구분해 직접 제시하는 현행 안내."
+Q048,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,match,생활관 다림질 안내로 입사 신청 절차와 무관함.
+Q048,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,match,생활관 식당 이용 안내로 입사 신청 절차와 무관함.
+Q048,https://dorm.honam.ac.kr/JG_JoinGuidance,seed_v3,true,partial,current,match,합격 후 입사 시 제출서류와 준비물·입사일 확인 경로를 안내하지만 입사 신청 방법 자체는 없음 → partial.
+Q048,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,match,생활관 위급 상황 안내로 입사 신청 절차와 무관함.
+Q048,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,match,생활관 호실 청소 안내로 입사 신청 절차와 무관함.
+Q048,https://enter.honam.ac.kr/faq,top5,true,partial,current,match,신입생은 매년 1월 중 생활관 홈페이지에서 신청한다고 안내하지만 재학생·복학생 경로와 구체 회차 일정은 없음 → partial.
+Q048,https://espo.honam.ac.kr/AdmissionNotice/1/read/311,top5,true,partial,stale,match,2026학년도 신입생은 생활관 홈페이지에서 신청한다고 안내하지만 해당 1학기 입학 회차가 종료되었고 다른 학생 경로는 없음 → partial.
+Q048,https://hufdesign.honam.ac.kr/DepartmentNotice/1/read/813,top5,true,full,stale,match,2026학년도 신입생의 신청기간·대상·생활관 홈페이지 신청방법·문의처를 모두 제시하지만 해당 회차가 종료되어 stale.
+Q049,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,mismatch,생활관 세탁실 다림질 안내로 예비군 연기 신청과 무관. 생활관 입사자 대상.
+Q049,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 이용 안내로 예비군 연기 신청과 무관. 생활관 입사자 대상.
+Q049,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급상황 연락 안내로 예비군 연기 신청과 무관. 생활관 입사자 대상.
+Q049,https://dorm.honam.ac.kr/ResidentialLiving,top5,true,invalid,current,mismatch,생활관 호실 청소·생활수칙으로 예비군 연기 신청과 무관. 생활관 입사자 대상.
+Q049,https://enter.honam.ac.kr/faq,top5|exp06,true,invalid,current,mismatch,수시 입시 FAQ 모음으로 예비군 연기 신청 정보가 없음. 지원자 대상.
+Q049,https://vcd.honam.ac.kr/AdmissionNotice/1/read/313,top5|exp06,true,invalid,stale,mismatch,"2026-1학기 신·편입생 국가·가족장학금 신청 안내로 예비군 연기와 무관. 신청기간 경과, 신·편입생 장학 대상."
+Q050,https://dorm.honam.ac.kr/Clothing,top5,true,invalid,current,mismatch,생활관 세탁실 다림질 안내로 축제 일정과 무관. 생활관 입사자 대상.
+Q050,https://dorm.honam.ac.kr/Diet,top5,true,invalid,current,mismatch,생활관 식당 이용 안내로 축제 일정과 무관. 생활관 입사자 대상.
+Q050,https://dorm.honam.ac.kr/OtherLife,top5,true,invalid,current,mismatch,생활관 위급상황 연락 안내로 축제 일정과 무관. 생활관 입사자 대상.
+Q050,https://espo.honam.ac.kr/UniversitySchedule,top5,true,invalid,current,match,전교 학사일정 일부로 노동절·어린이날·수업일수·공휴일만 있고 축제 항목은 없음.
+Q050,https://gyoyang.honam.ac.kr/AcademicCalendar,top5,true,invalid,current,match,전교 학사일정 조각에 제헌절만 있고 축제 일정은 없음.
+Q050,https://hotelconvention.honam.ac.kr/InformationForExaminees/1/read/12,top5,true,invalid,unknown,mismatch,"호텔컨벤션학과 취업 안내 이미지 링크로 축제 일정과 무관. 시점 판단 불가, 특정 학과 수험생 대상."
+Q050,https://hufdesign.honam.ac.kr/FrequentlyAskedQuestions/1/read/1,top5,true,invalid,stale,mismatch,2019년 패션디자인학과 입학 실기 FAQ로 축제 일정과 무관. 특정 학과 지원자 대상 과거 자료.
+Q050,https://tkd.honam.ac.kr/UniversitySchedule,top5,true,invalid,current,match,espo 학사일정과 동일한 전교 일정 미러로 축제 항목이 없음.
