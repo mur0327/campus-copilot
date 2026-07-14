@@ -12,6 +12,7 @@ alembic/versions/*.pyc
 TODO.md
 NOTE.md
 eval/results/
+tmp/
 
 # Third-party journal submission guides/templates kept for local reference only.
 docs/paper/guide/01-논문투고안내.md
