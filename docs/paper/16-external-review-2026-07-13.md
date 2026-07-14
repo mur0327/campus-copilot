@@ -5,6 +5,9 @@
 리뷰 5 원문(195줄)은 `tmp/qrel-v3-external-review-2026-07-13.md`(비추적)에 있고, 리뷰 6은 대화로만 수신되어 요지를 본 문서에 수록한다.
 v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-criteria.md), 도구 구현 계약은 [docs/sessions/2026-07-14-qrel-v4-codex-instructions.md](../sessions/2026-07-14-qrel-v4-codex-instructions.md)다.
 
+**2026-07-14 감사 범위 변경**: §4의 v4 절차 문구와 §5의 저자 감사 범위는 사람 감사 시작 전에 [17-qrel-v4-b2-audit-protocol.md](17-qrel-v4-b2-audit-protocol.md)로 대체됐다.
+아래 내용은 리뷰 6 승인 당시의 역사 기록으로 보존한다.
+
 ## 1. 리뷰 5 판정 요지
 
 결론: "방향은 바로잡았지만 검색 재채점의 기초로는 불합격, v3는 동결 보존하고 v4로 발행하라."

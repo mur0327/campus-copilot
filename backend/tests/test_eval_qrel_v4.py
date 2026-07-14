@@ -543,3 +543,40 @@ def test_sheet_masks_phone_and_email_and_stays_blind():
     assert "062-940-1234" not in document
     assert "author@example.com" not in document
     assert all(word not in document.lower() for word in ("mode", "rank", "score"))
+
+
+def test_audit_sheet_adds_bundle_timers_without_changing_judgment_rows():
+    pages = [page("Q001", "https://example.test/a", grade="invalid", judged="false")]
+    chunks = [
+        evidence(
+            "Q001",
+            "https://example.test/a",
+            "c1",
+            content_hash="hash",
+            judged="false",
+        )
+    ]
+    questions = {"Q001": {"id": "Q001", "question": "문의처는 어디인가요?"}}
+    records = {
+        "c1": ChunkRecord(
+            chunk_id="c1",
+            canonical_url="https://example.test/a",
+            title="연락처",
+            menu_path="안내",
+            chunk_index=0,
+            content="본문",
+            content_hash="hash",
+        )
+    }
+    audit_ids = {
+        "P|Q001|https://example.test/a",
+        "E|Q001|c1",
+    }
+
+    document = render_sheet(pages, chunks, questions, records, audit_ids=audit_ids)
+
+    assert 'data-timed="true"' in document
+    assert "묶음 시작" in document
+    assert "완료 0/1묶음" in document
+    assert document.count('class="judge judgment-row" data-kind="page"') == 1
+    assert document.count('class="judge judgment-row" data-kind="evidence"') == 1

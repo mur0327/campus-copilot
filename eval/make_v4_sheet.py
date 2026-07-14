@@ -85,6 +85,11 @@ h3 { margin: 0; font-size: 1.05rem; }
 .content { padding: .65rem .8rem; white-space: pre-wrap; word-break: break-word; font-size: .88rem; }
 .judge { margin: .8rem; padding: .8rem 1rem; border: 2px solid #2e4d72; border-radius: 8px; background: #fbfdff; }
 .judge-title { margin-bottom: .45rem; font-weight: 800; }
+.bundle-timer { margin-top: .6rem; }
+.bundle-timer button { margin-right: .5rem; padding: .25rem .55rem; border: 1px solid #6d7890;
+  border-radius: 5px; background: #fff; cursor: pointer; }
+.timing-summary { margin-top: .8rem; padding: .65rem .8rem; border: 1px solid #9aa3b2;
+  border-radius: 7px; background: #fff; }
 .axis { margin: .45rem 0; }
 .axis-title { display: inline-block; min-width: 9.5rem; font-weight: 700; }
 label { display: inline-block; margin: .15rem .9rem .15rem 0; }
@@ -105,6 +110,46 @@ textarea { width: 100%; min-height: 3.2rem; resize: vertical; }
 """
 
 SHEET_JS = """
+function formatElapsed(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}분 ${String(remainder).padStart(2, '0')}초`;
+}
+
+function updateTimingSummary() {
+  const summary = document.getElementById('timing-summary');
+  if (!summary) return;
+  const cards = Array.from(document.querySelectorAll('.page-card[data-timed="true"]'));
+  const elapsed = cards.map((card) => Number(card.dataset.elapsedSeconds || 0)).filter(Boolean);
+  if (!elapsed.length) {
+    summary.textContent = `완료 0/${cards.length}묶음 · 각 묶음의 시작·완료 버튼으로 시간을 잽니다.`;
+    return;
+  }
+  const ordered = elapsed.slice().sort((a, b) => a - b);
+  const middle = Math.floor(ordered.length / 2);
+  const median = ordered.length % 2
+    ? ordered[middle]
+    : Math.round((ordered[middle - 1] + ordered[middle]) / 2);
+  summary.textContent = `완료 ${elapsed.length}/${cards.length}묶음 · 중앙 ${formatElapsed(median)}`
+    + ` · 개별 ${elapsed.map(formatElapsed).join(', ')}`;
+}
+
+function toggleBundleTimer(button) {
+  const card = button.closest('.page-card');
+  const output = card.querySelector('.bundle-time');
+  if (!card.dataset.timerStarted) {
+    card.dataset.timerStarted = String(Date.now());
+    button.textContent = '묶음 완료';
+    output.textContent = '측정 중';
+    return;
+  }
+  const elapsed = Math.max(1, Math.round((Date.now() - Number(card.dataset.timerStarted)) / 1000));
+  card.dataset.elapsedSeconds = String(elapsed);
+  button.disabled = true;
+  output.textContent = formatElapsed(elapsed);
+  updateTimingSummary();
+}
+
 function picked(section, field) {
   const item = section.querySelector(`input[data-field="${field}"]:checked`);
   return item ? item.value : null;
@@ -439,6 +484,7 @@ def render_page(
     page_control: bool,
     page_index: int,
     evidence_counter: list[int],
+    show_timer: bool = False,
 ) -> str:
     canonical_url = page["canonical_url"]
     first = chunks[0][1]
@@ -450,12 +496,18 @@ def render_page(
             control_index = evidence_counter[0]
         rendered_chunks.append(render_chunk(pool_row, record, control_index=control_index))
     page_judgment = render_page_judgment(page["question_id"], canonical_url, page_index) if page_control else ""
+    timer = ""
+    if show_timer and page_control:
+        timer = """
+    <div class="bundle-timer"><button type="button" onclick="toggleBundleTimer(this)">묶음 시작</button>
+      <span class="bundle-time muted">미측정</span></div>"""
     return f"""
-<section class="page-card">
+<section class="page-card"{' data-timed="true"' if timer else ""}>
   <div class="page-head">
     <h3><span class="chip">{_text(site_label(canonical_url))}</span>{_text(mask_pii(first.title))}</h3>
     <div class="url">{_text(mask_pii(canonical_url))}</div>
     {f'<div class="muted">메뉴: {_text(mask_pii(first.menu_path))}</div>' if first.menu_path else ""}
+    {timer}
   </div>
   {"".join(rendered_chunks)}
   {page_judgment}
@@ -576,6 +628,7 @@ def render_sheet(
                     page_control=page_control,
                     page_index=page_counter,
                     evidence_counter=evidence_counter,
+                    show_timer=audit_ids is not None,
                 )
             )
 
@@ -606,6 +659,12 @@ def render_sheet(
     <li>이 시트에는 검색 방식·순위·점수가 표시되지 않습니다.</li>
   </ul>
 </div>"""
+    timing_summary = ""
+    if audit:
+        timing_summary = (
+            f'<div id="timing-summary" class="timing-summary">완료 0/{page_counter}묶음 · '
+            "각 묶음의 시작·완료 버튼으로 시간을 잽니다.</div>"
+        )
     output = f"""<!doctype html>
 <html lang="ko">
 <head>
@@ -618,6 +677,7 @@ def render_sheet(
 <h1>{title}</h1>
 <p>판정자 <input type="text" id="judge-name"> · 판정일 <input type="text" id="judge-date"></p>
 {guide}
+{timing_summary}
 {"".join(sections)}
 <button type="button" class="export-btn" onclick="exportJudgments()">판정 JSON 내보내기</button>
 <script>{SHEET_JS}</script>

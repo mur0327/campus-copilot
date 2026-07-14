@@ -1,6 +1,6 @@
 # qrel v4 판정 기준 (2026-07-14)
 
-외부 리뷰 5·6([docs/paper/16](../docs/paper/16-external-review-2026-07-13.md))의 승인 조건을 집행하는 판정 규칙이다.
+외부 리뷰 5·6([docs/paper/16](../docs/paper/16-external-review-2026-07-13.md))의 승인 조건과 B2 사람 감사 프로토콜([docs/paper/17](../docs/paper/17-qrel-v4-b2-audit-protocol.md))을 집행하는 판정 규칙이다.
 v3(gold_sources_v3.csv, question_judgments_v3.csv, qrel-v3-*.md)는 불변 보존하고 v4를 새 파일로 발행한다.
 판정 시작 전에 이 문서를 동결하며, 판정 중 규칙이 바뀌면 변경 내용과 시점을 §11에 기록하고 이미 판정한 행을 재검토한다.
 도구 스키마는 [docs/sessions/2026-07-14-qrel-v4-codex-instructions.md](../docs/sessions/2026-07-14-qrel-v4-codex-instructions.md)와 합치해야 한다.
@@ -134,13 +134,19 @@ pool_support는 page 판정에서 자동 파생한다(수기 동결 금지).
 
 ## 8. 판정 절차
 
-- 1차 초벌: LLM(Claude)이 이 코드북으로 pool 전량을 판정한다. 필수분(insufficient 18문항의 3모드 합집합 + support 양성 abstain 7문항의 문서 행)을 먼저 끝낸다.
-- 2차 감사: 저자가 초벌 라벨을 보지 않은 상태로 먼저 판정한 뒤 대조한다. 대상은 모든 신규 full/partial, 모든 v3→v4 변경 행, 모든 경계 표시 행, stale/mismatch로 배포 판정이 달라지는 행, invalid 중 층화 무작위 표본(모드·순위·질문 유형을 섞어 20~30쌍)이다.
-- 감사에서 초벌 오류 패턴이 발견되면 같은 패턴의 층만 확대 검토한다.
+- 1차 초벌: LLM이 이 코드북으로 pool 전량을 판정한다. 필수분(insufficient 18문항의 3모드 합집합 + support 양성 abstain 7문항의 문서 행)을 먼저 끝낸다. 실제 판정자·모델 분담은 primary JSON의 judge 필드에 보존한다.
+- 2차 감사 단위는 개별 행이 아니라 질문–페이지 묶음이다. 묶음을 고르면 페이지 축과 해당 evidence candidate를 같은 자료 읽기에서 함께 판정한다.
+- 표적 감사는 v3→v4 페이지 변경, `경계:` 표시, temporal·audience가 expected behavior에 영향을 주는 사례, 충돌, invariant 후보, composition 근거, §9의 사전 쟁점 페이지를 전량 포함한다.
+- 나머지에서는 LLM-positive와 LLM-invalid 묶음을 모두 고정 시드 층화 표본으로 뽑는다. 주요 층은 순위(1–2/3–5/seed), 모드 출현(단일/복수/seed), 문서 성격(일반/특수)이며 질문 유형과 출처 범위를 보조 조건으로 맞춘다.
+- 최종 표본 수는 초기 라벨과 선정 사유를 숨긴 10묶음 시간 파일럿의 중앙 시간을 잰 뒤, 불일치를 열기 전에 3~5시간 예산에 맞춰 동결한다. 파일럿 묶음은 최종 표본에 포함한다.
+- 사람 검토자는 LLM 초기 라벨, 선정 사유, mode·rank·score와 v3 판정을 보지 않는다. 완전한 독립 블라인드가 아니라 초기 라벨 비공개 사람 감사로 기술한다.
+- 중대한 불일치는 support grade, temporal validity, audience scope, evidence 지지 또는 expected behavior가 바뀌는 경우다. 같은 사전 정의 유형에서 2건 이상이거나 1건의 체계적 코드북 오적용이면 해당 유형을 확대한다. 독립 유형 여러 곳이면 같은 크기의 표본을 추가하고, 전역 오류일 때만 후보 전량 감사를 검토한다.
+- page·evidence 불일치 조정 뒤 expected behavior와 reason은 50문항 전량을 사람이 검토한다. pool_support는 최종 page qrel에서 자동 파생한다.
 - 불일치는 조정(adjudication) 기록을 남기고 최종 결정권은 저자에게 있다.
-- 감사 표본은 선택 표본이므로 κ를 신뢰도로 보고하지 않고 변경 건수와 대표 불일치를 기술한다.
+- 표적 감사와 층화 표본 감사는 분리해 보고한다. 둘을 합친 일치율이나 κ를 신뢰도로 보고하지 않고 변경 건수, 대표 오류 유형, 확대 여부를 기술한다.
+- 초벌 qrel과 감사 후 qrel의 지표·검색 방식 순위·헤드라인 결론을 비교하고, 결과가 바뀌면 영향을 준 유형을 확대한다.
 - 원본 계보: `qrel-v4-primary-initial.json`(초벌 전량), `qrel-v4-secondary-audit.json`(감사 행만), `qrel-v4-adjudicated.json`(최종), `qrel-v4-manifest.sha256`. v3 교수 판정 JSON은 v4 계보에 넣지 않는다(역사 자료).
-- 논문 서술은 [docs/paper/16 §4](../docs/paper/16-external-review-2026-07-13.md)의 문구를 따른다(LLM 초벌 + 사람 검증·확정 절차임을 명시, 금지 표현 준수).
+- 세부 선정·확대·보고 규칙과 논문 서술은 [docs/paper/17](../docs/paper/17-qrel-v4-b2-audit-protocol.md)을 따른다.
 
 ## 9. 초벌 출발값 (v3 대비 사전 확정 변경, 2026-07-14 저자 승인)
 
@@ -176,9 +182,11 @@ pool_support는 page 판정에서 자동 파생한다(수기 동결 금지).
 ## 11. 변경 기록
 
 - 2026-07-14: 최초 동결.
+- 2026-07-14: 사람 감사 시작 전 B2 프로토콜로 변경. 모든 양성 전량 감사 대신 사전 정의 고위험 묶음 전량 + 나머지 양성·음성 층화 표본 + 질문 행동 50문항 전량 검토로 동결했다. 초기 라벨 비공개 10묶음 시간 파일럿과 유형별 확대 규칙을 추가했다.
 
 ## 12. 산출물
 
 - `eval/gold_pages_v4.csv`, `eval/gold_evidence_v4.csv`, `eval/question_judgments_v4.csv`, `eval/target_sources_v4.csv`
 - `eval/qrel-v4-primary-initial.json`, `eval/qrel-v4-secondary-audit.json`, `eval/qrel-v4-adjudicated.json`, `eval/qrel-v4-manifest.sha256`
+- 감사 선정 도구: `eval/select_v4_audit.py`(고정 시드·질문–페이지 묶음)
 - 재채점 결과: `eval/results/scores-v4-*.json`
