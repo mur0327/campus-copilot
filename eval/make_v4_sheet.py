@@ -39,7 +39,6 @@ from eval.run_questions import content_signature, normalize_url  # noqa: E402
 QUESTIONS_PATH = REPO_ROOT / "eval" / "questions.csv"
 DEFAULT_OUT_PATH = RESULTS_DIR / "qrel-v4-judgment-sheet.html"
 DEFAULT_AUDIT_OUT_PATH = RESULTS_DIR / "qrel-v4-audit-sheet.html"
-CONTENT_CHARS = 1500
 JUDGMENT_SCHEMA_VERSION = "qrel-v4-judgment-1"
 
 PHONE_RE = re.compile(
@@ -162,7 +161,7 @@ function setBundleControlsEnabled(card, enabled) {
     .forEach((control) => { control.disabled = !enabled; });
 }
 
-function bundleIsComplete(card) {
+function bundleFieldsComplete(card) {
   const page = card.querySelector('.judgment-row[data-kind="page"]');
   if (!page || !picked(page, 'support_grade') || !picked(page, 'temporal_validity')
       || !picked(page, 'audience_scope')) return false;
@@ -171,6 +170,21 @@ function bundleIsComplete(card) {
       const grade = picked(section, 'evidence_grade');
       return grade === 'none' || Boolean(grade && picked(section, 'evidence_type'));
     });
+}
+
+function bundleConsistencyError(card) {
+  const page = card.querySelector('.judgment-row[data-kind="page"]');
+  const support = picked(page, 'support_grade');
+  const evidenceGrades = Array.from(card.querySelectorAll('.judgment-row[data-kind="evidence"]'))
+    .map((section) => picked(section, 'evidence_grade'));
+  const hasPositiveEvidence = evidenceGrades.some((grade) => grade === 'full' || grade === 'partial');
+  if ((support === 'full' || support === 'partial') && !hasPositiveEvidence) {
+    return '완전·일부 페이지에는 최소 한 개의 양성 청크 근거가 필요합니다.';
+  }
+  if (support === 'invalid' && hasPositiveEvidence) {
+    return '무관 페이지의 청크 근거는 모두 근거 아님이어야 합니다.';
+  }
+  return null;
 }
 
 function startBundleTimer(button) {
@@ -201,7 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.addEventListener('change', (event) => {
     const card = event.target.closest('.page-card[data-timed="true"]');
-    if (card && bundleIsComplete(card)) finishBundleTimer(card);
+    if (!card || !bundleFieldsComplete(card)) return;
+    const error = bundleConsistencyError(card);
+    if (error) {
+      card.querySelector('.bundle-time').textContent = error;
+      return;
+    }
+    finishBundleTimer(card);
   });
 });
 
@@ -227,8 +247,17 @@ function exportJudgments() {
     questions: [],
   };
   const incomplete = [];
+  const contradictions = [];
 
   if (result.audit) {
+    document.querySelectorAll('.page-card[data-timed="true"]').forEach((card) => {
+      const error = bundleFieldsComplete(card) ? bundleConsistencyError(card) : null;
+      if (error) contradictions.push(`${card.dataset.pageRowId}: ${error}`);
+    });
+    if (contradictions.length) {
+      alert('페이지와 청크 근거 판정이 모순됩니다:\\n' + contradictions.join('\\n'));
+      return;
+    }
     result.audit_timing = timingSnapshot();
     result.audit_timing.bundles
       .filter((bundle) => !bundle.elapsed_seconds)
@@ -495,10 +524,7 @@ def render_chunk(
     control_index: int | None,
 ) -> str:
     row_id = evidence_row_id(pool_row["question_id"], pool_row["chunk_id"])
-    content = mask_pii(record.content)
-    shown = content[:CONTENT_CHARS]
-    if len(content) > CONTENT_CHARS:
-        shown += " … (이하 생략 — 청크가 더 이어짐)"
+    shown = mask_pii(record.content)
     control = ""
     if control_index is not None:
         prefix = f"e-{control_index}"
@@ -770,6 +796,8 @@ def render_sheet(
       학과 사이트는 불일치의 신호지만, 본문이 전교 공통임을 보여주면 일치입니다.</li>
     <li><strong>청크 근거</strong>: 청크 자체가 질문에 필요한 주장을 지지하는지 봅니다.
       양성 페이지 안에도 근거가 아닌 청크가 있을 수 있고, 무관 페이지의 청크는 근거 아님입니다.</li>
+    <li>완전·일부 페이지에는 최소 한 개의 양성 청크 근거가 필요합니다.
+      무관 페이지의 청크는 모두 근거 아님이어야 합니다.</li>
     <li>위치 안내 질문은 페이지 도달 자체가 답일 때만 페이지 위치 자체를 근거로 고릅니다.</li>
     <li>이 시트에는 검색 방식·순위·점수가 표시되지 않습니다.</li>
   </ul>

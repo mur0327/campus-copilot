@@ -8,9 +8,11 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from eval.adjudicate_v4_qrel import build_adjudicated  # noqa: E402
 from eval.build_v4_qrel import (  # noqa: E402
     JUDGMENT_SCHEMA_VERSION,
     build_question_rows,
+    load_json,
     validate_judgment_payload,
 )
 from eval.check_v4_invariants import (  # noqa: E402
@@ -26,6 +28,7 @@ from eval.make_v4_pool import (  # noqa: E402
     recover_exp06_candidate,
     validate_frozen_top5,
 )
+from eval.make_v4_question_review import render_question_review  # noqa: E402
 from eval.make_v4_sheet import (  # noqa: E402
     EMAIL_RE,
     PHONE_RE,
@@ -586,6 +589,8 @@ def test_audit_sheet_adds_required_automatic_bundle_timers_without_changing_rows
     assert "판정 시작(필수)" in document
     assert "setBundleControlsEnabled(card, false)" in document
     assert "finishBundleTimer(card)" in document
+    assert "bundleConsistencyError" in document
+    assert "완전·일부 페이지에는 최소 한 개의 양성 청크 근거가 필요합니다." in document
     assert "audit_timing" in document
     assert "시점과 대상을 무시하고 질문에 담긴 주장만 봅니다" in document
     assert 'data-export-name="qrel-v4-secondary-audit-repilot.json"' in document
@@ -634,3 +639,128 @@ def test_audit_sheet_shows_context_page_without_controls_or_timer():
     assert document.count('<section class="page-card context-card"') == 1
     assert document.count('class="judge judgment-row" data-kind="page"') == 1
     assert document.count('class="judge judgment-row" data-kind="evidence"') == 1
+
+
+def test_sheet_keeps_the_full_chunk_content_for_judgment():
+    pages = [page("Q001", "https://example.test/a", grade="partial", judged="false")]
+    chunks = [
+        evidence(
+            "Q001",
+            "https://example.test/a",
+            "c1",
+            content_hash="h1",
+            judged="false",
+        )
+    ]
+    questions = {"Q001": {"id": "Q001", "question": "신청은 어떻게 하나요?"}}
+    tail = "관련 신청 절차가 청크 끝에 있습니다."
+    records = {
+        "c1": ChunkRecord(
+            "c1",
+            "https://example.test/a",
+            "FAQ",
+            "안내",
+            0,
+            "앞부분 " * 300 + tail,
+            "h1",
+        )
+    }
+
+    document = render_sheet(pages, chunks, questions, records)
+
+    assert tail in document
+    assert "이하 생략" not in document
+
+
+def test_question_review_requires_explicit_review_and_shows_final_positive_context():
+    payload = {
+        "pages": [
+            {
+                "row_id": "P|Q001|https://example.test/a",
+                "question_id": "Q001",
+                "canonical_url": "https://example.test/a",
+                "judged": True,
+                "support_grade": "full",
+                "temporal_validity": "current",
+                "audience_scope": "match",
+                "notes": "공식 절차를 직접 제시함.",
+            }
+        ],
+        "evidence": [
+            {
+                "row_id": "E|Q001|c1",
+                "question_id": "Q001",
+                "canonical_url": "https://example.test/a",
+                "chunk_id": "c1",
+                "judged": True,
+                "evidence_grade": "full",
+                "evidence_type": "text_chunk",
+                "notes": "절차 본문.",
+            }
+        ],
+        "questions": [
+            {
+                "row_id": "Q|Q001",
+                "question_id": "Q001",
+                "judged": True,
+                "expected_behavior": "full_answer",
+                "primary_reason": "",
+                "secondary_reasons": [],
+                "composition_override": False,
+                "pool_support": "",
+                "composition_sources": [],
+                "notes": "완전 답변 가능.",
+            }
+        ],
+        "date": "2026-07-14",
+    }
+    metadata = {
+        "Q001": {
+            "id": "Q001",
+            "category": "학사",
+            "question": "신청은 어떻게 하나요?",
+            "question_type": "procedure",
+        }
+    }
+    records = {
+        "c1": ChunkRecord(
+            "c1",
+            "https://example.test/a",
+            "신청 안내",
+            "안내",
+            0,
+            "신청 메뉴에서 접수합니다.",
+            "h1",
+        )
+    }
+
+    document = render_question_review(payload, metadata, records)
+
+    assert 'class="question-card"' in document
+    assert 'data-derived-support="full"' in document
+    assert "신청 메뉴에서 접수합니다." in document
+    assert "초벌 제안:" in document
+    assert "이 판정 확정" in document
+    assert "미검토 문항이" in document
+    assert "data-kind=\"page\"" not in document
+
+
+def test_adjudication_applies_author_question_changes_to_page_and_evidence():
+    payload = build_adjudicated(
+        load_json(REPO_ROOT / "eval" / "qrel-v4-primary-initial.json"),
+        load_json(REPO_ROOT / "eval" / "qrel-v4-question-review.json"),
+    )
+    pages = {row["row_id"]: row for row in payload["pages"]}
+    evidence_rows = {row["row_id"]: row for row in payload["evidence"]}
+    questions = {row["question_id"]: row for row in payload["questions"]}
+
+    assert pages["P|Q008|https://www.honam.ac.kr/ClassLessonApply"]["support_grade"] == "partial"
+    assert evidence_rows["E|Q008|33478902-8a72-4b39-a885-10686fc9436b"]["evidence_grade"] == "partial"
+    assert questions["Q008"]["pool_support"] == "partial"
+    assert questions["Q008"]["expected_behavior"] == "qualified_answer"
+
+    assert pages["P|Q036|https://www.honam.ac.kr/ExamResult"]["support_grade"] == "partial"
+    assert evidence_rows["E|Q036|e319bc25-7e16-4762-b274-c08cc926abd5"]["evidence_grade"] == "partial"
+    assert questions["Q036"]["pool_support"] == "partial"
+    assert questions["Q036"]["expected_behavior"] == "abstain"
+    assert questions["Q036"]["primary_reason"] == "acquisition_failure"

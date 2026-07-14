@@ -1,0 +1,185 @@
+{
+  "schema_version": "qrel-v4-judgment-1",
+  "audit": true,
+  "judge": "저자",
+  "date": "2026-07-14",
+  "exported_at": "2026-07-14T10:43:44.202Z",
+  "pages": [
+    {
+      "row_id": "P|Q016|https://enter.honam.ac.kr/faq",
+      "question_id": "Q016",
+      "canonical_url": "https://enter.honam.ac.kr/faq",
+      "judged": true,
+      "support_grade": "partial",
+      "temporal_validity": "current",
+      "audience_scope": "match",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q022|https://enter.honam.ac.kr/faq",
+      "question_id": "Q022",
+      "canonical_url": "https://enter.honam.ac.kr/faq",
+      "judged": true,
+      "support_grade": "invalid",
+      "temporal_validity": "current",
+      "audience_scope": "unknown",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q025|https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "judged": true,
+      "support_grade": "partial",
+      "temporal_validity": "current",
+      "audience_scope": "match",
+      "notes": ""
+    },
+    {
+      "row_id": "P|Q048|https://enter.honam.ac.kr/faq",
+      "question_id": "Q048",
+      "canonical_url": "https://enter.honam.ac.kr/faq",
+      "judged": true,
+      "support_grade": "partial",
+      "temporal_validity": "current",
+      "audience_scope": "unknown",
+      "notes": ""
+    }
+  ],
+  "evidence": [
+    {
+      "row_id": "E|Q016|2f65264a-211e-4309-9c8c-58c05c44eaf8",
+      "question_id": "Q016",
+      "canonical_url": "https://enter.honam.ac.kr/faq",
+      "chunk_id": "2f65264a-211e-4309-9c8c-58c05c44eaf8",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q022|2f65264a-211e-4309-9c8c-58c05c44eaf8",
+      "question_id": "Q022",
+      "canonical_url": "https://enter.honam.ac.kr/faq",
+      "chunk_id": "2f65264a-211e-4309-9c8c-58c05c44eaf8",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|2dbe7877-7e70-474c-91e7-3ec9ed964cdf",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "2dbe7877-7e70-474c-91e7-3ec9ed964cdf",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|87b77ca0-51c1-43e9-abd1-24f3524b8e8c",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "87b77ca0-51c1-43e9-abd1-24f3524b8e8c",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|b728539f-407b-4be7-a26d-ce9caeb7ee08",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "b728539f-407b-4be7-a26d-ce9caeb7ee08",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|9fc3e7a9-56ec-434f-959e-f8cab864c3c2",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "9fc3e7a9-56ec-434f-959e-f8cab864c3c2",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|11fc7c91-a19a-4dfa-9a5a-f010c819016b",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "11fc7c91-a19a-4dfa-9a5a-f010c819016b",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|74b530d1-e332-40e2-9c79-bf3363a249a4",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "74b530d1-e332-40e2-9c79-bf3363a249a4",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|6bb87111-3ed2-4ecd-b91c-5f325283c8d0",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "6bb87111-3ed2-4ecd-b91c-5f325283c8d0",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q025|c6fe21d3-3e01-4275-bf59-c25ebb6dc152",
+      "question_id": "Q025",
+      "canonical_url": "https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+      "chunk_id": "c6fe21d3-3e01-4275-bf59-c25ebb6dc152",
+      "judged": true,
+      "evidence_grade": "partial",
+      "evidence_type": "page_navigation",
+      "notes": ""
+    },
+    {
+      "row_id": "E|Q048|2f65264a-211e-4309-9c8c-58c05c44eaf8",
+      "question_id": "Q048",
+      "canonical_url": "https://enter.honam.ac.kr/faq",
+      "chunk_id": "2f65264a-211e-4309-9c8c-58c05c44eaf8",
+      "judged": true,
+      "evidence_grade": "",
+      "evidence_type": "",
+      "notes": ""
+    }
+  ],
+  "questions": [],
+  "audit_timing": {
+    "bundle_count": 4,
+    "complete_bundle_count": 4,
+    "median_seconds": 30,
+    "bundles": [
+      {
+        "page_row_id": "P|Q016|https://enter.honam.ac.kr/faq",
+        "elapsed_seconds": 48
+      },
+      {
+        "page_row_id": "P|Q022|https://enter.honam.ac.kr/faq",
+        "elapsed_seconds": 6
+      },
+      {
+        "page_row_id": "P|Q025|https://www.honam.ac.kr/GraduateGrades/pdfdownload/2025",
+        "elapsed_seconds": 36
+      },
+      {
+        "page_row_id": "P|Q048|https://enter.honam.ac.kr/faq",
+        "elapsed_seconds": 24
+      }
+    ]
+  }
+}
