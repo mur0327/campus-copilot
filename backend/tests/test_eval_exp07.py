@@ -29,6 +29,11 @@ from eval.exp07_corpus import (  # noqa: E402
 from eval.make_exp07_manifest import build_manifest  # noqa: E402
 from eval.make_exp07_primary_sheet import render_sheet as render_primary_sheet  # noqa: E402
 from eval.make_exp07_reveal_sheet import render_sheet as render_reveal_sheet  # noqa: E402
+from eval.make_exp07_stage1_manifest import (  # noqa: E402
+    assert_stage1_unchanged,
+    injected_evidence_coverage,
+    validate_stage1_snapshot,
+)
 from eval.publish_exp07 import public_response  # noqa: E402
 from eval.run_exp07 import (  # noqa: E402
     AsyncStartRateLimiter,
@@ -58,6 +63,21 @@ def full_judgment(question_id: str, *, behavior: str = "full_answer") -> dict:
         "stage2_locked_at": "2026-07-15T02:00:00+00:00",
         "revision_history": [],
     }
+
+
+def stage1_judgment(question_id: str, *, behavior: str = "full_answer") -> dict:
+    row = full_judgment(question_id, behavior=behavior)
+    for field in (
+        "content_accuracy",
+        "claim_support",
+        "source_display",
+        "temporal_validity",
+        "audience_scope",
+        "privacy",
+    ):
+        row[field] = ""
+    row["stage2_locked_at"] = None
+    return row
 
 
 def response_record(
@@ -230,6 +250,105 @@ def test_judgment_gate_requires_locks_and_resolved_holds():
     payload["judgments"][0]["hold"] = True
     with pytest.raises(ValueError, match="판정보류"):
         validated_judgment_index(payload)
+
+
+def test_stage1_snapshot_is_frozen_before_stage_two_and_compared_later():
+    row = stage1_judgment("Q001")
+    row["abstention_notice"] = ""
+    payload = {
+        "schema_version": "exp07-judgment-1",
+        "run_id": "run",
+        "private_raw_sha256": "raw",
+        "rubric_sha256": "rubric",
+        "judgments": [row],
+    }
+
+    assert validate_stage1_snapshot(
+        payload,
+        expected_run_id="run",
+        expected_raw_sha256="raw",
+        expected_rubric_sha256="rubric",
+        expected_statuses={"Q001": "success"},
+    )["Q001"]["abstention_notice"] == "not_applicable"
+
+    final_payload = deepcopy(payload)
+    final_payload["judgments"][0].update(full_judgment("Q001"))
+    assert_stage1_unchanged(payload, final_payload)
+
+    final_payload["judgments"][0]["actual_behavior"] = "abstain"
+    with pytest.raises(ValueError, match="actual_behavior differs from stage one"):
+        assert_stage1_unchanged(payload, final_payload)
+
+    final_payload = deepcopy(payload)
+    final_payload["rubric_sha256"] = "other-rubric"
+    with pytest.raises(ValueError, match="rubric_sha256 differs"):
+        assert_stage1_unchanged(payload, final_payload)
+
+
+def test_stage1_snapshot_does_not_normalize_a_blank_abstain_notice():
+    row = stage1_judgment("Q001", behavior="abstain")
+    row["abstention_notice"] = ""
+    payload = {
+        "schema_version": "exp07-judgment-1",
+        "run_id": "run",
+        "private_raw_sha256": "raw",
+        "rubric_sha256": "rubric",
+        "judgments": [row],
+    }
+
+    with pytest.raises(ValueError, match="invalid abstention_notice"):
+        validate_stage1_snapshot(
+            payload,
+            expected_run_id="run",
+            expected_raw_sha256="raw",
+            expected_rubric_sha256="rubric",
+            expected_statuses={"Q001": "success"},
+        )
+
+
+def test_injected_evidence_coverage_distinguishes_unjudged_rows():
+    records = [response_record(f"Q{index:03d}") for index in range(1, 51)]
+    qrel = {
+        "pages": [],
+        "evidence": [],
+    }
+    for record in records:
+        display = record["attempts"][0]["evidence_candidates"][0][
+            "display_result"
+        ]
+        qrel["pages"].append(
+            {
+                "question_id": record["question_id"],
+                "canonical_url": display["url"],
+                "judged": True,
+                "support_grade": "full",
+            }
+        )
+        qrel["evidence"].append(
+            {
+                "question_id": record["question_id"],
+                "chunk_id": display["chunk_id"],
+                "judged": True,
+                "evidence_grade": "full",
+            }
+        )
+
+    covered = injected_evidence_coverage(records, qrel)
+    qrel["pages"] = [row for row in qrel["pages"] if row["question_id"] != "Q001"]
+    qrel["evidence"] = [
+        row for row in qrel["evidence"] if row["question_id"] != "Q001"
+    ]
+    unjudged = injected_evidence_coverage(records, qrel)
+
+    assert covered["page_status_counts"] == {"full": 50}
+    assert covered["chunk_status_counts"] == {"positive": 50}
+    assert covered["questions_with_unjudged_chunk"] == []
+    assert unjudged["page_status_counts"] == {"full": 49, "unjudged": 1}
+    assert unjudged["chunk_status_counts"] == {
+        "positive": 49,
+        "unjudged": 1,
+    }
+    assert unjudged["questions_with_unjudged_chunk"] == ["Q001"]
 
 
 def test_aggregate_keeps_system_errors_in_end_to_end_denominator():

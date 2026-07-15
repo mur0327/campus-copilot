@@ -28,10 +28,17 @@ from eval.make_exp07_primary_sheet import (  # noqa: E402
     primary_records,
     selected_attempt,
 )
+from eval.make_exp07_stage1_manifest import (  # noqa: E402
+    MANIFEST_SCHEMA_VERSION as STAGE1_MANIFEST_SCHEMA_VERSION,
+    assert_stage1_unchanged,
+    canonicalize_primary_sheet_judgment,
+    validate_stage1_snapshot,
+)
 from eval.make_v4_pool import RESULTS_DIR  # noqa: E402
 
 QREL_PATH = REPO_ROOT / "eval" / "qrel-v4-adjudicated.json"
 RUN_MANIFEST_PATH = REPO_ROOT / "eval" / "exp07-run-manifest.json"
+STAGE1_MANIFEST_PATH = REPO_ROOT / "eval" / "exp07-stage1-manifest.json"
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,6 +48,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("run_dir", type=Path)
     parser.add_argument("judgments", type=Path)
     parser.add_argument("--manifest", type=Path, default=RUN_MANIFEST_PATH)
+    parser.add_argument(
+        "--stage1-manifest", type=Path, default=STAGE1_MANIFEST_PATH
+    )
+    parser.add_argument("--stage1-snapshot", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=None)
     return parser.parse_args()
 
@@ -407,6 +418,61 @@ def _validate_manifest(manifest: dict[str, Any], summary: dict[str, Any]) -> Non
         raise ValueError("run manifest raw SHA-256 differs from run.json")
 
 
+def _load_stage1_lineage(
+    *,
+    stage1_manifest_path: Path,
+    stage1_snapshot_path: Path | None,
+    run_dir: Path,
+    run_manifest_path: Path,
+    run_manifest: dict[str, Any],
+    summary: dict[str, Any],
+    expected_statuses: dict[str, str],
+) -> tuple[dict[str, Any], dict[str, Any], Path]:
+    assert_committed_file(stage1_manifest_path)
+    manifest = load_json(stage1_manifest_path)
+    if manifest.get("schema_version") != STAGE1_MANIFEST_SCHEMA_VERSION:
+        raise ValueError("stage-one manifest schema_version is invalid")
+    if manifest.get("run_id") != summary.get("run_id"):
+        raise ValueError("stage-one manifest belongs to another run")
+    if manifest.get("run_manifest_sha256") != sha256_file(run_manifest_path):
+        raise ValueError("stage-one manifest refers to another run manifest")
+    provenance = manifest.get("provenance") or {}
+    if provenance.get("private_raw_sha256") != summary.get("raw_sha256"):
+        raise ValueError("stage-one manifest raw SHA-256 differs from the run")
+    if provenance.get("rubric_sha256") != (
+        run_manifest.get("provenance") or {}
+    ).get("rubric_sha256"):
+        raise ValueError("stage-one manifest rubric differs from the run manifest")
+
+    private_stage1 = manifest.get("private_stage1") or {}
+    snapshot_path = (
+        stage1_snapshot_path
+        or (run_dir / str(private_stage1.get("file_name") or ""))
+    ).resolve()
+    if not snapshot_path.is_relative_to(run_dir):
+        raise ValueError("stage-one snapshot must stay inside the private run directory")
+    if private_stage1.get("sha256") != sha256_file(snapshot_path):
+        raise ValueError("stage-one snapshot SHA-256 differs from its manifest")
+    if private_stage1.get("size") != snapshot_path.stat().st_size:
+        raise ValueError("stage-one snapshot size differs from its manifest")
+    if snapshot_path.stat().st_mode & 0o077:
+        raise ValueError("stage-one snapshot must use owner-only permissions")
+
+    primary_html = manifest.get("primary_html") or {}
+    primary_html_path = run_dir / str(primary_html.get("file_name") or "")
+    if primary_html.get("sha256") != sha256_file(primary_html_path):
+        raise ValueError("primary judgment HTML differs from the stage-one manifest")
+    baseline = load_json(snapshot_path)
+    validate_stage1_snapshot(
+        baseline,
+        expected_run_id=str(summary["run_id"]),
+        expected_raw_sha256=str(summary["raw_sha256"]),
+        expected_rubric_sha256=str(provenance["rubric_sha256"]),
+        expected_statuses=expected_statuses,
+    )
+    return manifest, baseline, snapshot_path
+
+
 def main() -> None:
     args = parse_args()
     run_dir = args.run_dir.resolve()
@@ -425,14 +491,41 @@ def main() -> None:
     records = load_jsonl(raw_path)
     primary = primary_records(records)
     question_ids = {str(record["question_id"]) for record in primary}
+    expected_statuses = {
+        str(record["question_id"]): str(record["status"]) for record in primary
+    }
+    stage1_manifest, stage1_baseline, stage1_snapshot_path = _load_stage1_lineage(
+        stage1_manifest_path=args.stage1_manifest,
+        stage1_snapshot_path=args.stage1_snapshot,
+        run_dir=run_dir,
+        run_manifest_path=args.manifest,
+        run_manifest=manifest,
+        summary=summary,
+        expected_statuses=expected_statuses,
+    )
     judgments_payload = load_json(args.judgments)
     judgments_payload["primary_judgments_sha256"] = sha256_file(args.judgments)
+    judgments_payload["stage1_manifest_sha256"] = sha256_file(
+        args.stage1_manifest
+    )
+    judgments_payload["stage1_snapshot_sha256"] = sha256_file(
+        stage1_snapshot_path
+    )
+    assert_stage1_unchanged(stage1_baseline, judgments_payload)
+    judgments_payload["judgments"] = [
+        canonicalize_primary_sheet_judgment(row)
+        for row in judgments_payload.get("judgments") or []
+    ]
     judgments = validated_judgment_index(
         judgments_payload,
         expected_run_id=str(summary["run_id"]),
         expected_raw_sha256=str(summary["raw_sha256"]),
         expected_question_ids=question_ids,
     )
+    if (stage1_manifest.get("private_stage1") or {}).get(
+        "judgment_count"
+    ) != len(judgments):
+        raise ValueError("stage-one manifest judgment count differs from the final JSON")
     primary_by_id = {str(record["question_id"]): record for record in primary}
     for question_id, judgment in judgments.items():
         if judgment.get("response_status") != primary_by_id[question_id].get("status"):

@@ -1,0 +1,77 @@
+{
+  "schema_version": "exp07-stage1-manifest-1",
+  "run_id": "exp07-20260715T064623Z",
+  "generated_at": "2026-07-15T09:18:09.163902+00:00",
+  "git_commit": "b680340724ed1eeb2b3f907cda308bbe71d6d8fb",
+  "run_manifest_sha256": "8365fb39f85f800b9b2c759dd6e54a138349b51cafd79753c541bfc9daf4566f",
+  "private_stage1": {
+    "file_name": "exp07-20260715T064623Z-primary-judgments-draft.json",
+    "size": 24964,
+    "sha256": "21ba47825fcaf392bb3e3c741c327a2c4dd96c8ac3e30548948b382ea2433f0e",
+    "exported_at": "2026-07-15T07:47:11.676Z",
+    "judge": "author",
+    "judgment_count": 50,
+    "stage1_locked_count": 50,
+    "stage2_locked_count": 0,
+    "stage2_value_count": 0,
+    "first_locked_at": "2026-07-15T07:27:32.618Z",
+    "last_locked_at": "2026-07-15T07:47:07.278Z"
+  },
+  "primary_html": {
+    "file_name": "exp07-primary-judgment.html",
+    "size": 822657,
+    "sha256": "28c260201d2c231f25d6c34a4f474ab264263669c3b57a3698c69e36482df70b"
+  },
+  "provenance": {
+    "private_raw_sha256": "267159fb3c925a3f281aed4a7633d73cef23dff42e06c5ca3387ed6bbfd9f54c",
+    "rubric_sha256": "a58b66112276548db95866a0f788108a97e95ec48d0b89df0db044c285b12af9",
+    "qrel_sha256": "e5320e4b10089f351ccf1ad0f5d01966b5c2726cf6f518bb7ff8e2b75e651f6d",
+    "qrel_manifest_sha256": "7f36251ac9a37f357e85fb66b62a0361b76b862e93f9a801df407c88fa037639",
+    "qrel_lineage": {
+      "eval/gold_pages_v4.csv": "0524bc9676098ca513cc21f345d2f7969ea56c792444d1249336b3268c0b9a14",
+      "eval/gold_evidence_v4.csv": "8c3a8f3a66282bb1c4466252f3e5bf89a2f160d91c9abad20ab38436c47d3a00",
+      "eval/question_judgments_v4.csv": "bd8ae3a57c63307e23706433dbd73b95f46303306422c8fc3ebd20a6405e969a",
+      "eval/target_sources_v4.csv": "ae77faa28d0a4a71d4240bdf50b67caadca59f47e97e8fdfea8cfb35d0080aa4"
+    },
+    "qrel_judgment_date": "2026-07-14",
+    "run_date": "2026-07-15"
+  },
+  "round1_injected_evidence_coverage": {
+    "injected_context_row_count": 155,
+    "unique_question_page_count": 149,
+    "page_status_counts": {
+      "full": 52,
+      "invalid": 38,
+      "partial": 57,
+      "unjudged": 2
+    },
+    "unique_question_chunk_count": 155,
+    "chunk_status_counts": {
+      "judged_non_support": 46,
+      "positive": 107,
+      "unjudged": 2
+    },
+    "questions_without_injected_evidence": [
+      "Q024",
+      "Q050"
+    ],
+    "questions_with_unjudged_page": [
+      "Q010",
+      "Q049"
+    ],
+    "questions_with_unjudged_chunk": [
+      "Q010",
+      "Q049"
+    ],
+    "coverage_rows_sha256": "9cf6c0cc872cb3d17f8ea6e5236dfaabf1294019e165065271471930679b6dff"
+  },
+  "frozen_interpretation": {
+    "content_accuracy_basis": "frozen_v4_reference_bundle",
+    "claim_support_basis": "round1_actual_injected_evidence",
+    "unjudged_injected_evidence": "use_unverifiable_only_when_the_claim_cannot_be_confirmed_in_the_frozen_v4_reference",
+    "full_answer_behavior": "substantive_answer_without_an_explicit_material_limitation;_accuracy_is_judged_separately",
+    "pure_abstain_not_applicable": "no_supplementary_factual_guidance_and_no_displayed_sources",
+    "temporal_validity_basis": "run_date",
+    "primary_html_blank_non_abstain_notice": "normalized_to_not_applicable"
+  }
+}

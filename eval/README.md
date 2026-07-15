@@ -12,6 +12,7 @@
 - `run_exp07.py`: 현재 production 검색·생성·후처리 경로를 50문항×3회 순차 실행하는 스크립트다.
 - `make_exp07_manifest.py`: 비공개 원본을 열기 전에 실행 계보와 완결성을 동결하는 스크립트다.
 - `make_exp07_primary_sheet.py`: 기대 행동과 반복 결과를 싣지 않은 2단계 블라인드 본판정 HTML을 만든다.
+- `make_exp07_stage1_manifest.py`: 2단계 전에 1단계 원본과 주입 evidence coverage를 안전한 manifest로 동결한다.
 - `make_exp07_reveal_sheet.py`: 본판정 잠금 뒤 기대 행동·반복 결과를 공개하고 조정 이력을 남기는 HTML을 만든다.
 - `publish_exp07.py`: 원시 출력과 evidence 전문을 제외한 공개 응답·판정·50/49 집계 파일을 만든다.
 - `results/`: Git에 커밋하지 않는 평가 원본과 비공개 판정 화면을 저장한다. EXP-07 원본은 재생성 가능한 캐시가 아니라 manifest hash로 계보를 고정하는 로컬 증거다.
@@ -51,9 +52,25 @@ manifest 커밋이 끝난 뒤에만 본판정 화면을 만든다.
 uv run --project backend python eval/make_exp07_primary_sheet.py "$RUN_DIR"
 ```
 
+1단계 50문항을 잠그고 2단계 값을 입력하기 전에 중간 JSON을 비공개 실행 디렉터리에 저장한다.
+stage1 manifest는 판정값을 공개하지 않고 원본 hash, 잠금 수, 본판정 HTML hash, qrel 계보와 round 1 주입 evidence coverage를 기록한다.
+
+```bash
+STAGE1_SNAPSHOT="$RUN_DIR/exp07-primary-judgments-draft.json"
+uv run --project backend python eval/make_exp07_stage1_manifest.py \
+  "$RUN_DIR" "$STAGE1_SNAPSHOT"
+git add eval/exp07-stage1-manifest.json
+git commit
+```
+
+stage1 manifest를 커밋한 뒤 2단계를 진행한다.
+JSON 복원이 필요하면 동결한 stage1 원본과 동일한 1단계 값을 가진 파일만 사용한다.
+동결한 본판정 HTML이 비기권 답변의 기권 고지 `해당 없음`을 빈 문자열로 내보낸 경우에는 manifest와 공개 화면 생성기가 이를 `not_applicable`로 정규화한다.
+
 전량 잠금 JSON을 입력해 공개·조정 화면을 만든다.
 이 단계에서만 기대 행동, 모델의 구조화 행동과 3회 반복 결과가 보인다.
 공개 후 값을 바꾸려면 조정 이유를 입력해야 하며 이전 값·새 값·시각이 기록된다.
+공개 화면 생성기는 최종 JSON의 행동·기권 고지·1단계 잠금 시각을 동결한 stage1 원본과 대조한다.
 
 ```bash
 uv run --project backend python eval/make_exp07_reveal_sheet.py \
