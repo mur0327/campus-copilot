@@ -2,13 +2,13 @@
   "schema_version": "exp07-public-1",
   "run_id": "exp07-20260715T064623Z",
   "manifest_sha256": "8365fb39f85f800b9b2c759dd6e54a138349b51cafd79753c541bfc9daf4566f",
-  "private_judgments_sha256": "158bcc38fdcdde2d06123c7d4b7595144a2dc9cbf7558a8c8126e87379079d1b",
+  "private_judgments_sha256": "1c840b472a743f3f5bc9ef92f336783c5c3902d8434b5521d9f1a0b25bf4925d",
   "primary_judgments_sha256": "caee6b2221827cfbe506a58bb944c65521797b3e7c3cb887f5c935d6cfea27f9",
   "judge": "author",
   "rubric_sha256": "a58b66112276548db95866a0f788108a97e95ec48d0b89df0db044c285b12af9",
   "primary_exported_at": "2026-07-15T12:16:01.420Z",
   "reveal_started_at": "2026-07-15T12:28:14.495Z",
-  "adjudicated_exported_at": "2026-07-15T12:34:36.367Z",
+  "adjudicated_exported_at": "2026-07-15T16:39:31Z",
   "judgments": [
     {
       "question_id": "Q017",
@@ -205,7 +205,7 @@
       "response_status": "success",
       "actual_behavior": "full_answer",
       "abstention_notice": "not_applicable",
-      "content_accuracy": "partially_correct",
+      "content_accuracy": "fully_correct",
       "claim_support": "fully_supported",
       "source_display": "complete",
       "temporal_validity": "not_applicable",
@@ -216,7 +216,16 @@
       "hold_axes": [],
       "stage1_locked_at": "2026-07-15T07:36:09.098Z",
       "stage2_locked_at": "2026-07-15T11:09:40.440Z",
-      "revision_history": [],
+      "revision_history": [
+        {
+          "field": "content_accuracy",
+          "old_value": "partially_correct",
+          "new_value": "fully_correct",
+          "reason": "외부 검토 후 동결 v4 참조와 실제 응답을 재대조한 결과, 응답이 신입생과 재학생·복학생의 신청 경로를 모두 제공해 질문의 핵심 절차와 필요한 대상 범위를 충족함을 확인했다. 기존 부분 정확 판정에는 구체적인 누락 또는 오류 사유가 없어 완전 정확으로 정정한다.",
+          "revised_at": "2026-07-15T16:39:31Z",
+          "phase": "post_reveal"
+        }
+      ],
       "raw_output_privacy_review": "no_sensitive_pattern"
     },
     {
