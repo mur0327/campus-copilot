@@ -1,0 +1,154 @@
+{
+  "schema_version": "exp07-run-manifest-1",
+  "run_id": "exp07-20260715T064623Z",
+  "status": "completed",
+  "run_completed_at": "2026-07-15T07:09:08.092480+00:00",
+  "generated_at": "2026-07-15T07:09:39.731421+00:00",
+  "provenance": {
+    "git_commit": "a718a76a55adfe0dd79809dd2399d061726fc756",
+    "questions_sha256": "9a7f2ef96d2dd68ea9d1905fdcd55b48ae54c95d98d81221d2a587b99ffc7cb0",
+    "qrel_sha256": "e5320e4b10089f351ccf1ad0f5d01966b5c2726cf6f518bb7ff8e2b75e651f6d",
+    "qrel_manifest_sha256": "7f36251ac9a37f357e85fb66b62a0361b76b862e93f9a801df407c88fa037639",
+    "rubric_sha256": "a58b66112276548db95866a0f788108a97e95ec48d0b89df0db044c285b12af9",
+    "prompt_sha256": "66c96d5944e67e54af400531f8f3a4f466b3031ce87e414b05582b29a2bbc51f"
+  },
+  "configuration": {
+    "provider": "gemini",
+    "llm_model": "gemini-3-flash-preview",
+    "embedding_model": "voyage-4-large",
+    "runtime_packages": {
+      "google-genai": "1.72.0",
+      "voyageai": "0.3.7",
+      "chromadb": "1.5.8",
+      "asyncpg": "0.31.0"
+    },
+    "sampling_parameters": "provider_defaults_unspecified",
+    "retriever": {
+      "mode": "hybrid",
+      "category": null,
+      "semantic_top_n": 20,
+      "bm25_top_n": 20,
+      "final_top_k": 6,
+      "semantic_weight": 0.7,
+      "bm25_weight": 0.3,
+      "best_bets_enabled": true
+    },
+    "seed": 20260715,
+    "rounds": 3,
+    "question_order": [
+      "Q017",
+      "Q029",
+      "Q049",
+      "Q045",
+      "Q047",
+      "Q020",
+      "Q019",
+      "Q033",
+      "Q050",
+      "Q046",
+      "Q048",
+      "Q028",
+      "Q024",
+      "Q040",
+      "Q038",
+      "Q001",
+      "Q004",
+      "Q027",
+      "Q006",
+      "Q002",
+      "Q032",
+      "Q037",
+      "Q043",
+      "Q025",
+      "Q026",
+      "Q041",
+      "Q036",
+      "Q031",
+      "Q011",
+      "Q023",
+      "Q035",
+      "Q018",
+      "Q042",
+      "Q007",
+      "Q044",
+      "Q010",
+      "Q034",
+      "Q021",
+      "Q009",
+      "Q003",
+      "Q030",
+      "Q016",
+      "Q022",
+      "Q014",
+      "Q012",
+      "Q013",
+      "Q039",
+      "Q005",
+      "Q015",
+      "Q008"
+    ],
+    "llm_rpm_limit": 1000.0,
+    "embedding_rpm_limit": 2000.0,
+    "safety_factor": 0.8,
+    "retry_policy": {
+      "evaluation_level_max_retries": 1,
+      "evaluation_level_scope": "retryable_infrastructure_errors_only",
+      "production_json_repair_preserved": true,
+      "production_embedding_retry_policy": "VoyageEmbedder: two retries; voyage client: zero retries",
+      "gemini_sdk_retry_policy": "locked SDK default"
+    },
+    "cache_bypassed": true,
+    "timezone": "Asia/Seoul"
+  },
+  "records": {
+    "question_count": 50,
+    "response_record_count": 150,
+    "success_count": 150,
+    "system_error_count": 0,
+    "evaluation_retry_count": 0,
+    "llm_call_count": 144,
+    "llm_json_repair_count": 0,
+    "embedding_call_count": 150,
+    "error_type_counts": {}
+  },
+  "private_raw": {
+    "file_name": "raw.jsonl",
+    "size": 4367152,
+    "sha256": "267159fb3c925a3f281aed4a7633d73cef23dff42e06c5ca3387ed6bbfd9f54c",
+    "sensitive_pattern_counts": {
+      "phone": 11
+    }
+  },
+  "corpus": {
+    "unchanged": true,
+    "before_file_sha256": "8bdd2661783e61514ad19c85888e6589438d1374bdf875271f37d5f476af8f5d",
+    "after_file_sha256": "4d4f9c2d164a2f9e8275f28c188991366df0b3883580a46378d650a95a63b285",
+    "fingerprint": {
+      "schema_version": "exp07-corpus-fingerprint-1",
+      "database": {
+        "document_count": 7608,
+        "active_document_count": 4087,
+        "chunk_count": 42206,
+        "indexed_chunk_count": 20788,
+        "max_crawled_at": "2026-07-05T09:25:35.380940+00:00",
+        "max_chunk_created_at": "2026-07-05T09:25:35.392305+00:00",
+        "sha256": "19d92db03cef6f36f5b4a5d7e369d421a3b550496a91c5274973b220abea793c"
+      },
+      "chroma": {
+        "item_count": 20788,
+        "sha256": "7470431c704713c22e09a01ad9e796e92bf5ded8e51461ba9838db685abe8138"
+      },
+      "bm25": {
+        "file_count": 1,
+        "files": [
+          {
+            "name": "bm25-497cfcd551611219.pkl",
+            "size": 43277744,
+            "sha256": "f1698a122f6148a57e67a9383cbfb6bf0017f5a31ba3bcdccd132ff1f6da4608"
+          }
+        ],
+        "sha256": "cfd7662af790f721f33fac67193008520acbe1a86b3d141b7c18f0f83c6ba97b"
+      }
+    }
+  }
+}
