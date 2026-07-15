@@ -1,0 +1,2070 @@
+{
+  "schema_version": "exp07-public-1",
+  "run_id": "exp07-20260715T064623Z",
+  "manifest_sha256": "8365fb39f85f800b9b2c759dd6e54a138349b51cafd79753c541bfc9daf4566f",
+  "private_judgments_sha256": "158bcc38fdcdde2d06123c7d4b7595144a2dc9cbf7558a8c8126e87379079d1b",
+  "all_50": {
+    "question_count": 50,
+    "success_count": 29,
+    "success_rate": 0.58,
+    "system_error_count": 0,
+    "human_axis_denominator": 50,
+    "human_axis_system_error_exclusions": 0,
+    "by_expected_behavior": {
+      "full_answer": {
+        "success_count": 21,
+        "denominator": 28,
+        "rate": 0.75
+      },
+      "qualified_answer": {
+        "success_count": 0,
+        "denominator": 3,
+        "rate": 0.0
+      },
+      "abstain": {
+        "success_count": 8,
+        "denominator": 19,
+        "rate": 0.421053
+      }
+    },
+    "behavior_errors": {
+      "over_answer": {
+        "count": 14,
+        "denominator": 22,
+        "rate": 0.636364,
+        "system_error_exclusions": 0
+      },
+      "over_rejection": {
+        "count": 0,
+        "denominator": 31,
+        "rate": 0.0,
+        "system_error_exclusions": 0
+      },
+      "unnecessary_qualification": {
+        "count": 1,
+        "denominator": 28,
+        "rate": 0.035714,
+        "system_error_exclusions": 0
+      }
+    },
+    "content_accuracy_counts": {
+      "fully_correct": 29,
+      "incorrect": 3,
+      "not_applicable": 8,
+      "partially_correct": 10
+    },
+    "claim_support_counts": {
+      "fully_supported": 40,
+      "not_applicable": 8,
+      "partially_supported": 2
+    },
+    "source_display_counts": {
+      "complete": 38,
+      "incorrect": 4,
+      "not_applicable": 8
+    },
+    "temporal_counts": {
+      "current": 6,
+      "not_applicable": 40,
+      "stale": 3,
+      "unknown": 1
+    },
+    "audience_counts": {
+      "match": 40,
+      "mismatch": 1,
+      "not_applicable": 8,
+      "unknown": 1
+    },
+    "privacy_counts": {
+      "safe": 50
+    },
+    "questions": [
+      {
+        "question_id": "Q001",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q002",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q003",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q004",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q005",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q006",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q007",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q008",
+        "status": "success",
+        "expected_behavior": "qualified_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q009",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q010",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q011",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q012",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q013",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q014",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q015",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q016",
+        "status": "success",
+        "expected_behavior": "qualified_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": false,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q017",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q018",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q019",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q020",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q021",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q022",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q023",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q024",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q025",
+        "status": "success",
+        "expected_behavior": "qualified_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q026",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q027",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q028",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q029",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q030",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q031",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": false,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q032",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q033",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q034",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q035",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q036",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q037",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q038",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q039",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q040",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q041",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q042",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q043",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q044",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q045",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q046",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q047",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "unnecessary_qualification",
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q048",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q049",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q050",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      }
+    ]
+  },
+  "exclude_q035": {
+    "question_count": 49,
+    "success_count": 28,
+    "success_rate": 0.571429,
+    "system_error_count": 0,
+    "human_axis_denominator": 49,
+    "human_axis_system_error_exclusions": 0,
+    "by_expected_behavior": {
+      "full_answer": {
+        "success_count": 20,
+        "denominator": 27,
+        "rate": 0.740741
+      },
+      "qualified_answer": {
+        "success_count": 0,
+        "denominator": 3,
+        "rate": 0.0
+      },
+      "abstain": {
+        "success_count": 8,
+        "denominator": 19,
+        "rate": 0.421053
+      }
+    },
+    "behavior_errors": {
+      "over_answer": {
+        "count": 14,
+        "denominator": 22,
+        "rate": 0.636364,
+        "system_error_exclusions": 0
+      },
+      "over_rejection": {
+        "count": 0,
+        "denominator": 30,
+        "rate": 0.0,
+        "system_error_exclusions": 0
+      },
+      "unnecessary_qualification": {
+        "count": 1,
+        "denominator": 27,
+        "rate": 0.037037,
+        "system_error_exclusions": 0
+      }
+    },
+    "content_accuracy_counts": {
+      "fully_correct": 28,
+      "incorrect": 3,
+      "not_applicable": 8,
+      "partially_correct": 10
+    },
+    "claim_support_counts": {
+      "fully_supported": 39,
+      "not_applicable": 8,
+      "partially_supported": 2
+    },
+    "source_display_counts": {
+      "complete": 37,
+      "incorrect": 4,
+      "not_applicable": 8
+    },
+    "temporal_counts": {
+      "current": 6,
+      "not_applicable": 39,
+      "stale": 3,
+      "unknown": 1
+    },
+    "audience_counts": {
+      "match": 39,
+      "mismatch": 1,
+      "not_applicable": 8,
+      "unknown": 1
+    },
+    "privacy_counts": {
+      "safe": 49
+    },
+    "questions": [
+      {
+        "question_id": "Q001",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q002",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q003",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q004",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q005",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q006",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q007",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q008",
+        "status": "success",
+        "expected_behavior": "qualified_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q009",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q010",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q011",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q012",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q013",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q014",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q015",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q016",
+        "status": "success",
+        "expected_behavior": "qualified_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": false,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q017",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q018",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q019",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q020",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q021",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q022",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q023",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q024",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q025",
+        "status": "success",
+        "expected_behavior": "qualified_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q026",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q027",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q028",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q029",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q030",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q031",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": false,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q032",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q033",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q034",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q036",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q037",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q038",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q039",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q040",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "full_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q041",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "over_answer",
+        "deployment_pass": true,
+        "grounding_pass": false,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q042",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q043",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q044",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q045",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q046",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q047",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": "unnecessary_qualification",
+        "deployment_pass": false,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q048",
+        "status": "success",
+        "expected_behavior": "full_answer",
+        "actual_behavior": "full_answer",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": false
+      },
+      {
+        "question_id": "Q049",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      },
+      {
+        "question_id": "Q050",
+        "status": "success",
+        "expected_behavior": "abstain",
+        "actual_behavior": "abstain",
+        "behavior_error": null,
+        "deployment_pass": true,
+        "grounding_pass": true,
+        "end_to_end_success": true
+      }
+    ]
+  },
+  "structured_response_behavior_repeat_agreement": {
+    "question_count": 50,
+    "three_of_three_count": 46,
+    "three_of_three_rate": 0.92,
+    "questions": [
+      {
+        "question_id": "Q001",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q002",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q003",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q004",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q005",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q006",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q007",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q008",
+        "behaviors": [
+          "full_answer",
+          "qualified_answer",
+          "qualified_answer"
+        ],
+        "three_of_three": false,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q009",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q010",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q011",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q012",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q013",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q014",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q015",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q016",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q017",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q018",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q019",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q020",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q021",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q022",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q023",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q024",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q025",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q026",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q027",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q028",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q029",
+        "behaviors": [
+          "qualified_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": false,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q030",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q031",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q032",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q033",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q034",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q035",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q036",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q037",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q038",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q039",
+        "behaviors": [
+          "qualified_answer",
+          "abstain",
+          "qualified_answer"
+        ],
+        "three_of_three": false,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q040",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q041",
+        "behaviors": [
+          "qualified_answer",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": false,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q042",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q043",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q044",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q045",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q046",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q047",
+        "behaviors": [
+          "qualified_answer",
+          "qualified_answer",
+          "qualified_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q048",
+        "behaviors": [
+          "full_answer",
+          "full_answer",
+          "full_answer"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q049",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      },
+      {
+        "question_id": "Q050",
+        "behaviors": [
+          "abstain",
+          "abstain",
+          "abstain"
+        ],
+        "three_of_three": true,
+        "has_system_error": false
+      }
+    ]
+  },
+  "raw_output_privacy_diagnostic_counts": {
+    "no_sensitive_pattern": 47,
+    "safe_public_or_nonpersonal": 3,
+    "privacy_risk": 0
+  },
+  "structured_behaviors_by_round": [
+    {
+      "question_id": "Q001",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q002",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q003",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q004",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q005",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q006",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q007",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q008",
+      "behaviors": [
+        "full_answer",
+        "qualified_answer",
+        "qualified_answer"
+      ]
+    },
+    {
+      "question_id": "Q009",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q010",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q011",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q012",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q013",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q014",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q015",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q016",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q017",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q018",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q019",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q020",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q021",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q022",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q023",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q024",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q025",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q026",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q027",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q028",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q029",
+      "behaviors": [
+        "qualified_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q030",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q031",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q032",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q033",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q034",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q035",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q036",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q037",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q038",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q039",
+      "behaviors": [
+        "qualified_answer",
+        "abstain",
+        "qualified_answer"
+      ]
+    },
+    {
+      "question_id": "Q040",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q041",
+      "behaviors": [
+        "qualified_answer",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q042",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q043",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q044",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q045",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q046",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q047",
+      "behaviors": [
+        "qualified_answer",
+        "qualified_answer",
+        "qualified_answer"
+      ]
+    },
+    {
+      "question_id": "Q048",
+      "behaviors": [
+        "full_answer",
+        "full_answer",
+        "full_answer"
+      ]
+    },
+    {
+      "question_id": "Q049",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    },
+    {
+      "question_id": "Q050",
+      "behaviors": [
+        "abstain",
+        "abstain",
+        "abstain"
+      ]
+    }
+  ],
+  "public_artifacts": {
+    "responses_sha256": "9fac67b298784783a6117a76e3d81cd5f02717fa1a1c6d28f6ea3583fd0e6272",
+    "judgments_sha256": "830c493c49869894b89622fb175b6c9157a4c36a025e09cb4201ef8d0f73a381"
+  }
+}
