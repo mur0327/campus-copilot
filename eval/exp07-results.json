@@ -2,11 +2,11 @@
   "schema_version": "exp07-public-1",
   "run_id": "exp07-20260715T064623Z",
   "manifest_sha256": "8365fb39f85f800b9b2c759dd6e54a138349b51cafd79753c541bfc9daf4566f",
-  "private_judgments_sha256": "1c840b472a743f3f5bc9ef92f336783c5c3902d8434b5521d9f1a0b25bf4925d",
+  "private_judgments_sha256": "3fcb018db0f691acafa18ba10c9f701eeacfb5d618606a04ada4da68c639c979",
   "all_50": {
     "question_count": 50,
-    "success_count": 30,
-    "success_rate": 0.6,
+    "success_count": 31,
+    "success_rate": 0.62,
     "system_error_count": 0,
     "human_axis_denominator": 50,
     "human_axis_system_error_exclusions": 0,
@@ -17,9 +17,9 @@
         "rate": 0.785714
       },
       "qualified_answer": {
-        "success_count": 0,
+        "success_count": 1,
         "denominator": 3,
-        "rate": 0.0
+        "rate": 0.333333
       },
       "abstain": {
         "success_count": 8,
@@ -29,9 +29,9 @@
     },
     "behavior_errors": {
       "over_answer": {
-        "count": 14,
+        "count": 13,
         "denominator": 22,
-        "rate": 0.636364,
+        "rate": 0.590909,
         "system_error_exclusions": 0
       },
       "over_rejection": {
@@ -153,11 +153,11 @@
         "question_id": "Q008",
         "status": "success",
         "expected_behavior": "qualified_answer",
-        "actual_behavior": "full_answer",
-        "behavior_error": "over_answer",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": null,
         "deployment_pass": true,
         "grounding_pass": true,
-        "end_to_end_success": false
+        "end_to_end_success": true
       },
       {
         "question_id": "Q009",
@@ -583,8 +583,8 @@
   },
   "exclude_q035": {
     "question_count": 49,
-    "success_count": 29,
-    "success_rate": 0.591837,
+    "success_count": 30,
+    "success_rate": 0.612245,
     "system_error_count": 0,
     "human_axis_denominator": 49,
     "human_axis_system_error_exclusions": 0,
@@ -595,9 +595,9 @@
         "rate": 0.777778
       },
       "qualified_answer": {
-        "success_count": 0,
+        "success_count": 1,
         "denominator": 3,
-        "rate": 0.0
+        "rate": 0.333333
       },
       "abstain": {
         "success_count": 8,
@@ -607,9 +607,9 @@
     },
     "behavior_errors": {
       "over_answer": {
-        "count": 14,
+        "count": 13,
         "denominator": 22,
-        "rate": 0.636364,
+        "rate": 0.590909,
         "system_error_exclusions": 0
       },
       "over_rejection": {
@@ -731,11 +731,11 @@
         "question_id": "Q008",
         "status": "success",
         "expected_behavior": "qualified_answer",
-        "actual_behavior": "full_answer",
-        "behavior_error": "over_answer",
+        "actual_behavior": "qualified_answer",
+        "behavior_error": null,
         "deployment_pass": true,
         "grounding_pass": true,
-        "end_to_end_success": false
+        "end_to_end_success": true
       },
       {
         "question_id": "Q009",
@@ -2064,7 +2064,7 @@
     }
   ],
   "public_artifacts": {
-    "responses_sha256": "56dbc7fa469905af24fe56929a714963adc83a03e85152e45ecc61d7122e9699",
-    "judgments_sha256": "7afc50298c8ae75e2ba41ad582a4d7a312572ea25652d9e6d64e42b80e1d3883"
+    "responses_sha256": "4c5e8838de543c2227c3721331f7fc11dfb3bcd2fe016f286b335ae6000cf32d",
+    "judgments_sha256": "3b45a368d5b7232a30e1021d3333d187609779a2dfae80406ec8632020023d9d"
   }
 }

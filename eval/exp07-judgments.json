@@ -2,13 +2,13 @@
   "schema_version": "exp07-public-1",
   "run_id": "exp07-20260715T064623Z",
   "manifest_sha256": "8365fb39f85f800b9b2c759dd6e54a138349b51cafd79753c541bfc9daf4566f",
-  "private_judgments_sha256": "1c840b472a743f3f5bc9ef92f336783c5c3902d8434b5521d9f1a0b25bf4925d",
+  "private_judgments_sha256": "3fcb018db0f691acafa18ba10c9f701eeacfb5d618606a04ada4da68c639c979",
   "primary_judgments_sha256": "caee6b2221827cfbe506a58bb944c65521797b3e7c3cb887f5c935d6cfea27f9",
   "judge": "author",
   "rubric_sha256": "a58b66112276548db95866a0f788108a97e95ec48d0b89df0db044c285b12af9",
   "primary_exported_at": "2026-07-15T12:16:01.420Z",
   "reveal_started_at": "2026-07-15T12:28:14.495Z",
-  "adjudicated_exported_at": "2026-07-15T16:39:31Z",
+  "adjudicated_exported_at": "2026-07-16T14:00:03Z",
   "judgments": [
     {
       "question_id": "Q017",
@@ -996,7 +996,7 @@
     {
       "question_id": "Q008",
       "response_status": "success",
-      "actual_behavior": "full_answer",
+      "actual_behavior": "qualified_answer",
       "abstention_notice": "not_applicable",
       "content_accuracy": "fully_correct",
       "claim_support": "fully_supported",
@@ -1009,7 +1009,16 @@
       "hold_axes": [],
       "stage1_locked_at": "2026-07-15T07:47:07.278Z",
       "stage2_locked_at": "2026-07-15T12:15:55.542Z",
-      "revision_history": [],
+      "revision_history": [
+        {
+          "field": "actual_behavior",
+          "old_value": "full_answer",
+          "new_value": "qualified_answer",
+          "reason": "외부 검토(2026-07-16) 후 동결 rubric과 실제 응답을 재대조한 결과, 응답이 확인된 절차를 안내하면서 구체적인 정정 기간 일자와 상세 시스템 조작법이 확인되지 않았다는 핵심 제한을 limitations로 명시해 rubric의 qualified_answer 정의(확인된 부분을 답하며 핵심 범위 제한을 명시)에 부합함을 확인했다. 기대 행동이 qualified_answer인 문항의 fully_correct 판정과도 정합하도록 full_answer를 qualified_answer로 정정한다.",
+          "revised_at": "2026-07-16T14:00:03Z",
+          "phase": "post_reveal"
+        }
+      ],
       "raw_output_privacy_review": "no_sensitive_pattern"
     }
   ]
