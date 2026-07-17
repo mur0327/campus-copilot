@@ -1,12 +1,13 @@
-# 외부 리뷰 5·6 — qrel v3 감사와 v4 설계 승인 (2026-07-13 ~ 07-14)
+# 외부 리뷰 5·6: qrel v3 감사와 v4 설계 승인 (2026-07-13 ~ 07-14)
 
-무맥락 GPT Pro 리뷰 두 건의 정본 기록이다.
-리뷰 5는 qrel v3 발행 커밋(`547ef38`)을 대상으로 한 감사이고, 리뷰 6은 그 지적을 반영한 v4 설계안에 대한 승인 심사다.
-리뷰 5 원문(195줄)은 `tmp/qrel-v3-external-review-2026-07-13.md`(비추적)에 있고, 리뷰 6은 대화로만 수신되어 요지를 본 문서에 수록한다.
-v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-criteria.md), 도구 구현 계약은 [docs/sessions/2026-07-14-qrel-v4-codex-instructions.md](../sessions/2026-07-14-qrel-v4-codex-instructions.md)다.
+**상태: 역사 자료.**
+**작성일 2026-07-14.**
 
-**2026-07-14 감사 범위 변경**: §4의 v4 절차 문구와 §5의 저자 감사 범위는 사람 감사 시작 전에 [17-qrel-v4-b2-audit-protocol.md](17-qrel-v4-b2-audit-protocol.md)로 대체됐다.
-아래 내용은 리뷰 6 승인 당시의 역사 기록으로 보존한다.
+qrel v4 설계 승인과 감사 범위 변경 과정을 보존하며, 완료된 최종 절차와 결과는 `19-paper-master.md`를 따른다.
+
+무맥락 GPT Pro 리뷰 두 건의 정본 기록이다. 리뷰 5는 qrel v3 발행 커밋(`547ef38`)을 대상으로 한 감사이고, 리뷰 6은 그 지적을 반영한 v4 설계안에 대한 승인 심사다. 리뷰 5 원문(195줄)은 `tmp/qrel-v3-external-review-2026-07-13.md`(비추적)에 있고, 리뷰 6은 대화로만 수신되어 요지를 본 문서에 수록한다. v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-criteria.md), 도구 구현 계약은 [docs/sessions/2026-07-14-qrel-v4-codex-instructions.md](../sessions/2026-07-14-qrel-v4-codex-instructions.md)다.
+
+감사 범위 변경(2026-07-14): §4의 v4 절차 문구와 §5의 저자 감사 범위는 사람 감사 시작 전에 [17-qrel-v4-b2-audit-protocol.md](17-qrel-v4-b2-audit-protocol.md)로 대체됐다. 아래 내용은 리뷰 6 승인 당시의 역사 기록으로 보존한다.
 
 ## 1. 리뷰 5 판정 요지
 
@@ -20,20 +21,21 @@ v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-crit
 - C4. "세 판정자가 같은 규칙으로 판정" 서술은 사실과 다르다. 원칙 11~13은 교수 판정(09:21 KST) 후에 정식화됐고(초기 기준 커밋 16:02 KST), 저자는 Claude 초벌 경계 6건을 본 뒤 확정했다.
 - C5. 시스템은 chunk를 순위화하는데 scorer는 URL을 hit로 처리한다. Q009에서 같은 URL의 무의미 chunk(rank 3, 사실상 "- - 1 -")가 정답으로 계산되는 실증이 있다.
 
-수치 감사: 리뷰어가 재계산한 v3 집계·일치율·κ는 기록과 전부 일치했다(문제는 숫자가 아니라 숫자의 의미였다).
-저자 측 독립 재검증에서도 리뷰어의 정량 주장(156/90/66, 414쌍/207 URL, scorer 동작)이 모두 사실로 확인됐다.
+수치 감사: 리뷰어가 재계산한 v3 집계·일치율·κ는 기록과 전부 일치했다(문제는 숫자가 아니라 숫자의 의미였다). 저자 측 독립 재검증에서도 리뷰어의 정량 주장(156/90/66, 414쌍/207 URL, scorer 동작)이 모두 사실로 확인됐다.
 
 중요 지적 요지: 시효 판정 단위 불일치(I1), 결정적 산술을 partial로 벌점(I2, Q033), partial에서 answer/abstain을 가르는 규칙 부재(I3), reason 모순·오분류(I4), 문서 행 재검토 6건(I5), 논의 전 저자 원본 미보존(I6), κ 해석 제한(I7), v2 scorer 재사용 불가(I8), query-implied audience(I9).
 
 ## 2. 왕복 결과
 
-**과잉으로 판정하고 축소 수용한 것**
+### 과잉으로 판정하고 축소 수용한 것
 
 - claim 단위 temporal 스키마(I1): 실제 적용 규칙은 "유효기간 경과 여부"였고 세 행이 이 규칙에 일관하므로, 스키마 재설계 대신 원칙 문구 수정으로 해소한다.
 - derivation 4분류(I2): 보조 필드 신설 대신 "결정적 산술 도출은 full" 원칙 한 줄로 해소한다.
 - 차단 조건의 교수 재판정(리뷰 5 §차단 6): 수행하지 않는다. 방법 절을 "진단적 비교"로 제한하면 현행 데이터로 정직하게 서술된다. 리뷰 6이 이 선택을 승인했다.
 
-**저자 결정으로 확정한 것 (2026-07-14 그릴링)**
+### 저자 결정으로 확정한 것
+
+2026-07-14 그릴링에서 확정했다.
 
 - pool은 50문항 전량(414쌍)으로 확장하되, 필수분(18문항 union 66쌍 + abstain 7문항 행)을 먼저 판정한다. 일정이 밀리면 그 시점에서 멈추고 부분 pooling으로 정직하게 서술하며, 이미 한 판정은 그대로 유효하다.
 - 채점은 page + evidence 2계층으로 분리한다.
@@ -41,12 +43,16 @@ v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-crit
 - expected_behavior 3값 도입, reason은 primary+secondary와 우선순위 고정.
 - Q033은 저자가 리뷰어 논리를 수용해 v3 결정을 뒤집었고, Q006은 "두 서류가 다르다는 단정도 재료 밖 사적 지식"이라는 대칭 원칙으로 partial을 유지했다.
 
-## 3. 리뷰 6 판정 요지 (v4 설계 승인)
+## 3. 리뷰 6 판정 요지
+
+v4 설계 승인에 관한 기록이다.
 
 결론: "GO. 다만 판정 시작 전에 계약을 잠글 것."
 승인 조건 6건과 저자 측 수용:
 
-**1. 414쌍은 후보 pool이지 qrel 전체가 아니다**
+### 3.1 후보 pool과 qrel
+
+414쌍은 후보 pool이지 qrel 전체가 아니다.
 
 - 최종 판정 집합은 3모드 top-5 합집합 ∪ v3 양성 gold ∪ EXP-06 양성이어야 한다.
 - 세 모드가 전부 놓친 정답이 분모에서 사라지면 검색 실패라는 핵심 발견 자체가 증발한다.
@@ -54,38 +60,47 @@ v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-crit
 - 현행 세 실행의 top-5에 unjudged가 남으면 scorer가 실패해야 한다.
 - 전부 수용.
 
-**2. URL pool과 별도의 chunk pool**
+### 3.2 URL pool과 chunk pool
+
+URL pool과 별도의 chunk pool이 필요하다.
 
 - evidence qrel은 1:N(한 페이지에 정답 chunk 여러 개 가능) + content hash 보존.
 - 위치 질문(Q015류)을 위한 evidence_type=page_navigation 신설.
 - invalid 페이지에는 gold chunk를 지정하지 않는다(비용 절감).
 - 전부 수용.
 
-**3. hit@5 둘만으로는 순위 주장 불가**
+### 3.3 순위 지표
+
+hit@5 둘만으로는 순위 주장을 할 수 없다.
 
 - graded nDCG_support@5와 nDCG_deployable@5를 유지하고, Recall 명칭은 방법 절에 question-level success rate로 정의한다.
 - 수용(기존 재채점 계획과 일치, 확인 도장 성격).
 
-**4. 음성 무작위 감사**
+### 3.4 음성 무작위 감사
+
+음성 라벨의 무작위 감사를 포함한다.
 
 - v2 붕괴가 정확히 "자신 있게 잘못 매긴 음성 라벨"이었으므로, 양성·경계·변경 행 외에 invalid 층화 무작위 표본을 저자 검토에 추가한다.
 - 검토자는 초벌 라벨을 가린 채 먼저 판정한다.
 - 전부 수용. 이번 사이클의 최고 기여로 평가.
 
-**5. 존재하지 않는 "v4 교수 원본"을 만들지 말 것**
+### 3.5 v4 계보
+
+존재하지 않는 "v4 교수 원본"을 만들지 않는다.
 
 - v4 계보는 primary-initial / secondary-audit / adjudicated + manifest이며, v3 교수 JSON은 역사 자료로 남긴다.
 - v3 문서는 본문을 고치지 않고 첫머리 정정 배너만 붙인다.
 - 전부 수용(저자 측 초기 계획 "3파일: 저자·교수·adjudicated"가 이 지적으로 정정됨).
 
-**6. expected_behavior 결정표와 reason 의미 잠금**
+### 3.6 기대 행동 결정표와 사유
+
+expected_behavior 결정표와 reason의 의미를 잠근다.
 
 - full_answer / qualified_answer / abstain의 판정 기준표와 허용 조합 검사를 코드북에 넣는다.
 - reason에 missing_required_claim을 신설해 Q006의 partial+absent 모순을 해소한다.
 - 전부 수용.
 
-추가 수용: 질문 라벨은 pool 판정 후 자동 파생(수기 동결 금지, composition_override 예외), invariant 12종 자동 검사, EXP-07 전 answer rubric 동결, 판정 시트에서 mode·rank·score 숨김.
-리뷰 5 차단 조건 5(EXP-06 chunk 원천 복구)는 원천 로그(`retrieval-20260705-094816.jsonl`)가 로컬에 보존돼 있어 content_sig 대조로 이행한다.
+추가 수용: 질문 라벨은 pool 판정 후 자동 파생(수기 동결 금지, composition_override 예외), invariant 12종 자동 검사, EXP-07 전 answer rubric 동결, 판정 시트에서 mode·rank·score 숨김. 리뷰 5 차단 조건 5(EXP-06 chunk 원천 복구)는 원천 로그(`retrieval-20260705-094816.jsonl`)가 로컬에 보존돼 있어 content_sig 대조로 이행한다.
 
 ## 4. 방법 절 문구 정본
 
@@ -108,7 +123,9 @@ v4 절차 서술(LLM 초벌)은 리뷰 6 제안 문구를 채택한다:
 - "URL이 맞으면 근거도 회수됐다."
 - "사람이 414쌍을 전량 판정했다."
 
-## 5. 실행 순서 (v4 사이클 정본)
+## 5. 실행 순서
+
+당시 v4 사이클의 정본으로 사용한 순서다.
 
 1. 리뷰 16 정본화와 v3 문서 정정 배너.
 2. qrel-v4-criteria.md 코드북 동결.
