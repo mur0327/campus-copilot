@@ -142,3 +142,9 @@ any hit는 전부 같고 두 nDCG의 변화는 0.0019 이하였다.
 
 재현 명령은 `uv run --project backend python eval/compare_v4_audit.py`다.
 원시 산출물은 `eval/results/qrel-v4-audit-comparison-20260714-131635.json`과 `eval/results/qrel-v4-audit-comparison-20260714-131635.csv`이며 SHA-256은 각각 `b6be0458a827ed591f7cdd6b4712eb20c9c9147605ed7bb0601de4bc414141db`, `e2fa0f6dab4a6331ff72b1838126fdabc50a220055fcd51224861bc34dc62385`다.
+
+## 9. 기록 정정
+
+`qrel-v4-primary-initial.json`의 `judge` 필드는 Codex 모델을 `gpt-5.6-terra`로 기록했으나 실제 사용 모델은 GPT 5.6 Sol이다(2026-07-18 확인).
+동결본과 manifest 해시를 보존하기 위해 파일은 수정하지 않고 이 기록으로 정정한다.
+오기는 모델 표기에 한정되며 판정 내용과 계보에는 영향이 없다.
