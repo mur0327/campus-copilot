@@ -578,8 +578,10 @@ BM25-only, Semantic-only와 Hybrid는 공통 운영 코드 경로를 사용하�
 
 ### 13.10 집필 전 서지 확정 목록
 
-- 게재처 표기 미확정 5건(eRAG는 SIGIR 2024, RAGAS는 EACL 2024 demo, FreshLLMs는 ACL 2024 Findings, AIS는 Computational Linguistics 2023, HoH는 불명): arXiv 페이지에 학회 표기가 없어 학회 프로그램 페이지와 대조가 필요하다.
-- TREC 2025 RAG overview 논문의 저자·서지: NIST 목차 페이지에서 제목만 확인했다.
+- 게재처 확정(2026-07-18, ACM DL·ACL Anthology·MIT Press·dblp 대조): eRAG는 SIGIR 2024 pp. 2395-2400, RAGAS는 EACL 2024 System Demonstrations pp. 150-158, FreshLLMs는 Findings of ACL 2024 pp. 13697-13720, AIS는 Computational Linguistics 49(4) pp. 777-840, HoH는 ACL 2025 Long Papers pp. 6036-6063이다.
+- TREC 2025 RAG overview 저자는 S. Upadhyay, N. Thakur, R. Pradeep, N. Craswell, D. Campos, J. Lin이다(NIST TREC 34 proceedings, arXiv abs/2603.09891).
+- UAEval4RAG 정식 서지는 X. Peng, P. K. Choubey, C. Xiong, C.-S. Wu, ACL 2025 Long Papers pp. 8452-8472이다.
+- 이재승 외 국내 문헌의 KCI 공식 영문 서지는 J.-S. Lee, J.-M. Lee, and J.-H. Yoo, "A Student Service Chatbot for Learning Management System at University using Retrieval-Augmented Generation-based Large Language Model," Journal of Broadcast Engineering 29(5), pp. 581-595, 2024이다.
 - ARGObot(ACM Southeast Conference 2025, DOI 10.1145/3696673.3723065): ACM DL 403으로 원문 접근 실패. 인용하려면 다른 경로가 필요하다.
 - Zobel, "How Reliable Are the Results of Large-Scale Information Retrieval Experiments?," SIGIR 1998: 원문 접속 실패로 핵심 근거에서 제외했고 pooling 한계는 NIST 원문으로 대체했다.
 - Antico et al. 2024(Milano-Bicocca 사례)와 AttributionBench(arXiv 2402.15089): 원문 미확인, 현재 확정 후보로 불필요.
@@ -678,7 +680,7 @@ qrel 감사 절차는 모든 결과의 기준이므로 표 2는 8쪽 압축에�
 | --- | --- | --- |
 | 마스터 통합 | 완료 | 최종 산출물·코드와 수치 대조 완료 |
 | 기존 논문 문서 포맷 정리 | 완료 | 추적 Markdown이 문서 형식 규칙을 따르고 의미 변화가 없음 |
-| 관련 연구 재조사 | 완료(§13) | 원 논문 대조 완료. 잔여: §13.10 서지 확정을 집필 전 완료 |
+| 관련 연구 재조사 | 완료(§13) | 원 논문 대조와 §13.10 서지 확정 완료 |
 | 외부 무맥락 리뷰 | 완료(2026-07-16, 조건부 진행 판정) | blocking·major 지적의 마스터 반영 |
 | 제목·RQ·기여 재검토 | 완료 | 최종 확정은 지도교수 검토에서 |
 | 동결 검색 출력 공개 판단 | 대기 | RQ1 재채점용 JSONL 3종의 공개 위치 또는 비공개 제한 문구 확정 |
