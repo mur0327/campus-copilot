@@ -20,6 +20,7 @@ docs/paper/guide/02-논문투고규정및연구윤리규정.md
 docs/paper/guide/03-논문심사규정.md
 docs/paper/guide/*.hwp
 docs/paper/guide/*.pdf
+docs/paper/sample/
 docs/internship-log/
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,python,node,react,visualstudiocode
