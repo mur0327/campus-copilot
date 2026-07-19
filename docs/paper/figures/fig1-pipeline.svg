@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="300" viewBox="0 0 920 300" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#222"/>
+    </marker>
+  </defs>
+
+  <!-- Frozen corpus feeds Retrieval -->
+  <rect x="195" y="30" width="180" height="78" rx="6" fill="#f2f2f2" stroke="#222" stroke-width="1.5"/>
+  <text x="285" y="55" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">Frozen corpus</text>
+  <text x="285" y="74" text-anchor="middle" font-size="11" fill="#333">4,087 active documents</text>
+  <text x="285" y="90" text-anchor="middle" font-size="11" fill="#333">20,788 indexed chunks</text>
+  <line x1="285" y1="108" x2="285" y2="144" stroke="#222" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- Question -->
+  <rect x="30" y="160" width="120" height="60" rx="6" fill="#fff" stroke="#222" stroke-width="1.5"/>
+  <text x="90" y="186" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">User</text>
+  <text x="90" y="204" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">question</text>
+
+  <!-- Retrieval -->
+  <line x1="150" y1="190" x2="196" y2="190" stroke="#222" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <rect x="200" y="148" width="170" height="88" rx="6" fill="#fff" stroke="#222" stroke-width="1.5"/>
+  <text x="285" y="172" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">Retrieval</text>
+  <text x="285" y="192" text-anchor="middle" font-size="11" fill="#333">operational Hybrid</text>
+  <text x="285" y="208" text-anchor="middle" font-size="11" fill="#333">(RRF, k = 60), Best Bets on</text>
+  <text x="285" y="226" text-anchor="middle" font-size="11" fill="#333">up to 6 results</text>
+
+  <!-- RQ1 retrieval-only comparison note -->
+  <rect x="25" y="28" width="152" height="84" rx="6" fill="none" stroke="#555" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="101" y="48" text-anchor="middle" font-size="11" font-weight="bold" fill="#111">RQ1 comparison</text>
+  <text x="101" y="66" text-anchor="middle" font-size="10.5" fill="#333">BM25 / Semantic / Hybrid</text>
+  <text x="101" y="82" text-anchor="middle" font-size="10.5" fill="#333">retrieval stage only</text>
+  <text x="101" y="98" text-anchor="middle" font-size="10.5" fill="#333">(top-5, Best Bets off)</text>
+  <line x1="150" y1="112" x2="215" y2="150" stroke="#555" stroke-width="1.1" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+
+  <!-- Evidence gate -->
+  <line x1="370" y1="190" x2="416" y2="190" stroke="#222" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <rect x="420" y="148" width="180" height="88" rx="6" fill="#fff" stroke="#222" stroke-width="1.5"/>
+  <text x="510" y="172" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">Evidence gate</text>
+  <text x="510" y="192" text-anchor="middle" font-size="11" fill="#333">relevance &#8805; 0.35 or</text>
+  <text x="510" y="208" text-anchor="middle" font-size="11" fill="#333">keyword overlap;</text>
+  <text x="510" y="226" text-anchor="middle" font-size="11" fill="#333">up to 4 evidence candidates</text>
+
+  <!-- Generation -->
+  <line x1="600" y1="190" x2="646" y2="190" stroke="#222" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <rect x="650" y="148" width="150" height="88" rx="6" fill="#fff" stroke="#222" stroke-width="1.5"/>
+  <text x="725" y="172" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">Generation</text>
+  <text x="725" y="192" text-anchor="middle" font-size="11" fill="#333">operational prompt,</text>
+  <text x="725" y="208" text-anchor="middle" font-size="11" fill="#333">structured JSON,</text>
+  <text x="725" y="226" text-anchor="middle" font-size="11" fill="#333">validation &amp; repair</text>
+
+  <!-- Structured response -->
+  <line x1="725" y1="148" x2="725" y2="104" stroke="#222" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <rect x="640" y="30" width="170" height="70" rx="6" fill="#f2f2f2" stroke="#222" stroke-width="1.5"/>
+  <text x="725" y="55" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">Structured response</text>
+  <text x="725" y="74" text-anchor="middle" font-size="11" fill="#333">answer text +</text>
+  <text x="725" y="90" text-anchor="middle" font-size="11" fill="#333">displayed sources</text>
+
+  <!-- Insufficient-evidence branch -->
+  <line x1="510" y1="236" x2="510" y2="272" stroke="#222" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="510" y="290" text-anchor="middle" font-size="11" fill="#333">no passing candidate &#8594; insufficient-evidence response (no LLM call)</text>
+</svg>
