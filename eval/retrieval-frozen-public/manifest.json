@@ -1,0 +1,42 @@
+{
+  "schema": "retrieval-frozen-public.v1",
+  "kept_item_fields": [
+    "rank",
+    "source_number",
+    "score",
+    "chunk_id",
+    "document_id",
+    "title",
+    "url",
+    "menu_path",
+    "source_scope",
+    "page_kind",
+    "chunk_type",
+    "chunk_index",
+    "content_sig"
+  ],
+  "removed": "chunk text excerpts and pre-v4 gold/expectation labels",
+  "files": {
+    "bm25": {
+      "source": "retrieval-bm25-20260712-061017.jsonl",
+      "source_sha256": "46d39a432f50fd09c760899349b836312d14e4eec33ad84f6cdee0db108a4c4d",
+      "public": "retrieval-bm25-20260712-public.jsonl",
+      "public_sha256": "7f16e8c59a390b3d1ef825084fbf2da6507f98ea2542b493c1233d8b4c09ab6e",
+      "records": 50
+    },
+    "semantic": {
+      "source": "retrieval-semantic-20260712-061027.jsonl",
+      "source_sha256": "c4b6ebca38bcc9c6916116a7c0a602840b46b83ee43d37769a92fd5eba1d06e4",
+      "public": "retrieval-semantic-20260712-public.jsonl",
+      "public_sha256": "db793690d221b8f401d74bb530b771f01c315eff5a344deac9ae8737224ecdd8",
+      "records": 50
+    },
+    "hybrid": {
+      "source": "retrieval-hybrid-20260712-061045.jsonl",
+      "source_sha256": "a0e8cc00d6dc4cf67fe644bf1bc588d1d4a9aec9a39520df24a9e3cff7325c55",
+      "public": "retrieval-hybrid-20260712-public.jsonl",
+      "public_sha256": "0032afdd33e2198619cb1cf58f154460e6521fe657daf354bd1a2ea31b0d195a",
+      "records": 50
+    }
+  }
+}
