@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 400" font-family="Helvetica, Arial, sans-serif">
+<rect width="920" height="400" fill="#ffffff"/>
+<line x1="50" y1="345.0" x2="900" y2="345.0" stroke="#222222" stroke-width="1"/>
+<text x="42" y="349.0" font-size="11" fill="#444444" text-anchor="end">0.0</text>
+<line x1="50" y1="287.0" x2="900" y2="287.0" stroke="#d9d9d9" stroke-width="1"/>
+<text x="42" y="291.0" font-size="11" fill="#444444" text-anchor="end">0.2</text>
+<line x1="50" y1="229.0" x2="900" y2="229.0" stroke="#d9d9d9" stroke-width="1"/>
+<text x="42" y="233.0" font-size="11" fill="#444444" text-anchor="end">0.4</text>
+<line x1="50" y1="171.0" x2="900" y2="171.0" stroke="#d9d9d9" stroke-width="1"/>
+<text x="42" y="175.0" font-size="11" fill="#444444" text-anchor="end">0.6</text>
+<line x1="50" y1="113.0" x2="900" y2="113.0" stroke="#d9d9d9" stroke-width="1"/>
+<text x="42" y="117.0" font-size="11" fill="#444444" text-anchor="end">0.8</text>
+<line x1="50" y1="55.0" x2="900" y2="55.0" stroke="#d9d9d9" stroke-width="1"/>
+<text x="42" y="59.0" font-size="11" fill="#444444" text-anchor="end">1.0</text>
+<rect x="71.8" y="241.9" width="30" height="103.1" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2" rx="1.5"/>
+<rect x="105.8" y="138.8" width="30" height="206.2" fill="#b3b3b3" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<rect x="139.8" y="132.3" width="30" height="212.7" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<text x="120.8" y="363" font-size="11.5" fill="#222222" text-anchor="middle">PageHit</text>
+<text x="120.8" y="378" font-size="11.5" fill="#222222" text-anchor="middle">full@5</text>
+<rect x="213.5" y="171.0" width="30" height="174.0" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2" rx="1.5"/>
+<rect x="247.5" y="55.0" width="30" height="290.0" fill="#b3b3b3" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<rect x="281.5" y="61.4" width="30" height="283.6" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<text x="262.5" y="363" font-size="11.5" fill="#222222" text-anchor="middle">PageHit</text>
+<text x="262.5" y="378" font-size="11.5" fill="#222222" text-anchor="middle">any@5</text>
+<rect x="355.2" y="255.0" width="30" height="90.0" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2" rx="1.5"/>
+<rect x="389.2" y="106.7" width="30" height="238.3" fill="#b3b3b3" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<rect x="423.2" y="141.3" width="30" height="203.7" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<text x="404.2" y="363" font-size="11.5" fill="#222222" text-anchor="middle">nDCG</text>
+<text x="404.2" y="378" font-size="11.5" fill="#222222" text-anchor="middle">support@5</text>
+<rect x="496.8" y="254.0" width="30" height="91.0" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2" rx="1.5"/>
+<rect x="530.8" y="134.3" width="30" height="210.7" fill="#b3b3b3" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<rect x="564.8" y="154.8" width="30" height="190.2" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<text x="545.8" y="363" font-size="11.5" fill="#222222" text-anchor="middle">nDCG</text>
+<text x="545.8" y="378" font-size="11.5" fill="#222222" text-anchor="middle">deployable@5</text>
+<rect x="638.5" y="261.0" width="30" height="84.0" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2" rx="1.5"/>
+<rect x="672.5" y="139.0" width="30" height="206.0" fill="#b3b3b3" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<rect x="706.5" y="131.3" width="30" height="213.7" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<text x="687.5" y="363" font-size="11.5" fill="#222222" text-anchor="middle">EvidenceHit</text>
+<text x="687.5" y="378" font-size="11.5" fill="#222222" text-anchor="middle">full@5</text>
+<rect x="780.2" y="161.8" width="30" height="183.2" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2" rx="1.5"/>
+<rect x="814.2" y="55.0" width="30" height="290.0" fill="#b3b3b3" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<rect x="848.2" y="62.6" width="30" height="282.4" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="0.8" rx="1.5"/>
+<text x="829.2" y="363" font-size="11.5" fill="#222222" text-anchor="middle">EvidenceHit</text>
+<text x="829.2" y="378" font-size="11.5" fill="#222222" text-anchor="middle">any@5</text>
+<rect x="250" y="20" width="14" height="14" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2"/>
+<text x="270" y="31.5" font-size="12" fill="#222222">BM25-only</text>
+<rect x="374.8" y="20" width="14" height="14" fill="#b3b3b3" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="394.8" y="31.5" font-size="12" fill="#222222">Semantic-only</text>
+<rect x="528.4000000000001" y="20" width="14" height="14" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="548.4000000000001" y="31.5" font-size="12" fill="#222222">Hybrid</text>
+</svg>

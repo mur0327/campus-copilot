@@ -527,7 +527,7 @@ BM25-only, Semantic-only와 Hybrid는 공통 운영 코드 경로를 사용하�
 | Vu et al., *FreshLLMs: Refreshing Large Language Models with Search Engine Augmentation* (FreshQA), 2023 | 📄 | [arXiv abs/2310.03214](https://arxiv.org/abs/2310.03214), 2026-07-16 | 빠르게 변하는 지식과 거짓 전제 질문의 사실성 평가(사람 평가 5만 건 이상). temporal 축 평가 관행의 대표. | 인용 확정 후보. ACL 2024 Findings 게재로 알려짐, 표기 확인(§13.10). |
 | Ouyang et al., *HoH: A Dynamic Benchmark for Evaluating the Impact of Outdated Information on RAG*, 2025 | 📄 | [arXiv abs/2503.04800](https://arxiv.org/abs/2503.04800), 2026-07-16 | 낡은 정보가 주의 분산으로 정확도를 낮추고 현재 정보가 있어도 오답을 유도함을 실증. 본 연구의 stale 축과 EXP-06/07의 "낡은 근거의 충실한 오답"을 직접 지지. | 인용 확정 후보. 게재처 확인 필요(§13.10). |
 
-종합: temporal 축은 SituatedQA(맥락 의존), FreshQA(사실성), HoH(RAG에서의 해악 실증)로 계보가 탄탄하다. 반면 audience(문서의 대상 집단) 축을 관련성 판정에 분리해 넣은 학술 문헌은 이번 조사에서 찾지 못했다(산업 블로그의 "context trustworthiness" 논의 수준만 존재). 관련 연구 절에서 temporal은 선행에 접속하고, audience는 본 도메인의 요구(학과 미러·회차 공지·집단별 안내)에서 도출한 신설 축으로 서술하는 것이 정직하고 방어 가능하다.
+종합: temporal 축은 SituatedQA(맥락 의존), FreshQA(사실성), HoH(RAG에서의 해악 실증)로 계보가 탄탄하다. 반면 audience(문서의 대상 집단) 축을 관련성 판정에 분리해 넣은 학술 문헌은 이번 조사에서 찾지 못했다(산업 블로그의 "context trustworthiness" 논의 수준만 존재). 관련 연구 절에서 temporal은 선행에 접속하고, audience는 본 도메인의 요구(학과 미러·회차 공지·집단별 안내)에서 도출한 신설 축으로 서술하는 것이 정직하고 방어 가능하다. 2026-07-20 반례 재조사에서 ConditionalQA(ACL 2022, 정부 정책 문서의 조건부 답변 독해), CLEF eHealth의 understandability 차원, TREC Contextual Suggestion의 프로필 기반 판정을 인접 사례로 확인했으나, 문서의 대상 집단 적합성을 관련성 판정의 분리 축으로 둔 선례는 여전히 미발견이다. 원고 2.4는 ConditionalQA를 인용해 이 경계를 명시한다.
 
 ### 13.7 축 6: 기관·대학 행정 문서 RAG 응용
 
@@ -585,6 +585,8 @@ BM25-only, Semantic-only와 Hybrid는 공통 운영 코드 경로를 사용하�
 - ARGObot(ACM Southeast Conference 2025, DOI 10.1145/3696673.3723065): ACM DL 403으로 원문 접근 실패. 인용하려면 다른 경로가 필요하다.
 - Zobel, "How Reliable Are the Results of Large-Scale Information Retrieval Experiments?," SIGIR 1998: 원문 접속 실패로 핵심 근거에서 제외했고 pooling 한계는 NIST 원문으로 대체했다.
 - Antico et al. 2024(Milano-Bicocca 사례)와 AttributionBench(arXiv 2402.15089): 원문 미확인, 현재 확정 후보로 불필요.
+- ConditionalQA 정식 서지는 H. Sun, W. Cohen, and R. Salakhutdinov, "ConditionalQA: A Complex Reading Comprehension Dataset with Conditional Answers," ACL 2022 Long Papers pp. 3627-3637이다(2026-07-20 ACL Anthology 대조). audience 축의 인접 사례 경계를 원고에 명시하기 위한 인용이다.
+- ClarkeDietz(EVIA 2025) 게재처 정식 표기는 "Proceedings of the Eleventh International Workshop on Evaluating Information Access (EVIA 2025)" pp. 1-5이다(2026-07-21 NTCIR-18 공식 목차와 논문 PDF 대조, DOI 10.20736/0002002105). 종전의 "18th"는 공동 개최 NTCIR-18과 혼동한 오기이며, PDF 머리말의 "Tenth"보다 공식 목차의 "Eleventh"를 따른다.
 
 ## 14. 표와 그림 계획
 
