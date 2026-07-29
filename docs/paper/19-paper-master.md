@@ -587,6 +587,7 @@ BM25-only, Semantic-only와 Hybrid는 공통 운영 코드 경로를 사용하�
 - Antico et al. 2024(Milano-Bicocca 사례)와 AttributionBench(arXiv 2402.15089): 원문 미확인, 현재 확정 후보로 불필요.
 - ConditionalQA 정식 서지는 H. Sun, W. Cohen, and R. Salakhutdinov, "ConditionalQA: A Complex Reading Comprehension Dataset with Conditional Answers," ACL 2022 Long Papers pp. 3627-3637이다(2026-07-20 ACL Anthology 대조). audience 축의 인접 사례 경계를 원고에 명시하기 위한 인용이다.
 - ClarkeDietz(EVIA 2025) 게재처 정식 표기는 "Proceedings of the Eleventh International Workshop on Evaluating Information Access (EVIA 2025)" pp. 1-5이다(2026-07-21 NTCIR-18 공식 목차와 논문 PDF 대조, DOI 10.20736/0002002105). 종전의 "18th"는 공동 개최 NTCIR-18과 혼동한 오기이며, PDF 머리말의 "Tenth"보다 공식 목차의 "Eleventh"를 따른다.
+- Digital Education Council, "Global AI Student Survey 2024"(2026-07-29 추가, 2차 피드백의 서론 통계용): 16개국 학·석·박사생 3,839명 조사, 86%가 학업에 AI 활용, 3명 중 2명 이상이 정보 탐색에 활용. 공식 공개 PDF와 DEC 게시물로 확인. 기관 보고서라 학술지명 이탤릭 없음. 표기는 학회 규정의 인터넷 자료 예시("TheStory on thePING Program(2008), URL (accessed January 24, 2012).")를 따라 제목(연도), URL (accessed 월 완전 철자 일, 연도) 형식으로 확정(2026-07-29 규정 원문 대조). 보고서 정식 제목에 기관명이 포함되어 별도 저자 표기는 두지 않는다.
 
 ## 14. 표와 그림 계획
 
@@ -676,6 +677,7 @@ qrel 감사 절차는 모든 결과의 기준이므로 표 2는 8쪽 압축에�
 - 세 실패 축 교집합: 2문항
 - 구조화 행동 3/3 일치: 46/50(92.0%)
 - 시스템 오류·평가 재시도·JSON 복구: 0·0·0
+- 서론 인용 통계(DEC Global AI Student Survey 2024): 16개국 대학생 3,839명, 학업 AI 활용 86%, 정보 탐색 활용 3명 중 2명 이상
 
 ## 16. 현행 작업 목록
 
