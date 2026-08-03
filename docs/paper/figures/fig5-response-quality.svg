@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 372" font-family="Helvetica, Arial, sans-serif">
+<rect width="920" height="372" fill="#ffffff"/>
+<text x="182" y="77" font-size="12" fill="#222222" text-anchor="end">Content accuracy</text>
+<rect x="210.0" y="56" width="372.0" height="26" fill="#1a1a1a"/>
+<text x="396.0" y="74" font-size="11" fill="#ffffff" text-anchor="middle">30</text>
+<rect x="582.0" y="56" width="111.6" height="26" fill="#808080"/>
+<text x="637.8" y="74" font-size="11" fill="#222222" text-anchor="middle">9</text>
+<rect x="693.6" y="56" width="37.2" height="26" fill="#c8c8c8"/>
+<text x="712.2" y="74" font-size="11" fill="#222222" text-anchor="middle">3</text>
+<rect x="730.8" y="56" width="99.2" height="26" fill="#ffffff" stroke="#222222" stroke-width="1"/>
+<text x="780.4" y="74" font-size="11" fill="#222222" text-anchor="middle">8</text>
+<text x="182" y="115" font-size="12" fill="#222222" text-anchor="end">Claim support</text>
+<rect x="210.0" y="94" width="496.0" height="26" fill="#1a1a1a"/>
+<text x="458.0" y="112" font-size="11" fill="#ffffff" text-anchor="middle">40</text>
+<rect x="706.0" y="94" width="24.8" height="26" fill="#808080"/>
+<text x="718.4" y="112" font-size="11" fill="#222222" text-anchor="middle">2</text>
+<rect x="730.8" y="94" width="99.2" height="26" fill="#ffffff" stroke="#222222" stroke-width="1"/>
+<text x="780.4" y="112" font-size="11" fill="#222222" text-anchor="middle">8</text>
+<text x="182" y="153" font-size="12" fill="#222222" text-anchor="end">Source display</text>
+<rect x="210.0" y="132" width="471.2" height="26" fill="#1a1a1a"/>
+<text x="445.6" y="150" font-size="11" fill="#ffffff" text-anchor="middle">38</text>
+<rect x="681.2" y="132" width="49.6" height="26" fill="#c8c8c8"/>
+<text x="706.0" y="150" font-size="11" fill="#222222" text-anchor="middle">4</text>
+<rect x="730.8" y="132" width="99.2" height="26" fill="#ffffff" stroke="#222222" stroke-width="1"/>
+<text x="780.4" y="150" font-size="11" fill="#222222" text-anchor="middle">8</text>
+<text x="182" y="191" font-size="12" fill="#222222" text-anchor="end">Claim temporal validity</text>
+<rect x="210.0" y="170" width="74.4" height="26" fill="#1a1a1a"/>
+<text x="247.2" y="188" font-size="11" fill="#ffffff" text-anchor="middle">6</text>
+<rect x="284.4" y="170" width="49.6" height="26" fill="#c8c8c8"/>
+<text x="309.2" y="188" font-size="11" fill="#222222" text-anchor="middle">4</text>
+<rect x="334.0" y="170" width="496.0" height="26" fill="#ffffff" stroke="#222222" stroke-width="1"/>
+<text x="582.0" y="188" font-size="11" fill="#222222" text-anchor="middle">40</text>
+<text x="182" y="229" font-size="12" fill="#222222" text-anchor="end">Audience fit</text>
+<rect x="210.0" y="208" width="496.0" height="26" fill="#1a1a1a"/>
+<text x="458.0" y="226" font-size="11" fill="#ffffff" text-anchor="middle">40</text>
+<rect x="706.0" y="208" width="24.8" height="26" fill="#c8c8c8"/>
+<text x="718.4" y="226" font-size="11" fill="#222222" text-anchor="middle">2</text>
+<rect x="730.8" y="208" width="99.2" height="26" fill="#ffffff" stroke="#222222" stroke-width="1"/>
+<text x="780.4" y="226" font-size="11" fill="#222222" text-anchor="middle">8</text>
+<text x="182" y="267" font-size="12" fill="#222222" text-anchor="end">Privacy</text>
+<rect x="210.0" y="246" width="620.0" height="26" fill="#1a1a1a"/>
+<text x="520.0" y="264" font-size="11" fill="#ffffff" text-anchor="middle">50</text>
+<line x1="210.0" y1="48" x2="210.0" y2="278" stroke="#d9d9d9" stroke-width="1"/>
+<text x="210.0" y="296" font-size="11" fill="#444444" text-anchor="middle">0</text>
+<line x1="334.0" y1="48" x2="334.0" y2="278" stroke="#d9d9d9" stroke-width="1"/>
+<text x="334.0" y="296" font-size="11" fill="#444444" text-anchor="middle">10</text>
+<line x1="458.0" y1="48" x2="458.0" y2="278" stroke="#d9d9d9" stroke-width="1"/>
+<text x="458.0" y="296" font-size="11" fill="#444444" text-anchor="middle">20</text>
+<line x1="582.0" y1="48" x2="582.0" y2="278" stroke="#d9d9d9" stroke-width="1"/>
+<text x="582.0" y="296" font-size="11" fill="#444444" text-anchor="middle">30</text>
+<line x1="706.0" y1="48" x2="706.0" y2="278" stroke="#d9d9d9" stroke-width="1"/>
+<text x="706.0" y="296" font-size="11" fill="#444444" text-anchor="middle">40</text>
+<line x1="830.0" y1="48" x2="830.0" y2="278" stroke="#d9d9d9" stroke-width="1"/>
+<text x="830.0" y="296" font-size="11" fill="#444444" text-anchor="middle">50</text>
+<text x="520" y="316" font-size="11" fill="#444444" text-anchor="middle">number of first responses (N=50)</text>
+<rect x="210" y="347" width="14" height="14" fill="#1a1a1a"/>
+<text x="230" y="358" font-size="11" fill="#444444">Full / pass</text>
+<rect x="320.2" y="347" width="14" height="14" fill="#808080"/>
+<text x="340.2" y="358" font-size="11" fill="#444444">Partial</text>
+<rect x="405.6" y="347" width="14" height="14" fill="#c8c8c8"/>
+<text x="425.6" y="358" font-size="11" fill="#444444">Fail or unknown</text>
+<rect x="540.6" y="347" width="14" height="14" fill="#ffffff" stroke="#222222" stroke-width="1"/>
+<text x="560.6" y="358" font-size="11" fill="#444444">Not applicable</text>
+</svg>
