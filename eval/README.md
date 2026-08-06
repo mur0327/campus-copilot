@@ -1,21 +1,231 @@
 # Evaluation
 
-이 디렉터리는 Campus Copilot의 RAG 검색 성능과 출처 후보 품질을 확인하기 위한 평가 자료를 둔다.
+이 디렉터리는 Campus Copilot의 검색 성능과 최종 응답 품질을 평가한 자료를 둔다.
 
-## 파일 구성
+파일은 하위 폴더 없이 한 층에 둔다. `qrel-v4-manifest.sha256`과 `../docs/paper/`의 동결 프로토콜이 여기 경로를 그대로 기록하고 있어, 위치를 바꾸면 계보 검증과 실행 기록이 어긋난다.
+
+## 파일 지도
+
+자료는 네 세대로 쌓였고 뒤 세대가 앞 세대를 대체한다. 논문의 최종 수치는 qrel v4와 EXP-07에서 나온다.
+
+### 1. 검색 평가 (RQ1)
 
 - `questions.csv`: 평가 질문 데이터셋이다.
 - `gold_sources.csv`: 질문별 사람이 확인한 공식 정답 문서 목록이다.
-- `run_questions.py`: 현재 로컬 `.data`에 적재된 문서를 기준으로 질문별 retrieval 결과를 수집하는 스크립트다.
-- `analyze_retrieval_chunks.py`: retrieval JSONL을 chunk 단위 CSV로 펼쳐 파싱 품질과 evidence 후보를 점검하는 스크립트다.
-- `exp07-answer-rubric.md`: EXP-07 최종 응답의 행동·정확성·근거·배포 적합성 판정 기준이다.
-- `run_exp07.py`: 현재 production 검색·생성·후처리 경로를 50문항×3회 순차 실행하는 스크립트다.
-- `make_exp07_manifest.py`: 비공개 원본을 열기 전에 실행 계보와 완결성을 동결하는 스크립트다.
+- `run_questions.py`: 현재 로컬 `.data`에 적재된 문서를 기준으로 질문별 retrieval 결과를 수집한다.
+- `analyze_retrieval_chunks.py`: retrieval JSONL을 chunk 단위 CSV로 펼쳐 파싱 품질과 evidence 후보를 점검한다.
+- `publish_retrieval_snapshots.py`: 동결한 RQ1 검색 스냅숏의 공개용 사본을 만든다.
+- `retrieval-frozen-public/`: 2026-07-12 동결 검색 결과의 공개본이다. bm25·semantic·hybrid 세 구성과 `manifest.json`을 담는다.
+- `RETRIEVAL_EVALUATION.md`: 검색 평가의 방법론과 결과를 정리한 문서다.
+
+### 2. qrel v3 (초기 정답표)
+
+외부 리뷰 5·6의 지적으로 v4에 대체됐다. 기준 문서 두 개는 상단에 정정 안내를 달고 보존한다.
+
+- `qrel-v3-criteria.md`: v3 판정 기준이다.
+- `make_blind_sheet.py`: 판정자용 블라인드 판정 시트(단일 HTML)를 만든다.
+- `qrel-v3-judgment-2026-07-13_저자.json`, `qrel-v3-judgment-2026-07-13_지도교수.json`: 판정자별 블라인드 판정 결과다.
+- `qrel-v3-adjudication-2026-07-13.md`: 두 판정의 조정 기록이다.
+- `gold_sources_v3.csv`: v3로 발행한 페이지 수준 qrel이다.
+- `question_judgments_v3.csv`: v3 질문 수준 판정이다.
+
+### 3. qrel v4 (최종 정답표)
+
+판정 규칙의 정본은 `qrel-v4-criteria.md`, 사람 감사 계약은 [../docs/paper/17-qrel-v4-b2-audit-protocol.md](../docs/paper/17-qrel-v4-b2-audit-protocol.md)다.
+
+- `qrel-v4-criteria.md`: v4 판정 기준의 정본이다.
+- `make_v4_pool.py`: 페이지·근거 판정 pool을 만든다. 산출물은 `page_pool_v4.csv`와 `chunk_pool_v4.csv`다.
+- `make_v4_sheet.py`: 페이지·근거 판정용 단일 HTML 시트를 만든다.
+- `qrel-v4-primary-initial.json`: LLM 초벌 판정 원본이다. 이후 수정 없이 동결한다.
+- `select_v4_audit.py`: B2 사람 감사용 질문-페이지 묶음을 재현 가능하게 선정한다.
+- `qrel-v4-secondary-audit.json`, `qrel-v4-secondary-audit-repilot.json`, `qrel-v4-secondary-audit-remaining.json`, `qrel-v4-secondary-audit-truncation-reaudit.json`: 단계별 사람 감사 결과다.
+- `qrel-v4-pilot-adjudication-2026-07-14.md`: 파일럿 구간의 조정 기록이다.
+- `make_v4_question_review.py`: 조정된 판정으로 50문항 질문 수준 검토 시트를 만든다. 산출물은 `qrel-v4-question-review.json`이다.
+- `adjudicate_v4_qrel.py`: 승인된 감사와 질문 검토를 최종 JSON으로 조립한다. 산출물은 `qrel-v4-adjudicated.json`이다.
+- `qrel-v4-adjudication-2026-07-14.md`: 전체 조정과 발행 기록이다.
+- `build_v4_qrel.py`: 최종 JSON을 발행 CSV로 변환한다. 산출물은 `gold_pages_v4.csv`, `gold_evidence_v4.csv`, `question_judgments_v4.csv`다.
+- `target_sources_v4.csv`: 질문별 목표 문서와 코퍼스 스냅숏 포함 여부다.
+- `check_v4_invariants.py`: 발행할 qrel v4의 구조·판정·근거 불변식을 검사한다.
+- `score_v4.py`: 동결 검색 JSONL을 qrel v4로 오프라인 재채점한다.
+- `compare_v4_audit.py`: 같은 동결 검색 결과에서 감사 전후 판정 민감도를 비교한다.
+- `make_v4_manifest.py`: 입력·판정·발행 계보의 SHA-256 manifest를 만든다. 산출물은 `qrel-v4-manifest.sha256`이다.
+
+### 4. EXP-07 (최종 응답 평가)
+
+실행 계약은 [../docs/paper/18-exp-07-answer-evaluation-protocol.md](../docs/paper/18-exp-07-answer-evaluation-protocol.md)다. 실행 순서는 아래 절에 있다.
+
+- `exp07-answer-rubric.md`: 최종 응답의 행동·정확성·근거·배포 적합성 판정 기준이다.
+- `run_exp07.py`: 현재 production 검색·생성·후처리 경로를 50문항×3회 순차 실행한다.
+- `exp07_common.py`, `exp07_corpus.py`: 공용 스키마와 코퍼스 지문 생성 도구다.
+- `make_exp07_manifest.py`: 비공개 원본을 열기 전에 실행 계보와 완결성을 동결한다. 산출물은 `exp07-run-manifest.json`이다.
 - `make_exp07_primary_sheet.py`: 기대 행동과 반복 결과를 싣지 않은 2단계 블라인드 본판정 HTML을 만든다.
-- `make_exp07_stage1_manifest.py`: 2단계 전에 1단계 원본과 주입 evidence coverage를 안전한 manifest로 동결한다.
+- `make_exp07_stage1_manifest.py`: 2단계 전에 1단계 원본과 주입 evidence coverage를 동결한다. 산출물은 `exp07-stage1-manifest.json`이다.
 - `make_exp07_reveal_sheet.py`: 본판정 잠금 뒤 기대 행동·반복 결과를 공개하고 조정 이력을 남기는 HTML을 만든다.
-- `publish_exp07.py`: 원시 출력과 evidence 전문을 제외한 공개 응답·판정·50/49 집계 파일을 만든다.
+- `publish_exp07.py`: 원시 출력과 evidence 전문을 제외한 공개 산출물을 만든다. 산출물은 `exp07-responses-public.json`, `exp07-judgments.json`, `exp07-results.json`, `exp07-results.csv`다.
+
+### 초기 응답 실험
+
+qrel v4와 EXP-07 이전에 수행한 응답 실험의 도구와 기록이다.
+
+- `abstain_separation.py`: answerable과 insufficient의 분리 가능성을 분석한다(EXP-03 재현 도구).
+- `replay_final_responses.py`: 저장된 EXP-02 evidence 후보로 최종 응답을 재생한다.
+- `final-response-judgment-2026-07-11.md`: 그 재생 결과의 판정 기록이다.
+- `qrel-adjudication-2026-07-11.md`: 2026-07-11 qrel 재판정 판정표다.
+
+### 출력 디렉터리
+
 - `results/`: Git에 커밋하지 않는 평가 원본과 비공개 판정 화면을 저장한다. EXP-07 원본은 재생성 가능한 캐시가 아니라 manifest hash로 계보를 고정하는 로컬 증거다.
+
+## 검색 평가 실행 전 조건
+
+현재 스크립트는 로컬 Docker Compose 서비스가 떠 있는 상태를 기본값으로 삼는다.
+
+필요한 데이터는 다음 위치에 있어야 한다.
+
+- `.data/postgres`
+- `.data/chromadb`
+- `.data/bm25`
+
+기본 실행은 localhost에 공개된 PostgreSQL, ChromaDB, BM25 cache를 사용한다. 컨테이너 내부나 별도 환경에서 실행할 때는 `--no-local-services`를 사용한다.
+
+## 검색 평가 사용법
+
+1문항만 먼저 확인한다.
+
+```bash
+uv run --project backend python eval/run_questions.py --limit 1
+```
+
+전체 질문을 실행한다.
+
+```bash
+uv run --project backend python eval/run_questions.py
+```
+
+특정 데이터셋 카테고리만 실행한다.
+
+```bash
+uv run --project backend python eval/run_questions.py --category "휴학/복학"
+```
+
+출력 위치를 바꾼다.
+
+```bash
+uv run --project backend python eval/run_questions.py --out-dir /tmp/campus-copilot-eval
+```
+
+최신 retrieval JSONL을 chunk 단위 CSV로 펼친다.
+
+```bash
+python3 eval/analyze_retrieval_chunks.py
+```
+
+특정 질문만 확인한다.
+
+```bash
+python3 eval/analyze_retrieval_chunks.py --question-id Q016 --question-id Q017
+```
+
+입력 파일과 출력 파일을 직접 지정한다.
+
+```bash
+python3 eval/analyze_retrieval_chunks.py \
+  --input eval/results/retrieval-20260628-055432.jsonl \
+  --output eval/results/retrieval-chunks-debug.csv
+```
+
+기본 출력은 chunk 내용의 preview만 포함한다. 입력 JSONL에 full content가 있는 경우 `--include-content`를 지정하면 `content` 컬럼도 함께 출력한다.
+
+## 검색 평가 출력 파일
+
+실행 결과는 기본적으로 `eval/results/`에 저장된다.
+
+- `retrieval-YYYYMMDD-HHMMSS.jsonl`: 질문별 상세 retrieval 결과다.
+- `retrieval-YYYYMMDD-HHMMSS.csv`: 빠르게 검토하기 위한 요약 결과다.
+- `retrieval-chunks-YYYYMMDD-HHMMSS.csv`: retrieval/evidence 후보를 chunk 단위로 펼친 분석 결과다.
+
+JSONL에는 다음 정보가 포함된다.
+
+- 질문 ID와 질문 본문
+- 데이터셋의 질문 분류값
+- backend가 분류한 질문 의도
+- retrieval 상태
+- 최종 top-k 검색 후보
+- 답변 프롬프트에 들어갈 수 있는 evidence 후보
+
+CSV는 URL과 제목 중심의 요약 검토용이다. 논문용 Recall@k, MRR, nDCG 계산은 `gold_sources.csv` 라벨링을 마친 뒤 별도 채점 스크립트에서 수행한다.
+
+### 결과 CSV 값
+
+`retrieval-YYYYMMDD-HHMMSS.csv`는 다음 주요 필드를 사용한다.
+
+- `dataset_question_type`: `questions.csv`의 `question_type`을 복사한 값이다.
+- `classified_intent`: backend retriever가 질문 문구에서 추정한 의도다.
+- `retrieval_mode`: 실제 사용된 검색 모드다.
+- `degraded`: 일부 검색 경로가 실패해 degraded 상태로 실행됐는지 여부다.
+- `semantic_available`: ChromaDB semantic 검색 사용 가능 여부다.
+- `bm25_available`: BM25 keyword 검색 사용 가능 여부다.
+- `semantic_error`: semantic 검색 실패 시 예외 이름이다.
+- `bm25_error`: BM25 검색 실패 시 원인 메시지다.
+- `retrieved_count`: 최종 top-k 검색 후보 수다.
+- `evidence_count`: 답변 프롬프트에 들어갈 수 있도록 필터링된 evidence 후보 수다.
+- `gold_urls`: `gold_sources.csv`에 라벨링된 공식 정답 문서 URL 목록이다.
+- `gold_relevance`: 정답 문서별 relevance 목록이다.
+- `gold_source_scopes`: 정답 문서별 `source_scope` 목록이다.
+- `gold_page_kinds`: 정답 문서별 `page_kind` 목록이다.
+- `gold_hit_top`: `primary` 또는 `secondary` 정답 문서가 top-k 검색 후보에 포함됐는지 여부다.
+- `gold_hit_top_rank`: top-k 검색 후보에서 정답 문서가 처음 등장한 순위다.
+- `gold_hit_evidence`: `primary` 또는 `secondary` 정답 문서가 evidence 후보에 포함됐는지 여부다.
+- `gold_hit_evidence_rank`: evidence 후보에서 정답 문서가 처음 등장한 순위다.
+- `top_urls`: 최종 top-k 검색 후보 URL 목록이다. 파이프(`|`)로 구분한다.
+- `evidence_urls`: evidence 후보 URL 목록이다. 파이프(`|`)로 구분한다.
+- `top_titles`: 최종 top-k 검색 후보 제목 목록이다. 파이프(`|`)로 구분한다.
+- `top_source_scopes`: 최종 top-k 검색 후보의 `source_scope` 목록이다.
+- `top_page_kinds`: 최종 top-k 검색 후보의 `page_kind` 목록이다.
+- `evidence_source_scopes`: evidence 후보의 `source_scope` 목록이다.
+- `evidence_page_kinds`: evidence 후보의 `page_kind` 목록이다.
+
+`classified_intent` 값은 backend의 가벼운 질문 의도 분류 결과다.
+
+- `procedure`: `어떻게`, `신청`, `절차`, `방법` 등 절차성 표현이 있는 질문이다.
+- `deadline`: `언제`, `기간`, `마감`, `일정` 등 일정성 표현이 있는 질문이다.
+- `requirement`: `조건`, `기준`, `요건`, `서류` 등 요구사항 표현이 있는 질문이다.
+- `contact`: `문의`, `담당`, `전화`, `연락` 등 문의처 표현이 있는 질문이다.
+- `factual`: `무엇`, `얼마`, `몇`, `누구` 등 사실 확인 표현이 있는 질문이다.
+- `unknown`: 위 규칙에 명확히 걸리지 않은 질문이다.
+
+`retrieval_mode` 값은 다음 의미다.
+
+- `hybrid`: semantic 검색과 BM25 검색을 모두 사용했다.
+- `semantic_only`: semantic 검색만 사용했다.
+- `keyword_only`: BM25 검색만 사용했다.
+- `empty`: 사용 가능한 검색 결과가 없었다.
+
+`degraded`, `semantic_available`, `bm25_available`은 문자열 `True` 또는 `False`로 저장된다.
+
+### Chunk 분석 CSV 값
+
+`retrieval-chunks-YYYYMMDD-HHMMSS.csv`는 다음 주요 필드를 사용한다.
+
+- `question_id`: 평가 질문 ID다.
+- `question`: 질문 본문이다.
+- `row_type`: `retrieved` 또는 `evidence`다.
+- `rank`: retrieved 후보의 순위다.
+- `source_number`: evidence 후보의 출처 번호다.
+- `overlap`: evidence 후보의 질문 키워드 겹침 수다.
+- `score`: retrieval 점수다.
+- `url`: 후보 chunk의 문서 URL이다.
+- `source_scope`: 후보 문서의 출처 범위다.
+- `page_kind`: 후보 문서의 기능 분류다.
+- `chunk_id`: chunk ID다.
+- `document_id`: 문서 ID다.
+- `chunk_index`: 문서 내부 chunk 순서다.
+- `chunk_type`: `text` 또는 `table`이다.
+- `content_length`: JSONL에 들어 있는 content 또는 preview의 길이다.
+- `content_preview`: chunk 내용을 검토하기 위한 preview다.
+- `content_available`: 입력 JSONL에 full `content` 필드가 있었는지 여부다.
+
+실행 후 콘솔에는 입력/출력 파일, 질문 수, retrieved/evidence 행 수, evidence 후보가 0개인 질문 ID가 출력된다.
 
 ## EXP-07 실행 순서
 
@@ -192,154 +402,3 @@ question_id,gold_url,gold_title,relevance,source_scope,page_kind,notes
 `source_scope`와 `page_kind` 분류 규칙만 바뀐 경우 본문 `content_hash`는 변하지 않을 수 있다. 이 경우 기존 DB 문서, Chroma metadata, BM25 cache를 갱신하는 별도 metadata refresh 작업이 필요하며, 해당 작업은 후속 과제로 분리한다.
 
 검색 성능 평가에서는 보통 `primary`와 `secondary`를 정답 URL로 사용한다. `related`는 분석 메모나 후속 답변 품질 평가에 활용한다.
-
-## 실행 전 조건
-
-현재 스크립트는 로컬 Docker Compose 서비스가 떠 있는 상태를 기본값으로 삼는다.
-
-필요한 데이터는 다음 위치에 있어야 한다.
-
-- `.data/postgres`
-- `.data/chromadb`
-- `.data/bm25`
-
-기본 실행은 localhost에 공개된 PostgreSQL, ChromaDB, BM25 cache를 사용한다. 컨테이너 내부나 별도 환경에서 실행할 때는 `--no-local-services`를 사용한다.
-
-## 사용법
-
-1문항만 먼저 확인한다.
-
-```bash
-uv run --project backend python eval/run_questions.py --limit 1
-```
-
-전체 질문을 실행한다.
-
-```bash
-uv run --project backend python eval/run_questions.py
-```
-
-특정 데이터셋 카테고리만 실행한다.
-
-```bash
-uv run --project backend python eval/run_questions.py --category "휴학/복학"
-```
-
-출력 위치를 바꾼다.
-
-```bash
-uv run --project backend python eval/run_questions.py --out-dir /tmp/campus-copilot-eval
-```
-
-최신 retrieval JSONL을 chunk 단위 CSV로 펼친다.
-
-```bash
-python3 eval/analyze_retrieval_chunks.py
-```
-
-특정 질문만 확인한다.
-
-```bash
-python3 eval/analyze_retrieval_chunks.py --question-id Q016 --question-id Q017
-```
-
-입력 파일과 출력 파일을 직접 지정한다.
-
-```bash
-python3 eval/analyze_retrieval_chunks.py \
-  --input eval/results/retrieval-20260628-055432.jsonl \
-  --output eval/results/retrieval-chunks-debug.csv
-```
-
-기본 출력은 chunk 내용의 preview만 포함한다. 입력 JSONL에 full content가 있는 경우 `--include-content`를 지정하면 `content` 컬럼도 함께 출력한다.
-
-## 출력 파일
-
-실행 결과는 기본적으로 `eval/results/`에 저장된다.
-
-- `retrieval-YYYYMMDD-HHMMSS.jsonl`: 질문별 상세 retrieval 결과다.
-- `retrieval-YYYYMMDD-HHMMSS.csv`: 빠르게 검토하기 위한 요약 결과다.
-- `retrieval-chunks-YYYYMMDD-HHMMSS.csv`: retrieval/evidence 후보를 chunk 단위로 펼친 분석 결과다.
-
-JSONL에는 다음 정보가 포함된다.
-
-- 질문 ID와 질문 본문
-- 데이터셋의 질문 분류값
-- backend가 분류한 질문 의도
-- retrieval 상태
-- 최종 top-k 검색 후보
-- 답변 프롬프트에 들어갈 수 있는 evidence 후보
-
-CSV는 URL과 제목 중심의 요약 검토용이다. 논문용 Recall@k, MRR, nDCG 계산은 `gold_sources.csv` 라벨링을 마친 뒤 별도 채점 스크립트에서 수행한다.
-
-### 결과 CSV 값
-
-`retrieval-YYYYMMDD-HHMMSS.csv`는 다음 주요 필드를 사용한다.
-
-- `dataset_question_type`: `questions.csv`의 `question_type`을 복사한 값이다.
-- `classified_intent`: backend retriever가 질문 문구에서 추정한 의도다.
-- `retrieval_mode`: 실제 사용된 검색 모드다.
-- `degraded`: 일부 검색 경로가 실패해 degraded 상태로 실행됐는지 여부다.
-- `semantic_available`: ChromaDB semantic 검색 사용 가능 여부다.
-- `bm25_available`: BM25 keyword 검색 사용 가능 여부다.
-- `semantic_error`: semantic 검색 실패 시 예외 이름이다.
-- `bm25_error`: BM25 검색 실패 시 원인 메시지다.
-- `retrieved_count`: 최종 top-k 검색 후보 수다.
-- `evidence_count`: 답변 프롬프트에 들어갈 수 있도록 필터링된 evidence 후보 수다.
-- `gold_urls`: `gold_sources.csv`에 라벨링된 공식 정답 문서 URL 목록이다.
-- `gold_relevance`: 정답 문서별 relevance 목록이다.
-- `gold_source_scopes`: 정답 문서별 `source_scope` 목록이다.
-- `gold_page_kinds`: 정답 문서별 `page_kind` 목록이다.
-- `gold_hit_top`: `primary` 또는 `secondary` 정답 문서가 top-k 검색 후보에 포함됐는지 여부다.
-- `gold_hit_top_rank`: top-k 검색 후보에서 정답 문서가 처음 등장한 순위다.
-- `gold_hit_evidence`: `primary` 또는 `secondary` 정답 문서가 evidence 후보에 포함됐는지 여부다.
-- `gold_hit_evidence_rank`: evidence 후보에서 정답 문서가 처음 등장한 순위다.
-- `top_urls`: 최종 top-k 검색 후보 URL 목록이다. 파이프(`|`)로 구분한다.
-- `evidence_urls`: evidence 후보 URL 목록이다. 파이프(`|`)로 구분한다.
-- `top_titles`: 최종 top-k 검색 후보 제목 목록이다. 파이프(`|`)로 구분한다.
-- `top_source_scopes`: 최종 top-k 검색 후보의 `source_scope` 목록이다.
-- `top_page_kinds`: 최종 top-k 검색 후보의 `page_kind` 목록이다.
-- `evidence_source_scopes`: evidence 후보의 `source_scope` 목록이다.
-- `evidence_page_kinds`: evidence 후보의 `page_kind` 목록이다.
-
-`classified_intent` 값은 backend의 가벼운 질문 의도 분류 결과다.
-
-- `procedure`: `어떻게`, `신청`, `절차`, `방법` 등 절차성 표현이 있는 질문이다.
-- `deadline`: `언제`, `기간`, `마감`, `일정` 등 일정성 표현이 있는 질문이다.
-- `requirement`: `조건`, `기준`, `요건`, `서류` 등 요구사항 표현이 있는 질문이다.
-- `contact`: `문의`, `담당`, `전화`, `연락` 등 문의처 표현이 있는 질문이다.
-- `factual`: `무엇`, `얼마`, `몇`, `누구` 등 사실 확인 표현이 있는 질문이다.
-- `unknown`: 위 규칙에 명확히 걸리지 않은 질문이다.
-
-`retrieval_mode` 값은 다음 의미다.
-
-- `hybrid`: semantic 검색과 BM25 검색을 모두 사용했다.
-- `semantic_only`: semantic 검색만 사용했다.
-- `keyword_only`: BM25 검색만 사용했다.
-- `empty`: 사용 가능한 검색 결과가 없었다.
-
-`degraded`, `semantic_available`, `bm25_available`은 문자열 `True` 또는 `False`로 저장된다.
-
-### Chunk 분석 CSV 값
-
-`retrieval-chunks-YYYYMMDD-HHMMSS.csv`는 다음 주요 필드를 사용한다.
-
-- `question_id`: 평가 질문 ID다.
-- `question`: 질문 본문이다.
-- `row_type`: `retrieved` 또는 `evidence`다.
-- `rank`: retrieved 후보의 순위다.
-- `source_number`: evidence 후보의 출처 번호다.
-- `overlap`: evidence 후보의 질문 키워드 겹침 수다.
-- `score`: retrieval 점수다.
-- `url`: 후보 chunk의 문서 URL이다.
-- `source_scope`: 후보 문서의 출처 범위다.
-- `page_kind`: 후보 문서의 기능 분류다.
-- `chunk_id`: chunk ID다.
-- `document_id`: 문서 ID다.
-- `chunk_index`: 문서 내부 chunk 순서다.
-- `chunk_type`: `text` 또는 `table`이다.
-- `content_length`: JSONL에 들어 있는 content 또는 preview의 길이다.
-- `content_preview`: chunk 내용을 검토하기 위한 preview다.
-- `content_available`: 입력 JSONL에 full `content` 필드가 있었는지 여부다.
-
-실행 후 콘솔에는 입력/출력 파일, 질문 수, retrieved/evidence 행 수, evidence 후보가 0개인 질문 ID가 출력된다.
