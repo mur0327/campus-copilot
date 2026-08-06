@@ -12,6 +12,7 @@
 
 - `19-paper-master.md`: 유일한 현행 집필 정본이자 논문 전체 설명서다.
 - `00-doc-style-guide.md`: `docs/paper/`의 문서 형식 규칙이다.
+- `check_manuscript.py`: 원고를 정본 §15.3.2 규칙으로 점검하는 검사기이며 `python3 docs/paper/check_manuscript.py`로 실행한다.
 - `04-glossary.md`: 쉬운 설명을 위한 참고 용어집이다.
 - `06-experiment-log.md`: 실험 당시 사실과 해석을 시간순으로 보존하는 누적 기록이다.
 - `17-qrel-v4-b2-audit-protocol.md`: 최종 평가 정답표의 사람 감사 계약과 실행 기록이다.
