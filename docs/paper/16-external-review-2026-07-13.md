@@ -5,7 +5,7 @@
 
 qrel v4 설계 승인과 감사 범위 변경 과정을 보존하며, 완료된 최종 절차와 결과는 `19-paper-master.md`를 따른다.
 
-무맥락 GPT Pro 리뷰 두 건의 정본 기록이다. 리뷰 5는 qrel v3 발행 커밋(`547ef38`)을 대상으로 한 감사이고, 리뷰 6은 그 지적을 반영한 v4 설계안에 대한 승인 심사다. 리뷰 5 원문(195줄)은 `tmp/qrel-v3-external-review-2026-07-13.md`(비추적)에 있고, 리뷰 6은 대화로만 수신되어 요지를 본 문서에 수록한다. v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-criteria.md), 도구 구현 계약은 [docs/sessions/2026-07-14-qrel-v4-codex-instructions.md](../sessions/2026-07-14-qrel-v4-codex-instructions.md)다.
+무맥락 GPT Pro 리뷰 두 건의 정본 기록이다. 리뷰 5는 qrel v3 발행 커밋(`547ef38`)을 대상으로 한 감사이고, 리뷰 6은 그 지적을 반영한 v4 설계안에 대한 승인 심사다. 리뷰 5 원문(195줄)은 [review/qrel-v3-external-review-2026-07-13.md](review/qrel-v3-external-review-2026-07-13.md)에 있고, 리뷰 6은 대화로만 수신되어 요지를 본 문서에 수록한다. v4 판정 규칙의 정본은 [eval/qrel-v4-criteria.md](../../eval/qrel-v4-criteria.md), 도구 구현 계약은 [docs/sessions/2026-07-14-qrel-v4-codex-instructions.md](../sessions/2026-07-14-qrel-v4-codex-instructions.md)다.
 
 감사 범위 변경(2026-07-14): §4의 v4 절차 문구와 §5의 저자 감사 범위는 사람 감사 시작 전에 [17-qrel-v4-b2-audit-protocol.md](17-qrel-v4-b2-audit-protocol.md)로 대체됐다. 아래 내용은 리뷰 6 승인 당시의 역사 기록으로 보존한다.
 

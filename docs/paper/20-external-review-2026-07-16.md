@@ -3,7 +3,7 @@
 **상태: blocking·major 반영 완료, 역사 기록.**
 **작성일 2026-07-16.**
 
-19-paper-master.md 초벌에 대한 외부 무맥락 게이트 리뷰(GPT-5.6 Sol Pro)의 기록이다. 현행 방향과 수치는 [19-paper-master.md](19-paper-master.md)를 따른다.
+19-paper-master.md 초벌에 대한 외부 무맥락 게이트 리뷰(GPT-5.6 Sol Pro)의 기록이다. 현행 방향과 수치는 [19-paper-master.md](19-paper-master.md)를 따른다. 리뷰를 의뢰할 때 보낸 지침은 [review/external-review-brief.md](review/external-review-brief.md)다.
 
 ## 1. 개요
 
