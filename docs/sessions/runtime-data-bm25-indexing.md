@@ -95,7 +95,7 @@ Docker 컨테이너 로그를 기준으로 임베딩이 정상 완료됐는지 �
 - [backend/app/services/retriever.py](../../backend/app/services/retriever.py)
 - [worker/tasks/bm25.py](../../worker/tasks/bm25.py)
 - [worker/tasks/crawl.py](../../worker/tasks/crawl.py)
-- [Phase 4 indexing/search/RAG design](../specs/2026-05-06-phase-4-indexing-search-rag-design.md)
+- [Phase 4 indexing/search/RAG design](../kiosk/specs/2026-05-06-phase-4-indexing-search-rag-design.md)
 - 관련 커밋:
   - `1f065a7 fix(env): update BM25 cache directory paths in .env and docker-compose`
   - `eb2be69 feat(rag): build bm25 indexes in worker`

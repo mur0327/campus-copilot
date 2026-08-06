@@ -176,7 +176,7 @@ EXP-03 분석대로 overlap fallback을 원 의미 유사도 하한으로 교체
 근거 위치를 정리한다.
 
 - 50문항·라벨: `eval/questions.csv`, `eval/gold_sources.csv`
-- 순수 검색 0.94/0.78, Best Bets 분리: [../evaluation-report-2.md](../evaluation-report-2.md)
+- 순수 검색 0.94/0.78, Best Bets 분리: [../reports/evaluation-report-2.md](../reports/evaluation-report-2.md)
 - 실패 유형 분류 코드: `eval/run_questions.py`
 - 거절 실험(2/18), 분리성 분석: [06-experiment-log.md](06-experiment-log.md) EXP-02, EXP-03
 - 검색 개선·어휘 갭·Best Bets 상세: [../sessions/retrieval-rrf-vocabulary-gap-best-bets.md](../sessions/retrieval-rrf-vocabulary-gap-best-bets.md)

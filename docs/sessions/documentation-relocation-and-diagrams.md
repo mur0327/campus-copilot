@@ -95,10 +95,10 @@ file:///home/mur0327/services/campus-copilot/node_modules/pretendard/...
 
 ## 관련 자료
 
-- [docs/specs](../specs/)
-- [docs/plans](../plans/)
-- [RAG 답변 품질 지침서](../specs/2026-06-01-rag-answer-quality-design.md)
-- [RAG 답변 품질 구현 계획](../plans/2026-06-01-rag-answer-quality-implementation.md)
+- [docs/kiosk/specs](../kiosk/specs/)
+- [docs/kiosk/plans](../kiosk/plans/)
+- [RAG 답변 품질 지침서](../kiosk/specs/2026-06-01-rag-answer-quality-design.md)
+- [RAG 답변 품질 구현 계획](../kiosk/plans/2026-06-01-rag-answer-quality-implementation.md)
 - 관련 커밋:
   - `2d95c87 docs: relocate project planning documents`
   - `69066fb docs(rag): define answer quality contract`

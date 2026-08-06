@@ -18,7 +18,7 @@
 - `#### 상태`: 확정 / 추가 검증 필요 / 미해결
 - `#### 재현`: 파일·명령
 
-관련 문서: [방향·포지셔닝(확정/미결정)](05-scope-and-positioning.md) · [평가 보고서 2](../evaluation-report-2.md) · [검색 개선 세션 기록](../sessions/retrieval-rrf-vocabulary-gap-best-bets.md)
+관련 문서: [방향·포지셔닝(확정/미결정)](05-scope-and-positioning.md) · [평가 보고서 2](../reports/evaluation-report-2.md) · [검색 개선 세션 기록](../sessions/retrieval-rrf-vocabulary-gap-best-bets.md)
 
 ## EXP-01. 검색 성능 기준선
 
@@ -186,7 +186,7 @@ BM25 only, Vector only와 Hybrid를 nDCG@5를 포함해 비교했다.
 
 #### 방법
 
-`eval/run_questions.py`에 `--retriever-mode {hybrid,bm25,semantic}` 추가(설계: [docs/plans/2026-07-10-baseline-table-ndcg-eval.md](../plans/2026-07-10-baseline-table-ndcg-eval.md), 구현: Codex 위임). 격리는 융합만 끄고 상세 확장·중복 제거·intent boost 등 후처리는 동일. 단일 모드는 활성 검색기 가중치 1.0. nDCG@5는 binary(단일 relevant, IDCG=1). 세 모드를 같은 코퍼스 스냅숏에서 연속 실행, best bets 없이 순수 검색. Freshness 행은 범위 제외(08 문서 W6).
+`eval/run_questions.py`에 `--retriever-mode {hybrid,bm25,semantic}` 추가(설계: [docs/kiosk/plans/2026-07-10-baseline-table-ndcg-eval.md](../kiosk/plans/2026-07-10-baseline-table-ndcg-eval.md), 구현: Codex 위임). 격리는 융합만 끄고 상세 확장·중복 제거·intent boost 등 후처리는 동일. 단일 모드는 활성 검색기 가중치 1.0. nDCG@5는 binary(단일 relevant, IDCG=1). 세 모드를 같은 코퍼스 스냅숏에서 연속 실행, best bets 없이 순수 검색. Freshness 행은 범위 제외(08 문서 W6).
 
 #### 결과
 
@@ -309,7 +309,7 @@ EXP-02에서 evidence 게이트가 엉뚱한 근거를 통과시킨 insufficient
 
 #### 방법
 
-재검색 없이 EXP-02 실행(2026-07-05 jsonl)의 evidence 후보를 chunk_id로 DB에서 복원해, 운영 경로 그대로 `generate_answer_draft` → `assemble_chat_response`로 최종 ChatResponse 생성(게이트 재실행 금지). 모델 gemini-3-flash-preview, 프롬프트 sha256 고정 기록, ConflictWarning은 "없음"으로 고정, sig_mismatch 0(코퍼스 안정). 판정자 2인(Claude 1차, 저자 확정), 축은 응답 행동 × 근거 관계 + 커버리지 유형. 설계: [docs/plans/2026-07-11-leaked-evidence-response-eval.md](../plans/2026-07-11-leaked-evidence-response-eval.md), 구현 Codex, 판정 기록 `eval/final-response-judgment-2026-07-11.md`.
+재검색 없이 EXP-02 실행(2026-07-05 jsonl)의 evidence 후보를 chunk_id로 DB에서 복원해, 운영 경로 그대로 `generate_answer_draft` → `assemble_chat_response`로 최종 ChatResponse 생성(게이트 재실행 금지). 모델 gemini-3-flash-preview, 프롬프트 sha256 고정 기록, ConflictWarning은 "없음"으로 고정, sig_mismatch 0(코퍼스 안정). 판정자 2인(Claude 1차, 저자 확정), 축은 응답 행동 × 근거 관계 + 커버리지 유형. 설계: [docs/kiosk/plans/2026-07-11-leaked-evidence-response-eval.md](../kiosk/plans/2026-07-11-leaked-evidence-response-eval.md), 구현 Codex, 판정 기록 `eval/final-response-judgment-2026-07-11.md`.
 
 #### 결과
 

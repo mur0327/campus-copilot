@@ -107,8 +107,8 @@ RAG 정확도 검증은 “검색 정확도 + 근거 사용 정확도 + 답변 �
 
 ## 관련 코드·자료
 
-- [RAG 답변 품질 지침서](../specs/2026-06-01-rag-answer-quality-design.md)
-- [RAG 답변 품질 구현 계획](../plans/2026-06-01-rag-answer-quality-implementation.md)
+- [RAG 답변 품질 지침서](../kiosk/specs/2026-06-01-rag-answer-quality-design.md)
+- [RAG 답변 품질 구현 계획](../kiosk/plans/2026-06-01-rag-answer-quality-implementation.md)
 - [backend/app/schemas/chat.py](../../backend/app/schemas/chat.py)
 - [backend/tests/api/test_chat_sse.py](../../backend/tests/api/test_chat_sse.py)
 - [backend/tests/services/test_rag.py](../../backend/tests/services/test_rag.py)

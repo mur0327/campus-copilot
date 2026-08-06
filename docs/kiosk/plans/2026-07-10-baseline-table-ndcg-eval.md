@@ -2,8 +2,8 @@
 
 작성일: 2026-07-10
 배경: KMMS 체크리스트가 요구하는 비교 기준선표와 nDCG@k가 미측정
-([docs/paper/05-scope-and-positioning.md](../paper/05-scope-and-positioning.md) §3.2–3.3,
-[docs/paper/08-weaknesses-and-mitigations.md](../paper/08-weaknesses-and-mitigations.md) W5).
+([docs/paper/05-scope-and-positioning.md](../../paper/05-scope-and-positioning.md) §3.2–3.3,
+[docs/paper/08-weaknesses-and-mitigations.md](../../paper/08-weaknesses-and-mitigations.md) W5).
 설계는 Claude, 구현은 Codex 위임.
 
 ## 확정된 설계 결정

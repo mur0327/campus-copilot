@@ -222,5 +222,5 @@
 ## 부록: 산출물
 
 - 단계별 측정 결과와 실행 기록 (`eval/results/`)
-- 상세 기술 여정 기록: [docs/sessions/retrieval-rrf-vocabulary-gap-best-bets.md](./sessions/retrieval-rrf-vocabulary-gap-best-bets.md)
+- 상세 기술 여정 기록: [docs/sessions/retrieval-rrf-vocabulary-gap-best-bets.md](../sessions/retrieval-rrf-vocabulary-gap-best-bets.md)
 - 평가 실행 스크립트(큐레이션 분리 측정 옵션 포함): `eval/run_questions.py`

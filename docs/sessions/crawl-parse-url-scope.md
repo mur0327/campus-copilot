@@ -83,7 +83,7 @@ limited_targets = combined_targets[: settings.crawl_target_limit]
 - [worker/tasks/crawl.py](../../worker/tasks/crawl.py)
 - [worker/tasks/parse.py](../../worker/tasks/parse.py)
 - [worker/core/config.py](../../worker/core/config.py)
-- [Phase 2 crawling/parsing design](../specs/2026-04-19-phase-2-crawling-parsing-design.md)
+- [Phase 2 crawling/parsing design](../kiosk/specs/2026-04-19-phase-2-crawling-parsing-design.md)
 - 관련 커밋 예시:
   - `8936458 feat(worker): add crawl target discovery`
   - `bf1d128 feat(worker): add html parsing pipeline`

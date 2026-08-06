@@ -53,8 +53,8 @@ Campus Copilot은 호남대학교 학사 안내를 위한 키오스크 중심 �
 
 - [AGENTS.md](../../AGENTS.md)
 - [README.md](../../README.md)
-- [설계 문서 디렉터리](../specs/)
-- [구현 계획 디렉터리](../plans/)
+- [설계 문서 디렉터리](../kiosk/specs/)
+- [구현 계획 디렉터리](../kiosk/plans/)
 
 ## 공란/미확인
 

@@ -48,8 +48,8 @@ Campus Copilot의 핵심 품질 영역입니다. 단순히 답변이 자연스�
 
 작성된 문서:
 
-- [RAG 답변 품질 향상 지침서](../specs/2026-06-01-rag-answer-quality-design.md)
-- [RAG 답변 품질 구현 계획](../plans/2026-06-01-rag-answer-quality-implementation.md)
+- [RAG 답변 품질 향상 지침서](../kiosk/specs/2026-06-01-rag-answer-quality-design.md)
+- [RAG 답변 품질 구현 계획](../kiosk/plans/2026-06-01-rag-answer-quality-implementation.md)
 
 핵심 계약:
 
@@ -97,8 +97,8 @@ RAG 품질 문제는 단순 prompt 수정이 아니라 API contract, source filt
 - [backend/app/services/retriever.py](../../backend/app/services/retriever.py)
 - [backend/app/prompts/chat_answer.md](../../backend/app/prompts/chat_answer.md)
 - [frontend/src/components/kiosk/answer/SourceList.tsx](../../frontend/src/components/kiosk/answer/SourceList.tsx)
-- [RAG 답변 품질 지침서](../specs/2026-06-01-rag-answer-quality-design.md)
-- [RAG 답변 품질 구현 계획](../plans/2026-06-01-rag-answer-quality-implementation.md)
+- [RAG 답변 품질 지침서](../kiosk/specs/2026-06-01-rag-answer-quality-design.md)
+- [RAG 답변 품질 구현 계획](../kiosk/plans/2026-06-01-rag-answer-quality-implementation.md)
 
 ## 주석
 

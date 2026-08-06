@@ -12,7 +12,7 @@ Campus Copilot은 호남대학교 학사 안내를 위한 키오스크 중심 �
   - `frontend/src/types/kiosk.ts`: 프론트엔드 채팅 응답 수신 타입
 - `pi-setup/`: Raspberry Pi 키오스크 및 로컬 프린트 서비스 설정
 - `docs/`: 설계서, 구현 계획, 세션 기록, 논문 준비 문서
-  - `docs/specs/2026-06-01-rag-answer-quality-design.md`: RAG 답변 품질과 JSON 계약 설계 문서
+  - `docs/kiosk/specs/2026-06-01-rag-answer-quality-design.md`: RAG 답변 품질과 JSON 계약 설계 문서
 - `eval/`: 논문 및 RAG 평가용 질문 데이터셋과 평가 스크립트
 - `static/`: 정적 HTML 등 외부 제공용 파일
 - `chromadb/`: 로컬 ChromaDB 데이터

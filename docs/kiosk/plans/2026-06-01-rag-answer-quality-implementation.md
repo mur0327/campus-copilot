@@ -2,7 +2,7 @@
 
 **Date**: 2026-06-01
 **Goal**: 공식 문서 근거에 기반한 최종 답변만 사용자에게 표시하고, 관련 없는 출처 노출과 미검증 토큰 스트리밍을 제거한다.
-**Source Of Truth**: `docs/specs/2026-06-01-rag-answer-quality-design.md`
+**Source Of Truth**: `docs/kiosk/specs/2026-06-01-rag-answer-quality-design.md`
 
 ## 1. 목표 상태
 

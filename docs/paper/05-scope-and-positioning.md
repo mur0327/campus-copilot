@@ -216,7 +216,7 @@ binary nDCG@5를 지표에 추가하고 세 모드 모두 산출(EXP-04 표 참�
 당시 저장소 근거를 정리한다.
 
 - 50문항 확장·라벨링: `eval/questions.csv`, `eval/gold_sources.csv` (answerable 32 / insufficient 18)
-- 순수 검색 Recall@5 0.94 / MRR 0.78, Best Bets 분리 보고: [docs/evaluation-report-2.md](../evaluation-report-2.md)
+- 순수 검색 Recall@5 0.94 / MRR 0.78, Best Bets 분리 보고: [docs/reports/evaluation-report-2.md](../reports/evaluation-report-2.md)
 - 실패 유형 분류 코드(corpus_missing/pool_miss/merge_loss/ranked_low): `eval/run_questions.py`
 - 검색 개선·실패 분석 상세 기록: [docs/sessions/retrieval-rrf-vocabulary-gap-best-bets.md](../sessions/retrieval-rrf-vocabulary-gap-best-bets.md)
 - RRF(score)와 evidence gate(relevance) 분리: `backend/app/services/retriever.py`

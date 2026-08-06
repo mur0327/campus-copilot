@@ -171,11 +171,11 @@ flowchart LR
 
 ## 관련 코드
 
-- [worker/tasks/crawl.py](../../worker/tasks/crawl.py)
-- [worker/tasks/parse.py](../../worker/tasks/parse.py)
-- [worker/tasks/parsers/markdown.py](../../worker/tasks/parsers/markdown.py)
-- [worker/tasks/storage.py](../../worker/tasks/storage.py)
-- [worker/tasks/embed.py](../../worker/tasks/embed.py)
-- [worker/tasks/bm25.py](../../worker/tasks/bm25.py)
-- [worker/tasks/trigger.py](../../worker/tasks/trigger.py)
-- [backend/app/api/routes/admin.py](../../backend/app/api/routes/admin.py)
+- [worker/tasks/crawl.py](../../../worker/tasks/crawl.py)
+- [worker/tasks/parse.py](../../../worker/tasks/parse.py)
+- [worker/tasks/parsers/markdown.py](../../../worker/tasks/parsers/markdown.py)
+- [worker/tasks/storage.py](../../../worker/tasks/storage.py)
+- [worker/tasks/embed.py](../../../worker/tasks/embed.py)
+- [worker/tasks/bm25.py](../../../worker/tasks/bm25.py)
+- [worker/tasks/trigger.py](../../../worker/tasks/trigger.py)
+- [backend/app/api/routes/admin.py](../../../backend/app/api/routes/admin.py)

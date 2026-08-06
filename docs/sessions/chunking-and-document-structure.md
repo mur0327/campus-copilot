@@ -82,7 +82,7 @@ Campus Copilot의 chunking은 단순 텍스트 분할이 아니라, 학사 문�
 - [worker/tasks/parsers/markdown.py](../../worker/tasks/parsers/markdown.py)
 - [worker/tasks/parsers/html_tables.py](../../worker/tasks/parsers/html_tables.py)
 - [worker/tasks/parse.py](../../worker/tasks/parse.py)
-- [Phase 2 crawling/parsing design](../specs/2026-04-19-phase-2-crawling-parsing-design.md)
+- [Phase 2 crawling/parsing design](../kiosk/specs/2026-04-19-phase-2-crawling-parsing-design.md)
 - 관련 커밋 예시:
   - `bf1d128 feat(worker): add html parsing pipeline`
   - `e1da17a feat(worker): add pdf parsing pipeline`

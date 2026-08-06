@@ -3,8 +3,8 @@
 작성일: 2026-07-11
 배경: EXP-02에서 evidence 게이트가 정답 없는 질문(insufficient 18개) 중 16개에
 엉뚱한 근거를 통과시켰다. 실제 시스템이 그 근거로 위험한 최종 답변을 내는지는
-미측정이다([08 W3](../paper/08-weaknesses-and-mitigations.md), 외부 리뷰 2
-[09 §3](../paper/09-external-review-2026-07-10.md) 권고). 설계는 Claude,
+미측정이다([08 W3](../../paper/08-weaknesses-and-mitigations.md), 외부 리뷰 2
+[09 §3](../../paper/09-external-review-2026-07-10.md) 권고). 설계는 Claude,
 구현은 Codex 위임, 판정은 2인(Claude 1차, 저자 확정).
 
 ## 설계 결정
